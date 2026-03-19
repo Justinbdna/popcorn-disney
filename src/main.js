@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import resize from './resize.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { scales } from 'chart.js';
+import { objectDirection, objectScale } from 'three/tsl';
 
 // 1. LA SCÈNE (Le monde 3D)
-// Correction : Tout en minuscules, sans accent
 const scene = new THREE.Scene();
 
 // 2. LA CAMÉRA (Tes yeux)
@@ -19,32 +20,41 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// 4. LES OBJETS DE TEST (La Robe)
-// Dès que tu colles cette ligne, ton import tout en haut ne sera plus grisé !
+// 4. LES OBJETS (La Robe)
 const loader = new GLTFLoader(); 
 
 loader.load(
-  '/assets/princess_snow_white_dress.glb', // Assure-toi que c'est bien le nom de ton fichier
+  '/assets/princess_snow_white_dress.glb', 
   (gltf) => {
-    scene.add(gltf.scene);
+    scene.add(gltf.scene); 
+    object.visibility = false
+  }
+);
+loader.load(
+  '/assets/low_poly_lightsaber.glb', 
+  (gltf) => {
+    scene.add(gltf.scene); 
+    object.visibility = true
+    object.scales = 0,1; 0,1; 0,1
   }
 );
 
+
 // 5. LA LUMIÈRE
-const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 2); // Ciel blanc, sol gris foncé
+const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3); // Ciel blanc, sol gris foncé
 scene.add(hemiLight);
 
-const dirLight = new THREE.DirectionalLight(0xffffff, 3); // Soleil puissant
+const dirLight = new THREE.DirectionalLight(0xffffff,5); // Soleil puissant
 dirLight.position.set(5, 10, 7);
 scene.add(dirLight);
 
 // 6. LES AIDES VISUELLES (Le chantier)
 // On ajoute la grille au sol et les flèches directionnelles
-const gridHelper = new THREE.GridHelper(20, 20); 
+const gridHelper = new THREE.GridHelper(60, 60); 
 scene.add(gridHelper);
 
 const axesHelper = new THREE.AxesHelper(3);
-scene.add(axesHelper); // Correction : Le 's' est bien là !
+scene.add(axesHelper);
 
 // Appel du fichier resize.js (le musicien externe)
 resize(camera, renderer);
