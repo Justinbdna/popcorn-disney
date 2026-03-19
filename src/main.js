@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import resize from './resize.js';
 
 // 1. LA SCÈNE (Le monde 3D)
@@ -14,6 +15,8 @@ const canvas = document.querySelector('#webgl');
 const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
 
 // 4. UN OBJET DE TEST (Le cube)
 const geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -43,6 +46,8 @@ resize(camera, renderer);
 const animate = () => {
   mesh.rotation.x += 0.01;
   mesh.rotation.y += 0.01;
+
+  controls.update();
 
   renderer.render(scene, camera);
   window.requestAnimationFrame(animate);
