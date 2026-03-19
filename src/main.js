@@ -120,6 +120,33 @@ loader.load("/assets/low_poly_lightsaber.glb", (gltf) => {
     .name("Profondeur Z");
 });
 
+// Objet 3 : Lampe d'Aladdin
+loader.load("/assets/Aladdin_lamp.glb", (gltf) => {
+  const lampe = gltf.scene;
+  lampe.name = "Lampe";
+  scene.add(lampe);
+  objetsCliquables.push(lampe);
+  lampe.position.set(5, 0, 0); // On la décale à droite
+});
+
+// Objet 4 : Chapeau de Cowboy
+loader.load("/assets/lowpoly_cowboy_hat.glb", (gltf) => {
+  const chapeau = gltf.scene;
+  chapeau.name = "Chapeau";
+  scene.add(chapeau);
+  objetsCliquables.push(chapeau);
+  chapeau.position.set(-5, 0, 0); // On le décale à gauche
+});
+
+// Objet 5 : Drapeau Cars
+loader.load("/assets/drapeau_cars.glb", (gltf) => {
+  const drapeau = gltf.scene;
+  drapeau.name = "Drapeau";
+  scene.add(drapeau);
+  objetsCliquables.push(drapeau);
+  drapeau.position.set(0, 0, -5); // On le décale au fond
+});
+
 // 5. LA LUMIÈRE
 const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3); // Ciel blanc, sol gris foncé
 scene.add(hemiLight);
