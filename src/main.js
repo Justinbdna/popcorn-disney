@@ -3,7 +3,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import resize from "./resize.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import GUI from "lil-gui";
-
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 
 // 1. LA SCÈNE (Le monde 3D)
 const scene = new THREE.Scene();
@@ -40,26 +40,6 @@ loader.load("/assets/princess_snow_white_dress.glb", (gltf) => {
   robe.name = "Robe"; 
   objetsCliquables.push(robe);
 
-  // On crée le dossier de taille dans le menu et on le relie à la robe
-  const tailleDossier = gui.addFolder("Taille de la Robe");
-  tailleDossier
-    .add(robe.scale, "x")
-    .min(0.1)
-    .max(10)
-    .step(0.1)
-    .name("Largeur (X)");
-  tailleDossier
-    .add(robe.scale, "y")
-    .min(0.1)
-    .max(10)
-    .step(0.1)
-    .name("Hauteur (Y)");
-  tailleDossier
-    .add(robe.scale, "z")
-    .min(0.1)
-    .max(10)
-    .step(0.1)
-    .name("Profondeur (Z)");
 });
 
 // Objet 2 : Le Sabre
@@ -76,48 +56,6 @@ loader.load("/assets/low_poly_lightsaber.glb", (gltf) => {
   // On fixe la position exacte du sabre
   sabre.position.set(-10, 0, 0);
 
-  const tailleDossier = gui.addFolder("Taille du Sabre");
-  tailleDossier
-    .add(sabre.scale, "x")
-    .min(0.001)
-    .max(10)
-    .step(0.001)
-    .name("Largeur (X)");
-  tailleDossier
-    .add(sabre.scale, "y")
-    .min(0.001)
-    .max(10)
-    .step(0.001)
-    .name("Hauteur (Y)");
-  tailleDossier
-    .add(sabre.scale, "z")
-    .min(0.001)
-    .max(10)
-    .step(0.001)
-    .name("Profondeur (Z)");
-
-  const positionDossier = gui.addFolder("Position du Sabre");
-
-  positionDossier
-    .add(sabre.position, "x")
-    .min(-20)
-    .max(20)
-    .step(0.1)
-    .name("Déplacement X");
-
-  positionDossier
-    .add(sabre.position, "y")
-    .min(-10)
-    .max(10)
-    .step(0.1)
-    .name("Hauteur Y");
-
-  positionDossier
-    .add(sabre.position, "z")
-    .min(-20)
-    .max(20)
-    .step(0.1)
-    .name("Profondeur Z");
 });
 
 // Objet 3 : Lampe d'Aladdin
@@ -148,20 +86,28 @@ loader.load("/assets/drapeau_cars.glb", (gltf) => {
 });
 
 // 5. LA LUMIÈRE
-const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3); // Ciel blanc, sol gris foncé
+const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3);
 scene.add(hemiLight);
-
-const dirLight = new THREE.DirectionalLight(0xffffff, 5); // Soleil puissant
+const dirLight = new THREE.DirectionalLight(0xffffff, 5);
 dirLight.position.set(5, 10, 7);
 scene.add(dirLight);
-// --- CONTRÔLE DE LA LUMIÈRE (GUI) ---
-const lumiereDossier = gui.addFolder("Éclairage");
-lumiereDossier
-  .add(dirLight, "intensity")
-  .min(0)
-  .max(10)
-  .step(0.1)
-  .name("Intensité Soleil");
+
+// 1. Éclairage (Fixe)
+const lumiereDossier = gui.addFolder('Éclairage');
+lumiereDossier.add(dirLight, 'intensity').min(0).max(10).step(0.1).name('Soleil');
+
+// 2. Dossier dynamique (Vide au départ)
+let dossierSelection = gui.addFolder('Aucun objet sélectionné');
+
+// --- LES FLÈCHES 3D (TransformControls) ---
+const transformControl = new TransformControls(camera, renderer.domElement);
+scene.add(transformControl);
+
+// Astuce de pro : Désactiver la caméra quand on tire sur une flèche
+transformControl.addEventListener('dragging-changed', function (event) {
+  controls.enabled = !event.value;
+
+});
 
 // 6. LES AIDES VISUELLES (Le chantier)
 // On ajoute la grille au sol et les flèches directionnelles
@@ -174,6 +120,54 @@ scene.add(axesHelper);
 // Appel du fichier resize.js (le musicien externe)
 resize(camera, renderer);
 
+// --- LE LASER (RAYCASTER V3 - Le Clic Intelligent) ---
+const raycaster = new THREE.Raycaster();
+const souris = new THREE.Vector2();
+
+window.addEventListener('click', (event) => {
+  // Sécurité : On ignore le clic si on clique sur le menu noir GUI pour ne pas tout désélectionner
+  if (event.target !== canvas) return;
+
+  // 1. Convertir la position de la souris
+  souris.x = (event.clientX / window.innerWidth) * 2 - 1;
+  souris.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  
+  // 2. Tirer le laser
+  raycaster.setFromCamera(souris, camera);
+
+  // 3. Vérifier les collisions avec les objets de ta liste
+  const intersections = raycaster.intersectObjects(objetsCliquables, true);
+
+  if (intersections.length > 0) {
+    // On a touché quelque chose ! On remonte pour trouver l'objet principal
+    let cible = intersections[0].object;
+    while (cible.parent && cible.parent.type !== 'Scene') {
+      if (cible.name) break; 
+      cible = cible.parent;
+    }
+
+    // --- LA MAGIE OPÈRE ICI ---
+    
+    // A. On accroche les flèches 3D à l'objet cliqué
+    transformControl.attach(cible);
+
+    // B. On met à jour le menu dynamiquement
+    dossierSelection.destroy(); // On efface l'ancien menu
+    dossierSelection = gui.addFolder('Taille : ' + cible.name); 
+    
+    // On relie les curseurs à l'échelle de l'objet cliqué
+    dossierSelection.add(cible.scale, 'x').min(0.001).max(20).step(0.01).name('Largeur');
+    dossierSelection.add(cible.scale, 'y').min(0.001).max(20).step(0.01).name('Hauteur');
+    dossierSelection.add(cible.scale, 'z').min(0.001).max(20).step(0.01).name('Profondeur');
+    dossierSelection.open();
+
+  } else {
+    // Si on clique dans le vide
+    transformControl.detach(); // On cache les flèches
+    dossierSelection.destroy(); // On vide le menu
+    dossierSelection = gui.addFolder('Aucun objet sélectionné');
+  }
+});
 // 7. LA BOUCLE D'ANIMATION (Le coeur du jeu)
 const animate = () => {
   controls.update();
