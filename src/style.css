@@ -1,0 +1,17 @@
+html,
+body {
+  overflow: hidden;
+}
+
+/* L'étoile (*) cible absolument TOUS les éléments pour tuer leurs marges */
+* {
+  margin: 0;
+  padding: 0;
+}
+
+/* On garde le # car tu as un ID */
+#webgl {
+  position: fixed;
+  top: 0;
+  left: 0;
+}
