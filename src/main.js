@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import resize from './resize.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 // 1. LA SCÈNE (Le monde 3D)
 // Correction : Tout en minuscules, sans accent
@@ -18,18 +19,24 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// 4. UN OBJET DE TEST (Le cube)
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-const mesh = new THREE.Mesh(geometry, material);
-scene.add(mesh); // Ça marche maintenant car 'scene' s'écrit pareil partout !
+// 4. LES OBJETS DE TEST (La Robe)
+// Dès que tu colles cette ligne, ton import tout en haut ne sera plus grisé !
+const loader = new GLTFLoader(); 
+
+loader.load(
+  '/assets/princess_snow_white_dress.glb', // Assure-toi que c'est bien le nom de ton fichier
+  (gltf) => {
+    scene.add(gltf.scene);
+  }
+);
 
 // 5. LA LUMIÈRE
-const light = new THREE.AmbientLight(0xffffff, 1);
-scene.add(light);
-const pointLight = new THREE.PointLight(0xffffff, 15);
-pointLight.position.set(2, 3, 4);
-scene.add(pointLight);
+const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 2); // Ciel blanc, sol gris foncé
+scene.add(hemiLight);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 3); // Soleil puissant
+dirLight.position.set(5, 10, 7);
+scene.add(dirLight);
 
 // 6. LES AIDES VISUELLES (Le chantier)
 // On ajoute la grille au sol et les flèches directionnelles
@@ -44,8 +51,7 @@ resize(camera, renderer);
 
 // 7. LA BOUCLE D'ANIMATION (Le coeur du jeu)
 const animate = () => {
-  mesh.rotation.x += 0.01;
-  mesh.rotation.y += 0.01;
+
 
   controls.update();
 
