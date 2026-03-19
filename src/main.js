@@ -4,6 +4,7 @@ import resize from "./resize.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import GUI from "lil-gui";
 
+
 // 1. LA SCÈNE (Le monde 3D)
 const scene = new THREE.Scene();
 
@@ -29,12 +30,15 @@ const gui = new GUI();
 
 // 4. LES OBJETS
 const loader = new GLTFLoader();
+const objetsCliquables = []; // La liste de tes cibles
 
 // Objet 1 : La Robe
 loader.load("/assets/princess_snow_white_dress.glb", (gltf) => {
   const robe = gltf.scene;
   scene.add(robe);
   robe.visible = true; // Correction : on affiche la robe
+  robe.name = "Robe"; 
+  objetsCliquables.push(robe);
 
   // On crée le dossier de taille dans le menu et on le relie à la robe
   const tailleDossier = gui.addFolder("Taille de la Robe");
@@ -63,6 +67,8 @@ loader.load("/assets/low_poly_lightsaber.glb", (gltf) => {
   const sabre = gltf.scene; // Correction : on utilise la bonne variable
   scene.add(sabre);
   sabre.visible = true;
+  sabre.name = "Sabre"; 
+  objetsCliquables.push(sabre);
 
   // On fixe l'échelle exacte du sabre
   sabre.scale.set(0.03, 0.03, 0.03);
