@@ -2,8 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import resize from './resize.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { scales } from 'chart.js';
-import { objectDirection, objectScale } from 'three/tsl';
+import GUI from 'lil-gui';
 
 // 1. LA SCÈNE (Le monde 3D)
 const scene = new THREE.Scene();
@@ -20,25 +19,38 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// 4. LES OBJETS (La Robe)
+// --- INITIALISATION DU MENU (GUI) ---
+const gui = new GUI();
+
+// 4. LES OBJETS
 const loader = new GLTFLoader(); 
 
+// Objet 1 : La Robe
 loader.load(
   '/assets/princess_snow_white_dress.glb', 
   (gltf) => {
-    scene.add(gltf.scene); 
-    object.visibility = false
-  }
-);
-loader.load(
-  '/assets/low_poly_lightsaber.glb', 
-  (gltf) => {
-    scene.add(gltf.scene); 
-    object.visibility = true
-    object.scales = 0,1; 0,1; 0,1
+    const robe = gltf.scene;
+    scene.add(robe); 
+    robe.visible = true; // Correction : on affiche la robe
+
+    // On crée le dossier de taille dans le menu et on le relie à la robe
+    const tailleDossier = gui.addFolder('Taille de la Robe');
+    tailleDossier.add(robe.scale, 'x').min(0.1).max(10).step(0.1).name('Largeur (X)');
+    tailleDossier.add(robe.scale, 'y').min(0.1).max(10).step(0.1).name('Hauteur (Y)');
+    tailleDossier.add(robe.scale, 'z').min(0.1).max(10).step(0.1).name('Profondeur (Z)');
   }
 );
 
+// Objet 2 : Le Sabre
+loader.load(
+  '/assets/low_poly_lightsaber.glb', 
+  (gltf) => {
+    const sabre = gltf.scene; // Correction : on utilise la bonne variable
+    scene.add(sabre); 
+    sabre.visible = true;
+    sabre.scale.set(3, 3, 3); // On modifie l'échelle du sabre
+  }
+);
 
 // 5. LA LUMIÈRE
 const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3); // Ciel blanc, sol gris foncé
@@ -47,6 +59,9 @@ scene.add(hemiLight);
 const dirLight = new THREE.DirectionalLight(0xffffff,5); // Soleil puissant
 dirLight.position.set(5, 10, 7);
 scene.add(dirLight);
+// --- CONTRÔLE DE LA LUMIÈRE (GUI) ---
+const lumiereDossier = gui.addFolder('Éclairage');
+lumiereDossier.add(dirLight, 'intensity').min(0).max(10).step(0.1).name('Intensité Soleil');
 
 // 6. LES AIDES VISUELLES (Le chantier)
 // On ajoute la grille au sol et les flèches directionnelles
