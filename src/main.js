@@ -66,8 +66,7 @@ loader.load("/assets/princess_snow_white_dress.glb", (gltf) => {
 // Objet 2 : Le Sabre
 loader.load("/assets/low_poly_lightsaber.glb", (gltf) => {
   const sabre = gltf.scene;
-  scene.add(sabre);
-  sabreRef = sabre;
+  scene.add(sabre); 
   sabre.visible = true;
   sabre.name = "Sabre"; 
   objetsCliquables.push(sabre);
@@ -163,10 +162,33 @@ window.addEventListener('click', (event) => {
     dossierSelection.destroy(); // On efface l'ancien menu
     dossierSelection = gui.addFolder('Taille : ' + cible.name); 
     
-    // On relie les curseurs à l'échelle de l'objet cliqué
- dossierSelection.add(cible.scale, 'x').min(0.001).max(20).step(0.01).name('Largeur').listen();
-dossierSelection.add(cible.scale, 'y').min(0.001).max(20).step(0.01).name('Hauteur').listen();
-dossierSelection.add(cible.scale, 'z').min(0.001).max(20).step(0.01).name('Profondeur').listen();
+    // --- LES BOUTONS D'OUTILS ---
+    const actionsOutils = {
+      deplacer: () => transformControls.setMode('translate'),
+      tourner: () => transformControls.setMode('rotate'),
+      agrandir: () => transformControls.setMode('scale')
+    };
+
+    // --- SLIDERS DE POSITION ---
+    dossierSelection.add(cible.position, 'x').name('Pos X').listen();
+    dossierSelection.add(cible.position, 'y').name('Pos Y').listen();
+    dossierSelection.add(cible.position, 'z').name('Pos Z').listen();
+    
+    // --- SLIDERS DE ROTATION ---
+    dossierSelection.add(cible.rotation, 'x').name('Rot X').listen();
+    dossierSelection.add(cible.rotation, 'y').name('Rot Y').listen();
+    dossierSelection.add(cible.rotation, 'z').name('Rot Z').listen();
+
+    // --- SLIDERS DE TAILLE ---
+    dossierSelection.add(cible.scale, 'x').min(0.001).max(20).step(0.01).name('Largeur').listen();
+    dossierSelection.add(cible.scale, 'y').min(0.001).max(20).step(0.01).name('Hauteur').listen();
+    dossierSelection.add(cible.scale, 'z').min(0.001).max(20).step(0.01).name('Profondeur').listen();
+
+    // --- AJOUT DES BOUTONS AU MENU ---
+    dossierSelection.add(actionsOutils, 'deplacer').name('Activer Déplacement');
+    dossierSelection.add(actionsOutils, 'tourner').name('Activer Rotation');
+    dossierSelection.add(actionsOutils, 'agrandir').name('Activer Taille');
+
     dossierSelection.open();
 
   } else {
