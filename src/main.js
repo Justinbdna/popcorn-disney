@@ -181,8 +181,8 @@ window.addEventListener('click', (event) => {
 
     // --- SLIDERS DE TAILLE ---
     dossierSelection.add(cible.scale, 'x').min(0.001).max(20).step(0.01).name('Largeur').listen();
-    dossierSelection.add(cible.scale, 'y').min(0.001).max(20).step(0.01).name('Hauteur').listen();
-    dossierSelection.add(cible.scale, 'z').min(0.001).max(20).step(0.01).name('Profondeur').listen();
+    dossierSelection.add(cible.scale, 'y').min(0.001).max(20).step(0.01).name('Profondeur').listen();
+    dossierSelection.add(cible.scale, 'z').min(0.001).max(20).step(0.01).name('Hauteur').listen();
 
     // --- AJOUT DES BOUTONS AU MENU ---
     dossierSelection.add(actionsOutils, 'deplacer').name('Activer Déplacement');
