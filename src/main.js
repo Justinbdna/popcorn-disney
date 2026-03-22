@@ -116,6 +116,10 @@ lumiereDossier.add(dirLight, 'intensity').min(0).max(10).step(0.1).name('Soleil'
 
 // 2. Dossier dynamique (Vide au départ)
 let dossierSelection = gui.addFolder('Aucun objet sélectionné');
+const outils = { exporter: () => {
+  objetsCliquables.forEach(o => console.log(`${o.name} Pos:`, o.position, `Scale:`, o.scale));
+}};
+gui.add(outils, 'exporter').name('💾 Exporter Coordonnées');
 
 // 8. AIDES VISUELLES
 const gridHelper = new THREE.GridHelper(60, 60);
