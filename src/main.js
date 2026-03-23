@@ -117,7 +117,9 @@ lumiereDossier.add(dirLight, 'intensity').min(0).max(10).step(0.1).name('Soleil'
 // 2. Dossier dynamique (Vide au départ)
 let dossierSelection = gui.addFolder('Aucun objet sélectionné');
 const outils = { exporter: () => {
-  objetsCliquables.forEach(o => console.log(`${o.name} Pos:`, o.position, `Scale:`, o.scale));
+  const data = objetsCliquables.map(o => `${o.name} Pos: ${o.position.x.toFixed(2)}, ${o.position.y.toFixed(2)}, ${o.position.z.toFixed(2)}`).join('\n');
+  navigator.clipboard.writeText(data);
+  alert('Coordonnées copiées ! 📋 Tu peux faire Cmd+V dans tes notes.');
 }};
 gui.add(outils, 'exporter').name('💾 Exporter Coordonnées');
 
