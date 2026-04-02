@@ -1,14 +1,14 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import resize from "./resize.js";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import GUI from "lil-gui";
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 
-// 1. LA SCÈNE (Le monde 3D)
+// 1. LA SCÈNE
 const scene = new THREE.Scene();
 
-// 2. LA CAMÉRA (Tes yeux)
+// 2. LA CAMÉRA
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
@@ -17,18 +17,39 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.z = 5;
 
-// 3. LE RENDERER (Le moteur qui dessine)
+// 3. LE RENDERER
 const canvas = document.querySelector("#webgl");
-const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+// 4. ORBIT CONTROLS
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+
+// 5. TRANSFORM CONTROLS
+const transformControls = new TransformControls(camera, renderer.domElement);
+scene.add(transformControls.getHelper());
+
+// Désactiver OrbitControls quand on manipule un objet
+transformControls.addEventListener("dragging-changed", (event) => {
+  controls.enabled = !event.value;
+});
+
+// Mode par défaut
+transformControls.setMode("translate");
+
+// 🎮 Contrôles clavier
+window.addEventListener("keydown", (e) => {
+  if (e.key === "g") transformControls.setMode("translate");
+  if (e.key === "r") transformControls.setMode("rotate");
+  if (e.key === "s") transformControls.setMode("scale");
+});
 
 // --- INITIALISATION DU MENU (GUI) ---
 const gui = new GUI();
 
-// 4. LES OBJETS
+// 6. CHARGEMENT DES OBJETS
 const loader = new GLTFLoader();
 const objetsCliquables = []; // La liste de tes cibles
 
@@ -44,16 +65,13 @@ loader.load("/assets/princess_snow_white_dress.glb", (gltf) => {
 
 // Objet 2 : Le Sabre
 loader.load("/assets/low_poly_lightsaber.glb", (gltf) => {
-  const sabre = gltf.scene; // Correction : on utilise la bonne variable
-  scene.add(sabre);
+  const sabre = gltf.scene;
+  scene.add(sabre); 
   sabre.visible = true;
   sabre.name = "Sabre"; 
   objetsCliquables.push(sabre);
 
-  // On fixe l'échelle exacte du sabre
   sabre.scale.set(0.03, 0.03, 0.03);
-
-  // On fixe la position exacte du sabre
   sabre.position.set(-10, 0, 0);
 
 });
@@ -104,26 +122,21 @@ lumiereDossier.add(dirLight, 'intensity').min(0).max(10).step(0.1).name('Soleil'
 
 // 2. Dossier dynamique (Vide au départ)
 let dossierSelection = gui.addFolder('Aucun objet sélectionné');
+const outils = { exporter: () => {
+  const data = objetsCliquables.map(o => `${o.name} Pos: ${o.position.x.toFixed(2)}, ${o.position.y.toFixed(2)}, ${o.position.z.toFixed(2)}`).join('\n');
+  navigator.clipboard.writeText(data);
+  alert('Coordonnées copiées ! 📋 Tu peux faire Cmd+V dans tes notes.');
+}};
+gui.add(outils, 'exporter').name('💾 Exporter Coordonnées');
 
-// --- LES FLÈCHES 3D (TransformControls) ---
-const transformControl = new TransformControls(camera, renderer.domElement);
-scene.add(transformControl);
-
-// Astuce de pro : Désactiver la caméra quand on tire sur une flèche
-transformControl.addEventListener('dragging-changed', function (event) {
-  controls.enabled = !event.value;
-
-});
-
-// 6. LES AIDES VISUELLES (Le chantier)
-// On ajoute la grille au sol et les flèches directionnelles
+// 8. AIDES VISUELLES
 const gridHelper = new THREE.GridHelper(60, 60);
 scene.add(gridHelper);
 
 const axesHelper = new THREE.AxesHelper(3);
 scene.add(axesHelper);
 
-// Appel du fichier resize.js (le musicien externe)
+// Resize
 resize(camera, renderer);
 
 // --- LE LASER (RAYCASTER V3 - Le Clic Intelligent) ---
@@ -155,21 +168,44 @@ window.addEventListener('click', (event) => {
     // --- LA MAGIE OPÈRE ICI ---
     
     // A. On accroche les flèches 3D à l'objet cliqué
-    transformControl.attach(cible);
+    transformControls.attach(cible);
 
     // B. On met à jour le menu dynamiquement
     dossierSelection.destroy(); // On efface l'ancien menu
     dossierSelection = gui.addFolder('Taille : ' + cible.name); 
     
-    // On relie les curseurs à l'échelle de l'objet cliqué
-    dossierSelection.add(cible.scale, 'x').min(0.001).max(20).step(0.01).name('Largeur');
-    dossierSelection.add(cible.scale, 'y').min(0.001).max(20).step(0.01).name('Hauteur');
-    dossierSelection.add(cible.scale, 'z').min(0.001).max(20).step(0.01).name('Profondeur');
+    // --- LES BOUTONS D'OUTILS ---
+    const actionsOutils = {
+      deplacer: () => transformControls.setMode('translate'),
+      tourner: () => transformControls.setMode('rotate'),
+      agrandir: () => transformControls.setMode('scale')
+    };
+
+    // --- SLIDERS DE POSITION ---
+    dossierSelection.add(cible.position, 'x').name('Pos X').listen();
+    dossierSelection.add(cible.position, 'y').name('Pos Y').listen();
+    dossierSelection.add(cible.position, 'z').name('Pos Z').listen();
+    
+    // --- SLIDERS DE ROTATION ---
+    dossierSelection.add(cible.rotation, 'x').name('Rot X').listen();
+    dossierSelection.add(cible.rotation, 'y').name('Rot Y').listen();
+    dossierSelection.add(cible.rotation, 'z').name('Rot Z').listen();
+
+    // --- SLIDERS DE TAILLE ---
+    dossierSelection.add(cible.scale, 'x').min(0.001).max(20).step(0.01).name('Largeur').listen();
+    dossierSelection.add(cible.scale, 'y').min(0.001).max(20).step(0.01).name('Profondeur').listen();
+    dossierSelection.add(cible.scale, 'z').min(0.001).max(20).step(0.01).name('Hauteur').listen();
+
+    // --- AJOUT DES BOUTONS AU MENU ---
+    dossierSelection.add(actionsOutils, 'deplacer').name('Activer Déplacement');
+    dossierSelection.add(actionsOutils, 'tourner').name('Activer Rotation');
+    dossierSelection.add(actionsOutils, 'agrandir').name('Activer Taille');
+
     dossierSelection.open();
 
   } else {
     // Si on clique dans le vide
-    transformControl.detach(); // On cache les flèches
+    transformControls.detach(); // On cache les flèches
     dossierSelection.destroy(); // On vide le menu
     dossierSelection = gui.addFolder('Aucun objet sélectionné');
   }
@@ -177,10 +213,8 @@ window.addEventListener('click', (event) => {
 // 7. LA BOUCLE D'ANIMATION (Le coeur du jeu)
 const animate = () => {
   controls.update();
-
   renderer.render(scene, camera);
   window.requestAnimationFrame(animate);
 };
 
-// On allume le moteur !
 animate();
