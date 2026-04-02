@@ -103,13 +103,13 @@ loader.load("/assets/drapeau_cars.glb", (gltf) => {
   drapeau.position.set(0, 0, -5); // On le décale au fond
 });
 // Objet 6 : Kim Possible Telephone
-loader.load("/assets/Kim_Possible_CellPhone.glb"), (gltf) => {
+loader.load("/assets/Kim_Possible_CellPhone.glb", (gltf) => {
   const CellPhone = gltf.scene;
   CellPhone.name = "CellPhone";
   scene.add(CellPhone);
   objetsCliquables.push(CellPhone);
-  CellPhone.position.set(2, 3, 10);
-};
+  CellPhone.position.set(0, 0, 0);
+});
 
 // 5. LA LUMIÈRE
 const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3);
