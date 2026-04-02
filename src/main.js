@@ -84,6 +84,12 @@ loader.load("/assets/drapeau_cars.glb", (gltf) => {
   objetsCliquables.push(drapeau);
   drapeau.position.set(0, 0, -5); // On le décale au fond
 });
+loader.load("/assets/Kim Possible CellPhone.glb")
+  const CellPhone = gltf.scene;
+  CellPhone.name = "CellPhone";
+  scene.add(CellPhone);
+  objetsCliquables.push(CellPhone);
+  CellPhone.position.set(2, 3, 10);
 
 // 5. LA LUMIÈRE
 const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3);
