@@ -26,6 +26,10 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 // 4. ORBIT CONTROLS
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+// --- LIMITES DE LA CAMÉRA ---
+controls.maxPolarAngle = Math.PI / 2 - 0.05; // Interdit de regarder sous le plancher
+controls.minDistance = 2; // Zoom maximum
+controls.maxDistance = 45; // Dézoom maximum (emprisonne dans la pièce)
 
 // 5. TRANSFORM CONTROLS
 const transformControls = new TransformControls(camera, renderer.domElement);
