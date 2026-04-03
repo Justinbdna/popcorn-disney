@@ -79,26 +79,27 @@ const objetsCliquables = []; // La liste de tes cibles
 // quand disneyData sera livré
 // =============================================
 
-// disneyData.forEach((item) => {
-//   loader.load(`/assets/${item.id}.glb`, (gltf) => {
-//     const objet = gltf.scene;
-//     objet.name = item.id;
-//     objet.userData.nomVisible = item.nom;
-//     objet.userData.description = item.description;
-//     objet.userData.univers = item.univers;
-//     if (item.flotte) {
-//       objet.userData.flotte = true;
-//       objet.userData.baseY = item.y || 0;
-//       objet.userData.vitesse = item.vitesse || 0.8;
-//       objet.userData.amplitude = item.amplitude || 0.08;
-//       objet.position.set(item.x || 0, item.y || 0, item.z || 0);
-//     } else {
-//       objet.position.set(item.x || 0, item.y || 0, item.z || 0);
-//     }
-//     scene.add(objet);
-//     objetsCliquables.push(objet);
-//   });
-// });
+const disneyData = []; // ← AJOUT : Placeholder (empêche le crash)
+disneyData.forEach(item => {
+  loader.load(`/assets/${item.id}.glb`, (gltf) => {
+     const objet = gltf.scene;
+     objet.name = item.id;
+     objet.userData.nomVisible = item.nom;
+     objet.userData.description = item.description;
+     objet.userData.univers = item.univers;
+     if (item.flotte) {
+       objet.userData.flotte = true;
+       objet.userData.baseY = item.y || 0;
+       objet.userData.vitesse = item.vitesse || 0.8;
+       objet.userData.amplitude = item.amplitude || 0.08;
+       objet.position.set(item.x || 0, item.y || 0, item.z || 0);
+     } else {
+       objet.position.set(item.x || 0, item.y || 0, item.z || 0);
+     }
+     scene.add(objet);
+     objetsCliquables.push(objet);
+   });
+ });
 
 // Objet 1 : La Robe
 loader.load("/assets/princess_snow_white_dress.glb", (gltf) => {
