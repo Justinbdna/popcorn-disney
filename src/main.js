@@ -225,6 +225,12 @@ resize(camera, renderer);
 // --- LE LASER (RAYCASTER V3 - Le Clic Intelligent) ---
 const raycaster = new THREE.Raycaster();
 const souris = new THREE.Vector2();
+window.addEventListener("pointermove", (event) => {
+  souris.x = (event.clientX / window.innerWidth) * 2 - 1;
+  souris.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(souris, camera);
+});
+
 
 window.addEventListener("click", (event) => {
   // Sécurité : On ignore le clic si on clique sur le menu noir GUI pour ne pas tout désélectionner
