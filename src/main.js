@@ -4,6 +4,7 @@ import resize from "./resize.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import GUI from "lil-gui";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
+import Stats from "three/examples/jsm/libs/stats.module.js";
 
 // 1. LA SCÈNE
 const scene = new THREE.Scene();
@@ -242,6 +243,14 @@ const outils = {
 
 gui.add(outils, "exporter").name("💾 Exporter Coordonnées");
 
+// --- PERFORMANCES (FPS & POLYGONES) ---
+const stats = new Stats();
+document.body.appendChild(stats.dom); // Ajoute le compteur FPS en haut à gauche
+
+const perfData = { polygones: 0 };
+const perfFolder = gui.addFolder("Performances Moteur");
+perfFolder.add(perfData, "polygones").name("Triangles").listen();
+
 // 8. AIDES VISUELLES
 const gridHelper = new THREE.GridHelper(60, 60);
 scene.add(gridHelper);
@@ -385,6 +394,8 @@ const animate = () => {
   });
 
   renderer.render(scene, camera);
+  stats.update(); // Met à jour les FPS
+  perfData.polygones = renderer.info.render.triangles; // Compte les polygones affichés
   window.requestAnimationFrame(animate);
 };
 
