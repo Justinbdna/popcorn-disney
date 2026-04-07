@@ -300,9 +300,14 @@ window.addEventListener("click", (event) => {
     // A. On accroche les flèches 3D à l'objet cliqué
     transformControls.attach(cible);
 
-    // B. On met à jour le menu dynamiquement
-    dossierSelection.destroy(); // On efface l'ancien menu
-    dossierSelection = gui.addFolder("Taille : " + cible.name);
+   // B. On met à jour le menu dynamiquement
+    dossierSelection.destroy();
+    dossierSelection = gui.addFolder("Objet : " + cible.name);
+
+    // --- AUDIT DES POLYGONES ---
+    let polyObj = 0;
+    cible.traverse((c) => { if (c.isMesh) polyObj += c.geometry.index ? c.geometry.index.count / 3 : c.geometry.attributes.position.count / 3; });
+    dossierSelection.add({ p: Math.round(polyObj) }, 'p').name('⚖️ Poids (Triangles)').disable();
 
     // --- LES BOUTONS D'OUTILS ---
     const actionsOutils = {
