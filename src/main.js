@@ -177,6 +177,36 @@ loader.load("/assets/Kim_Possible_CellPhone.glb", (gltf) => {
   CellPhone.userData.vitesse = 1.0;
   CellPhone.userData.amplitude = 0.1;
 });
+// Objet 7 : Badge
+loader.load("/assets/badge.glb", (gltf) => {
+  const badge = gltf.scene; scene.add(badge);
+  badge.name = "Badge"; badge.position.set(-2, 0, 2); objetsCliquables.push(badge);
+});
+// Objet 8 : Bougie
+loader.load("/assets/bougie.glb", (gltf) => {
+  const bougie = gltf.scene; scene.add(bougie);
+  bougie.name = "Bougie"; bougie.position.set(2, 0, 2); objetsCliquables.push(bougie);
+});
+// Objet 9 : Casque kusco
+loader.load("/assets/casque_kusco.glb", (gltf) => {
+  const casque = gltf.scene; scene.add(casque);
+  casque.name = "CasqueKuzco"; casque.position.set(-4, 0, 2); objetsCliquables.push(casque);
+});
+// Objet 10 : Collier pocahontas
+loader.load("/assets/collier_poca.glb", (gltf) => {
+  const collier = gltf.scene; scene.add(collier);
+  collier.name = "Collier"; collier.position.set(4, 0, 2); objetsCliquables.push(collier);
+});
+// Objet 11 : Poele
+loader.load("/assets/poele.glb", (gltf) => {
+  const poele = gltf.scene; scene.add(poele);
+  poele.name = "Poele"; poele.position.set(0, 0, 4); objetsCliquables.push(poele);
+});
+// Objet 12 : Pot miel
+loader.load("/assets/pot_miel.glb", (gltf) => {
+  const pot = gltf.scene; scene.add(pot);
+  pot.name = "PotMiel"; pot.position.set(0, 0, -2); objetsCliquables.push(pot);
+});
 
 // 5. LA LUMIÈRE
 const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3);
