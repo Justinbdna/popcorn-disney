@@ -247,9 +247,11 @@ gui.add(outils, "exporter").name("💾 Exporter Coordonnées");
 const stats = new Stats();
 document.body.appendChild(stats.dom); // Ajoute le compteur FPS en haut à gauche
 
-const perfData = { polygones: 0 };
-const perfFolder = gui.addFolder("Performances Moteur");
+const perfData = { polygones: 0, drawCalls: 0, geometries: 0 };
+const perfFolder = gui.addFolder("Moniteur d'Activité");
 perfFolder.add(perfData, "polygones").name("Triangles").listen();
+perfFolder.add(perfData, "drawCalls").name("Draw Calls").listen();
+perfFolder.add(perfData, "geometries").name("Géométries (RAM)").listen();
 
 // 8. AIDES VISUELLES
 const gridHelper = new THREE.GridHelper(60, 60);
@@ -394,9 +396,10 @@ const animate = () => {
   });
 
   renderer.render(scene, camera);
-  stats.update(); // Met à jour les FPS
-  perfData.polygones = renderer.info.render.triangles; // Compte les polygones affichés
+  stats.update(); 
+  perfData.polygones = renderer.info.render.triangles; 
+  perfData.drawCalls = renderer.info.render.calls; 
+  perfData.geometries = renderer.info.memory.geometries; 
   window.requestAnimationFrame(animate);
 };
-
 animate();
