@@ -260,13 +260,6 @@ perfFolder.add(perfData, "polygones").name("Triangles").listen();
 perfFolder.add(perfData, "drawCalls").name("Draw Calls").listen();
 perfFolder.add(perfData, "geometries").name("Géométries (RAM)").listen();
 
-// 8. AIDES VISUELLES
-const gridHelper = new THREE.GridHelper(60, 60);
-scene.add(gridHelper);
-
-const axesHelper = new THREE.AxesHelper(3);
-scene.add(axesHelper);
-
 // Resize
 resize(camera, renderer);
 
