@@ -210,6 +210,11 @@ loader.load("/assets/pot_miel.glb", (gltf) => {
   const pot = gltf.scene; scene.add(pot);
   pot.name = "PotMiel"; pot.position.set(0, 0, -2); objetsCliquables.push(pot);
 });
+// Objet 12 : Maison
+loader.load("/assets/MaisonV1.glb", (gltf) => {
+  const MaisonV1 = gltf.scene; scene.add(MaisonV1);
+  MaisonV1.name = "maison"; MaisonV1.position.set(0, 0, 0); objetsCliquables.push(MaisonV1);
+});
 
 // 5. LA LUMIÈRE
 const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3);
