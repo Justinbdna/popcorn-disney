@@ -32,9 +32,10 @@ controls.maxPolarAngle = Math.PI / 2 - 0.05; // Interdit de regarder sous le pla
 controls.minDistance = 2; // Zoom maximum
 controls.maxDistance = 250; // Dézoom maximum (emprisonne dans la pièce)
 
-// --- VARIABLES DE DÉPLACEMENT (PLAN B) ---
+// --- VARIABLES DE DÉPLACEMENT (DOUBLE-CLIC) ---
 let moveControls = false;
-const targetControls = new THREE.Vector3();
+const targetTarget = new THREE.Vector3(); // Là où tu regardes
+const targetPosition = new THREE.Vector3(); // Là où est ton corps
 
 // 5. TRANSFORM CONTROLS
 const transformControls = new TransformControls(camera, renderer.domElement);
@@ -297,18 +298,9 @@ window.addEventListener("click", (event) => {
     while (cible.parent && cible.parent.type !== "Scene") {
       cible = cible.parent;
     }
-   // --- LE MOTEUR DE DÉPLACEMENT PLAN B ---
+  // --- SÉCURITÉ MAISON (CLIC SIMPLE) ---
     if (cible.name === "Maison") {
-      
-      // 1. Si on clique vers le bas (le sol), on déclenche la glissade
-      if (intersections[0].point.y < 2) {
-        targetControls.copy(intersections[0].point); moveControls = true;
-        transformControls.detach(); dossierSelection.destroy();
-        dossierSelection = gui.addFolder("🚶‍♂️ Déplacement en cours...");
-      }
-      // 2. Que l'on ait cliqué sur le sol ou sur un mur, on STOPPE le code ici. 
-      // La maison ne sera JAMAIS transformée en objet déplaçable.
-      return; 
+      return; // On bloque l'apparition des flèches sur la maison
     }
     // --- LA MAGIE OPÈRE ICI ---
 
@@ -396,15 +388,39 @@ window.addEventListener("click", (event) => {
     dossierSelection = gui.addFolder("Aucun objet sélectionné");
   }
 });
+// --- LE MOTEUR DE DÉPLACEMENT (DOUBLE-CLIC) ---
+window.addEventListener("dblclick", (event) => {
+  if (event.target !== canvas) return;
+  souris.x = (event.clientX / window.innerWidth) * 2 - 1;
+  souris.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(souris, camera);
+  const intersections = raycaster.intersectObjects(objetsCliquables, true);
+
+  if (intersections.length > 0) {
+    let cible = intersections[0].object;
+    while (cible.parent && cible.parent.type !== "Scene") cible = cible.parent;
+
+    if (cible.name === "Maison" && intersections[0].point.y < 2) {
+      const pointClique = intersections[0].point;
+      targetTarget.copy(pointClique); // 1. La tête regarde le point
+      const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+      targetPosition.copy(pointClique).add(offset); // 2. Le corps se déplace
+
+      moveControls = true; transformControls.detach(); 
+      dossierSelection.destroy(); dossierSelection = gui.addFolder("🚶‍♂️ Déplacement en cours...");
+    }
+  }
+});
 // 7. LA BOUCLE D'ANIMATION (Le coeur du jeu)
 const clock = new THREE.Clock();
 
 const animate = () => {
   controls.update();
-  // --- MOTEUR DE DÉPLACEMENT PLAN B ---
+  // --- MOTEUR DE DÉPLACEMENT (DOUBLE-CLIC) ---
   if (moveControls) {
-     controls.target.lerp(targetControls, 0.05); // L'effet de glissade fluide
-     if (controls.target.distanceTo(targetControls) < 0.1) {
+     controls.target.lerp(targetTarget, 0.05); // Tourne la tête
+     camera.position.lerp(targetPosition, 0.05); // DÉPLACE LE CORPS
+     if (controls.target.distanceTo(targetTarget) < 0.1) {
          moveControls = false; dossierSelection.destroy();
          dossierSelection = gui.addFolder("Aucun objet sélectionné");
      }
