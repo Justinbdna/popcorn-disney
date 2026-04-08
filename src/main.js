@@ -32,6 +32,10 @@ controls.maxPolarAngle = Math.PI / 2 - 0.05; // Interdit de regarder sous le pla
 controls.minDistance = 2; // Zoom maximum
 controls.maxDistance = 250; // Dézoom maximum (emprisonne dans la pièce)
 
+// --- VARIABLES DE DÉPLACEMENT (PLAN B) ---
+let moveControls = false;
+const targetControls = new THREE.Vector3();
+
 // 5. TRANSFORM CONTROLS
 const transformControls = new TransformControls(camera, renderer.domElement);
 scene.add(transformControls.getHelper());
@@ -215,7 +219,7 @@ loader.load("/assets/pot_miel.glb", (gltf) => {
 loader.load("/assets/MaisonV1.glb", (gltf) => {
   const maison = gltf.scene; scene.add(maison);
   maison.scale.set(15, 15, 15);
-  maison.name = "Maison"; maison.position.set(0, 0, 0); objetsCliquables.push(MaisonV1);
+  maison.name = "Maison"; maison.position.set(0, 0, 0); objetsCliquables.push(maison);
 });
 
 // 5. LA LUMIÈRE
@@ -291,10 +295,21 @@ window.addEventListener("click", (event) => {
     // On a touché quelque chose ! On remonte pour trouver l'objet principal
     let cible = intersections[0].object;
     while (cible.parent && cible.parent.type !== "Scene") {
-      if (cible.name) break;
       cible = cible.parent;
     }
-
+   // --- LE MOTEUR DE DÉPLACEMENT PLAN B ---
+    if (cible.name === "Maison") {
+      
+      // 1. Si on clique vers le bas (le sol), on déclenche la glissade
+      if (intersections[0].point.y < 2) {
+        targetControls.copy(intersections[0].point); moveControls = true;
+        transformControls.detach(); dossierSelection.destroy();
+        dossierSelection = gui.addFolder("🚶‍♂️ Déplacement en cours...");
+      }
+      // 2. Que l'on ait cliqué sur le sol ou sur un mur, on STOPPE le code ici. 
+      // La maison ne sera JAMAIS transformée en objet déplaçable.
+      return; 
+    }
     // --- LA MAGIE OPÈRE ICI ---
 
     // A. On accroche les flèches 3D à l'objet cliqué
@@ -386,6 +401,14 @@ const clock = new THREE.Clock();
 
 const animate = () => {
   controls.update();
+  // --- MOTEUR DE DÉPLACEMENT PLAN B ---
+  if (moveControls) {
+     controls.target.lerp(targetControls, 0.05); // L'effet de glissade fluide
+     if (controls.target.distanceTo(targetControls) < 0.1) {
+         moveControls = false; dossierSelection.destroy();
+         dossierSelection = gui.addFolder("Aucun objet sélectionné");
+     }
+  }
 
   const elapsedTime = clock.getElapsedTime();
 
