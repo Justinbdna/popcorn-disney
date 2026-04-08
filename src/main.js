@@ -112,7 +112,7 @@ loader.load("/assets/princess_snow_white_dress.glb", (gltf) => {
   scene.add(robe);
   robe.visible = true; // Correction : on affiche la robe
   robe.name = "Robe";
-  robe.position.set(3, 0, 0); // ← AJOUT (évite la superposition avec CellPhone)
+  robe.position.set(14, 0, 0); // ← AJOUT (évite la superposition avec CellPhone)
   objetsCliquables.push(robe);
 });
 
@@ -138,7 +138,7 @@ loader.load("/assets/Aladdin_lamp.glb", (gltf) => {
   lampe.name = "Lampe";
   scene.add(lampe);
   objetsCliquables.push(lampe);
-  lampe.position.set(5, 0, 0); // On la décale à droite
+  lampe.position.set(5, 2, 0); // On la décale à droite
   lampe.userData.flotte = true;
   lampe.userData.baseY = lampe.position.y;
   lampe.userData.vitesse = 0.5;
@@ -191,16 +191,18 @@ loader.load("/assets/bougie.glb", (gltf) => {
 // Objet 9 : Casque kusco
 loader.load("/assets/casque_kusco.glb", (gltf) => {
   const casque = gltf.scene; scene.add(casque);
-  casque.name = "CasqueKuzco"; casque.position.set(-4, 0, 2); objetsCliquables.push(casque);
+  casque.name = "Casquekuzco"; casque.position.set(-4, 0, 2); objetsCliquables.push(casque);
 });
 // Objet 10 : Collier pocahontas
 loader.load("/assets/collier_poca.glb", (gltf) => {
   const collier = gltf.scene; scene.add(collier);
+  collier.scale.set(5, 5, 5);
   collier.name = "Collier"; collier.position.set(4, 0, 2); objetsCliquables.push(collier);
 });
 // Objet 11 : Poele
 loader.load("/assets/poele.glb", (gltf) => {
   const poele = gltf.scene; scene.add(poele);
+  poele.scale.set(5, 5, 5);
   poele.name = "Poele"; poele.position.set(0, 0, 4); objetsCliquables.push(poele);
 });
 // Objet 12 : Pot miel
