@@ -191,7 +191,8 @@ loader.load("/assets/bougie.glb", (gltf) => {
 // Objet 9 : Casque kusco
 loader.load("/assets/casque_kusco.glb", (gltf) => {
   const casque = gltf.scene; scene.add(casque);
-  casque.name = "Casquekuzco"; casque.position.set(-4, 0, 2); objetsCliquables.push(casque);
+  casque.scale.set(5, 5, 5);
+  casque.name = "CasqueKuzco"; casque.position.set(-4, 0, 2); objetsCliquables.push(casque);
 });
 // Objet 10 : Collier pocahontas
 loader.load("/assets/collier_poca.glb", (gltf) => {
@@ -212,8 +213,9 @@ loader.load("/assets/pot_miel.glb", (gltf) => {
 });
 // Objet 12 : Maison
 loader.load("/assets/MaisonV1.glb", (gltf) => {
-  const MaisonV1 = gltf.scene; scene.add(MaisonV1);
-  MaisonV1.name = "maison"; MaisonV1.position.set(0, 0, 0); objetsCliquables.push(MaisonV1);
+  const maison = gltf.scene; scene.add(maison);
+  maison.scale.set(15, 15, 15);
+  maison.name = "Maison"; maison.position.set(0, 0, 0); objetsCliquables.push(MaisonV1);
 });
 
 // 5. LA LUMIÈRE
