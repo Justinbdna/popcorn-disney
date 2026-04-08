@@ -30,7 +30,7 @@ controls.enableDamping = true;
 // --- LIMITES DE LA CAMÉRA ---
 controls.maxPolarAngle = Math.PI / 2 - 0.05; // Interdit de regarder sous le plancher
 controls.minDistance = 2; // Zoom maximum
-controls.maxDistance = 45; // Dézoom maximum (emprisonne dans la pièce)
+controls.maxDistance = 250; // Dézoom maximum (emprisonne dans la pièce)
 
 // 5. TRANSFORM CONTROLS
 const transformControls = new TransformControls(camera, renderer.domElement);
@@ -237,14 +237,12 @@ let dossierSelection = gui.addFolder("Aucun objet sélectionné");
 
 const outils = {
   exporter: () => {
-    const data = objetsCliquables
-      .map((o) => {
-        const y = o.userData.flotte ? o.userData.baseY : o.position.y;
-        return `${o.name} Pos: ${o.position.x.toFixed(2)}, ${y.toFixed(2)}, ${o.position.z.toFixed(2)}`;
-      })
-      .join("\n");
+    const data = objetsCliquables.map((o) => {
+      const y = o.userData.flotte ? o.userData.baseY : o.position.y;
+      return `${o.name} | Pos: ${o.position.x.toFixed(2)}, ${y.toFixed(2)}, ${o.position.z.toFixed(2)} | Scale: ${o.scale.x.toFixed(2)}, ${o.scale.y.toFixed(2)}, ${o.scale.z.toFixed(2)}`;
+    }).join("\n");
     navigator.clipboard.writeText(data);
-    alert("Coordonnées copiées ! 📋 Tu peux faire Cmd+V dans tes notes.");
+    alert("Coordonnées ET Tailles copiées ! 📋");
   },
 };
 
