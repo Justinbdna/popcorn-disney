@@ -1,0 +1,348 @@
+/* ==============================================
+   RÉINITIALISATION ET VARIABLES
+=============================================== */
+:root {
+  --or-disney: #ffd700;
+  --fond-ui: rgba(15, 15, 25, 0.65);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background-color: #050510;
+  color: white;
+}
+
+.cache {
+  opacity: 0 !important; /* Remis à 0 pour que ça se cache vraiment */
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+/* ==============================================
+   LE SAS DE CHARGEMENT
+=============================================== */
+#ecran-chargement {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #050510;
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 1s ease-in-out;
+  overflow: hidden; /* Empêche les images de déborder de l'écran */
+}
+
+/* NOUVEAU : Galerie des personnages fantomatiques */
+#galerie-personnages {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0; /* Derrière le cercle central */
+  pointer-events: none; /* Ne bloque pas le clic */
+}
+
+.perso-flottant {
+  position: absolute;
+  opacity: 0; /* Temporarily set to debug visibility */
+  max-width: 200px;
+  filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.2));
+  /* Animation de 8s en boucle avec interpolation fluide */
+  animation: memoireMagique 8s infinite ease-in-out;
+  pointer-events: none;
+}
+
+/* Positionnement et délais personnalisés pour chaque personnage */
+.pos-1 {
+  top: 5%;
+  left: 5%;
+  max-width: 200px;
+  animation-delay: 0s;
+}
+.pos-2 {
+  top: 10%;
+  right: 15%;
+  max-width: 250px;
+  animation-delay: 2s;
+}
+.pos-3 {
+  bottom: 20%;
+  left: 20%;
+  max-width: 180px;
+  animation-delay: 4.5s;
+}
+.pos-4 {
+  top: 30%;
+  right: 25%;
+  max-width: 220px;
+  animation-delay: 1s;
+}
+.pos-5 {
+  bottom: 10%;
+  left: 10%;
+  max-width: 150px;
+  animation-delay: 6s;
+}
+.pos-6 {
+  top: 40%;
+  right: 5%;
+  max-width: 200px;
+  animation-delay: 3s;
+}
+
+@keyframes memoireMagique {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(30px);
+    filter: blur(8px);
+  }
+  40% {
+    opacity: 0.5;
+    transform: scale(1) translateY(0px);
+    filter: blur(0px);
+  } /* Opacité max à 50% pour rester discret */
+  60% {
+    opacity: 0.5;
+    transform: scale(1.05) translateY(-5px);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1) translateY(-30px);
+    filter: blur(8px);
+  }
+}
+
+/* Le contenu central */
+.contenu-chargement {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  z-index: 1; /* Devant la galerie */
+}
+
+.cercle-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+  animation: flottaison 4s ease-in-out infinite;
+  position: relative;
+  z-index: 2;
+}
+
+.image-ronde {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@keyframes flottaison {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 40px rgba(255, 215, 0, 0.6);
+  }
+}
+
+.texte-chargement {
+  font-size: 1.2rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--or-disney);
+  margin: 0;
+}
+
+/* BOUTONS MAGIQUES */
+.bouton-magique {
+  padding: 12px 30px;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: white;
+  background: transparent;
+  border: 1px solid var(--or-disney);
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+  font-family: inherit;
+  opacity: 1;
+  visibility: visible;
+}
+
+.bouton-magique:hover {
+  background: var(--or-disney);
+  color: #000;
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+  transform: scale(1.05);
+}
+
+/* ==============================================
+   L'ÉCRAN TUTORIEL
+=============================================== */
+#ecran-tutoriel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9998;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 1s ease-in-out;
+}
+
+#bg-video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  transform: translate(-50%, -50%);
+  z-index: -2;
+  filter: brightness(1.1) contrast(1.2); /* Enhance brightness and contrast for a cleaner look */
+}
+
+.overlay-sombre {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(
+    0,
+    0,
+    0,
+    0.4
+  ); /* Reduce opacity for better video visibility */
+  backdrop-filter: blur(4px); /* Reduce blur for a cleaner look */
+  z-index: -1;
+}
+
+.contenu-tuto {
+  text-align: center;
+  max-width: 700px;
+  padding: 40px;
+  background: rgba(15, 15, 20, 0.5);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+}
+
+.titre-tuto {
+  font-size: 3rem;
+  letter-spacing: 8px;
+  margin-top: 0;
+  margin-bottom: 40px;
+  color: var(--or-disney);
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.etapes-container {
+  position: relative;
+  height: 150px;
+  margin-bottom: 40px;
+}
+
+.etape-tuto {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.etape-tuto.active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.etape-tuto h2 {
+  color: white;
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+}
+.etape-tuto p {
+  color: #cccccc;
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+.vies {
+  letter-spacing: 5px;
+}
+
+/* ==============================================
+   L'INFOBULLE (TOOLTIP 3D)
+=============================================== */
+#infobulle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  background: var(--fond-ui);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+  transition: opacity 0.4s ease;
+  transform: translate(20px, 20px);
+}
+#infobulle.visible {
+  opacity: 1;
+}
+.infobulle-contenu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.infobulle-image {
+  width: 45px;
+  height: 45px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+.infobulle-textes h3 {
+  margin: 0 0 5px 0;
+  font-size: 16px;
+  color: var(--or-disney);
+}
+.infobulle-textes p {
+  margin: 0;
+  font-size: 12px;
+  color: #e0e0e0;
+}
+body.survol-objet {
+  cursor: pointer;
+}

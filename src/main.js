@@ -36,6 +36,12 @@ controls.maxDistance = 250; // Dézoom maximum (emprisonne dans la pièce)
 let moveControls = false;
 const targetTarget = new THREE.Vector3(); // Là où tu regardes
 const targetPosition = new THREE.Vector3(); // Là où est ton corps
+// --- LE PONT AVEC L'INTERFACE DE LÉVINE ---
+window.lancerJeu3D = () => {
+    console.log("🎬 Le tutoriel est terminé, le jeu commence !");
+    // C'est ici que l'on déclenchera le chronomètre et l'activation des clics plus tard.
+    // Pour l'instant, ça dit juste à la 3D que l'interface a fini son job.
+};
 
 // 5. TRANSFORM CONTROLS
 const transformControls = new TransformControls(camera, renderer.domElement);
