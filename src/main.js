@@ -5,6 +5,10 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import GUI from "lil-gui";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import Stats from "three/examples/jsm/libs/stats.module.js";
+// ==========================================
+// 🛠️ MODE DÉVELOPPEUR
+// ==========================================
+const MODE_DEV = false; // Mets sur 'false' pour le rendu final !
 
 // 1. LA SCÈNE
 const scene = new THREE.Scene();
@@ -17,6 +21,7 @@ const camera = new THREE.PerspectiveCamera(
   1000,
 );
 camera.position.z = 5;
+camera.position.y = 23;
 
 // 3. LE RENDERER
 const canvas = document.querySelector("#webgl");
@@ -27,6 +32,9 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 // 4. ORBIT CONTROLS
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+controls.target.y = 23; // <-- On lève la tête de la caméra à la même hauteur que ses yeux (1m70)
+controls.update();
+
 // --- LIMITES DE LA CAMÉRA ---
 controls.maxPolarAngle = Math.PI / 2 - 0.05; // Interdit de regarder sous le plancher
 controls.minDistance = 2; // Zoom maximum
@@ -83,6 +91,13 @@ manager.onProgress = (url, loaded, total) => {
 
 manager.onLoad = () => {
   console.log("✅ 3D chargée à 100% !");
+  // --- 🛠️ MODE DÉVELOPPEUR (Bypass Intro) ---
+  if (MODE_DEV) {
+      document.getElementById('ecran-chargement').style.display = 'none';
+      document.getElementById('ecran-tutoriel').style.display = 'none';
+      if (window.lancerJeu3D) window.lancerJeu3D();
+      return; // On arrête net la fonction, pas besoin d'afficher les boutons.
+  }
   const btnDecouvrir = document.getElementById("btn-decouvrir");
   const texteChargement = document.querySelector(".texte-chargement");
   
@@ -284,6 +299,13 @@ const perfFolder = gui.addFolder("Moniteur d'Activité");
 perfFolder.add(perfData, "polygones").name("Triangles").listen();
 perfFolder.add(perfData, "drawCalls").name("Draw Calls").listen();
 perfFolder.add(perfData, "geometries").name("Géométries (RAM)").listen();
+
+// --- 🔒 VERROU BLINDÉ : LIEN AVEC LE MASTER SWITCH ---
+// Placé ici, TOUT À LA FIN, le menu ne peut plus se réveiller.
+if (!MODE_DEV) {
+    gui.hide(); // Méthode officielle absolue pour cacher le menu noir
+    stats.dom.style.display = "none"; // Cache le compteur vert FPS
+}
 
 // Resize
 resize(camera, renderer);
