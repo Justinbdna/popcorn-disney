@@ -8,7 +8,7 @@ import Stats from "three/examples/jsm/libs/stats.module.js";
 // ==========================================
 // 🛠️ MODE DÉVELOPPEUR
 // ==========================================
-const MODE_DEV = false; // Mets sur 'false' pour le rendu final !
+const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
 
 // 1. LA SCÈNE
 const scene = new THREE.Scene();
