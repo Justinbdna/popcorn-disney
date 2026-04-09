@@ -82,8 +82,15 @@ manager.onProgress = (url, loaded, total) => {
 };
 
 manager.onLoad = () => {
-  const loaderScreen = document.getElementById("loader");
-  if (loaderScreen) loaderScreen.classList.add("fade-out");
+  console.log("✅ 3D chargée à 100% !");
+  const btnDecouvrir = document.getElementById("btn-decouvrir");
+  const texteChargement = document.querySelector(".texte-chargement");
+  
+  if (btnDecouvrir && texteChargement) {
+      btnDecouvrir.classList.remove("cache");
+      texteChargement.style.opacity = "0";
+      setTimeout(() => texteChargement.style.display = 'none', 500);
+  }
 };
 
 const loader = new GLTFLoader(manager);
