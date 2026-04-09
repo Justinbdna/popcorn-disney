@@ -87,10 +87,16 @@ manager.onLoad = () => {
   const texteChargement = document.querySelector(".texte-chargement");
   
   if (btnDecouvrir && texteChargement) {
-      btnDecouvrir.classList.remove("cache");
+     // 1. Le texte s'efface en douceur
       texteChargement.style.transition = "opacity 0.5s ease";
       texteChargement.style.opacity = "0";
+     // 2. On cache totalement le texte après son fondu (500ms)
       setTimeout(() => texteChargement.style.display = 'none', 500);
+      // 3. Le bouton apparaît avec un petit décalage élégant (400ms) 
+      // pour croiser la disparition du texte
+      setTimeout(() => {
+          btnDecouvrir.classList.remove("cache");
+      }, 400);
   }
 };
 

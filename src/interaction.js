@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. Un micro-délai, puis on lance le fondu de l'écran noir qui est au-dessus
         setTimeout(() => {
             ecranChargement.classList.add('cache');
-        }, 300);
+        }, 50);
         
         // 3. On nettoie tout après l'animation (1 seconde)
         setTimeout(() => {
@@ -61,18 +61,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Clic sur "Rentrer dans l'univers" -> Lancement du JEU
+ // Clic sur "Rentrer dans l'univers" -> Lancement du JEU
     btnRentrer.addEventListener('click', () => {
-        ecranTutoriel.classList.add('cache');
-        
-        // Signal de départ pour l'équipe 3D
-        if (typeof window.lancerJeu3D === 'function') {
-            window.lancerJeu3D();
-        }
+        // 1. On coupe la vidéo et on met un fond noir absolu pour éviter le glitch
+        ecranTutoriel.style.backgroundColor = "#050510"; 
+        const video = document.getElementById("bg-video");
+        if(video) video.style.opacity = "0"; 
 
+        // 2. On fond tout l'écran doucement vers la 3D
         setTimeout(() => {
-            ecranTutoriel.remove(); // On nettoie le DOM
-        }, 1000);
+            ecranTutoriel.classList.add('cache'); 
+            if (typeof window.lancerJeu3D === 'function') window.lancerJeu3D();
+        }, 300);
+
+        setTimeout(() => ecranTutoriel.remove(), 1600);
     });
 
     // --- 3. GESTION DE L'INFOBULLE FLUIDE (EFFET LERP) ---
