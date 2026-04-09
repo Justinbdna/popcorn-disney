@@ -20,21 +20,17 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Discover button clicked');
         btnDecouvrir.style.display = "none";
         
-        // 1. L'astuce anti-flash : on fait apparaître le tuto instantanément en dessous
+       // 1 & 2. Tuto 100% opaque en dessous, seul l'écran noir fond (anti-trou)
         ecranTutoriel.style.transition = "none";
+        ecranTutoriel.style.opacity = "1";
         ecranTutoriel.classList.remove('cache');
+        ecranChargement.style.transition = "opacity 1.5s ease-in-out";
+        setTimeout(() => ecranChargement.style.opacity = "0", 50);
         
-        // 2. Un micro-délai, puis on lance le fondu de l'écran noir qui est au-dessus
-        setTimeout(() => {
-            ecranChargement.classList.add('cache');
-        }, 50);
-        
-        // 3. On nettoie tout après l'animation (1 seconde)
+        // 3. On nettoie tout après le fondu (1.5s + marge)
         setTimeout(() => {
             ecranChargement.remove();
-            // On remet la transition douce au cas où pour la sortie du tuto
-            ecranTutoriel.style.transition = "opacity 1s ease-in-out"; 
-        }, 1050);
+            }, 1600);
     });
 
     // --- 2. GESTION DU TUTORIEL FLUIDE ---
@@ -68,13 +64,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const video = document.getElementById("bg-video");
         if(video) video.style.opacity = "0"; 
 
-        // 2. On fond tout l'écran doucement vers la 3D
-        setTimeout(() => {
-            ecranTutoriel.classList.add('cache'); 
-            if (typeof window.lancerJeu3D === 'function') window.lancerJeu3D();
-        }, 300);
-
-        setTimeout(() => ecranTutoriel.remove(), 1600);
+       // 2. Fondu vers la 3D (sans la classe 'cache' qui casse l'animation)
+        ecranTutoriel.style.transition = "opacity 1.5s ease-in-out";
+        ecranTutoriel.style.opacity = "0";
+        if (typeof window.lancerJeu3D === 'function') window.lancerJeu3D();
+        setTimeout(() => ecranTutoriel.remove(), 1500);
     });
 
     // --- 3. GESTION DE L'INFOBULLE FLUIDE (EFFET LERP) ---
