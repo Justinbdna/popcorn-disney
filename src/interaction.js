@@ -15,17 +15,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!btnDecouvrir) console.error('Discover button not found');
     if (!ecranTutoriel) console.error('Tutorial screen not found');
 
-    // Clic sur "Découvrir" -> On passe au Tutoriel
+  // Clic sur "Découvrir" -> On passe au Tutoriel
     btnDecouvrir.addEventListener('click', () => {
         console.log('Discover button clicked');
-        ecranChargement.classList.add('cache');
+        btnDecouvrir.style.display = "none";
+        
+        // 1. L'astuce anti-flash : on fait apparaître le tuto instantanément en dessous
+        ecranTutoriel.style.transition = "none";
         ecranTutoriel.classList.remove('cache');
         
-        // On détruit tout le loader du DOM
+        // 2. Un micro-délai, puis on lance le fondu de l'écran noir qui est au-dessus
+        setTimeout(() => {
+            ecranChargement.classList.add('cache');
+        }, 300);
+        
+        // 3. On nettoie tout après l'animation (1 seconde)
         setTimeout(() => {
             ecranChargement.remove();
-        }, 1000);
+            // On remet la transition douce au cas où pour la sortie du tuto
+            ecranTutoriel.style.transition = "opacity 1s ease-in-out"; 
+        }, 1050);
     });
+
     // --- 2. GESTION DU TUTORIEL FLUIDE ---
     let etapeActuelle = 0;
     const etapes = document.querySelectorAll('.etape-tuto');

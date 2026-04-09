@@ -88,6 +88,7 @@ manager.onLoad = () => {
   
   if (btnDecouvrir && texteChargement) {
       btnDecouvrir.classList.remove("cache");
+      texteChargement.style.transition = "opacity 0.5s ease";
       texteChargement.style.opacity = "0";
       setTimeout(() => texteChargement.style.display = 'none', 500);
   }
