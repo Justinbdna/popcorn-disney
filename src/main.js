@@ -6,6 +6,10 @@ import GUI from "lil-gui";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { injectSpeedInsights } from '@vercel/speed-insights'; 
+import { inject } from "@vercel/analytics"
+
+// injection d'analytics
+inject()
 
 // injection de SpeedInsights
 injectSpeedInsights();
