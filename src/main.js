@@ -5,6 +5,8 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import GUI from "lil-gui";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import Stats from "three/examples/jsm/libs/stats.module.js";
+import { SpeedInsights } from "@vercel/speed-insights/next"
+
 // ==========================================
 // 🛠️ MODE DÉVELOPPEUR
 // ==========================================
