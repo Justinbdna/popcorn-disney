@@ -7,6 +7,7 @@ import { TransformControls } from "three/examples/jsm/controls/TransformControls
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
+// injection de SpeedInsights
 injectSpeedInsights();
 // ==========================================
 // 🛠️ MODE DÉVELOPPEUR
