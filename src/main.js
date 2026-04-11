@@ -7,6 +7,7 @@ import { TransformControls } from "three/examples/jsm/controls/TransformControls
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { injectSpeedInsights } from '@vercel/speed-insights'; 
 import { inject } from "@vercel/analytics"
+import { disneyData } from "./disneyData.js";
 
 // injection d'analytics
 inject()
@@ -33,10 +34,16 @@ camera.position.y = 23;
 
 // 3. LE RENDERER
 const canvas = document.querySelector("#webgl");
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+const isMobile = window.innerWidth < 768; // 1. On détecte le mobile EN PREMIER
 
-// Si l'écran est petit (téléphone), on bloque la résolution à 1 pour sauver les FPS.
-const pixelRatio = window.innerWidth < 768 ? 1 : Math.min(window.devicePixelRatio, 2);
+// 2. On crée le renderer UNE SEULE FOIS (sans antialiasing sur mobile)
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile }); 
+
+// 3. On lui redonne sa taille (très important, tu l'avais perdu !)
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+// 4. Si l'écran est petit, on bloque la résolution à 1 pour sauver les FPS
+const pixelRatio = isMobile ? 1 : Math.min(window.devicePixelRatio, 2);
 renderer.setPixelRatio(pixelRatio);
 
 // 4. ORBIT CONTROLS
@@ -128,139 +135,16 @@ manager.onLoad = () => {
 const loader = new GLTFLoader(manager);
 const objetsCliquables = []; // La liste de tes cibles
 
-// =============================================
-// 🔜 FUSION AVEC MOHAMED — À ACTIVER PLUS TARD
-// Remplacer les 6 loaders manuels par cette boucle
-// quand disneyData sera livré
-// =============================================
-
-const disneyData = []; // ← AJOUT : Placeholder (empêche le crash)
-disneyData.forEach(item => {
+// 🟢 CHARGEMENT AUTOMATISÉ (Depuis disneyData.js)
+disneyData.forEach((item) => {
   loader.load(`/assets/${item.id}.glb`, (gltf) => {
-     const objet = gltf.scene;
-     objet.name = item.id;
-     objet.userData.nomVisible = item.nom;
-     objet.userData.description = item.description;
-     objet.userData.univers = item.univers;
-     if (item.flotte) {
-       objet.userData.flotte = true;
-       objet.userData.baseY = item.y || 0;
-       objet.userData.vitesse = item.vitesse || 0.8;
-       objet.userData.amplitude = item.amplitude || 0.08;
-       objet.position.set(item.x || 0, item.y || 0, item.z || 0);
-     } else {
-       objet.position.set(item.x || 0, item.y || 0, item.z || 0);
-     }
-     scene.add(objet);
-     objetsCliquables.push(objet);
-   });
- });
-
-// Objet 1 : La Robe
-loader.load("/assets/princess_snow_white_dress.glb", (gltf) => {
-  const robe = gltf.scene;
-  scene.add(robe);
-  robe.visible = true; // Correction : on affiche la robe
-  robe.name = "Robe";
-  robe.position.set(14, 0, 0); // ← AJOUT (évite la superposition avec CellPhone)
-  objetsCliquables.push(robe);
+    const objet = gltf.scene; objet.name = item.id; objet.userData = { ...item };
+    if (item.flotte) Object.assign(objet.userData, { flotteActive: true, baseY: item.y || 0, vitesse: item.vitesse || 0.8, amplitude: item.amplitude || 0.08 });
+    objet.position.set(item.x || 0, item.y || 0, item.z || 0);
+    scene.add(objet); objetsCliquables.push(objet);
+  });
 });
 
-// Objet 2 : Le Sabre
-loader.load("/assets/low_poly_lightsaber.glb", (gltf) => {
-  const sabre = gltf.scene;
-  scene.add(sabre);
-  sabre.visible = true;
-  sabre.name = "Sabre";
-  objetsCliquables.push(sabre);
-
-  sabre.scale.set(0.03, 0.03, 0.03);
-  sabre.position.set(-10, 0, 0);
-  sabre.userData.flotte = true;
-  sabre.userData.baseY = sabre.position.y;
-  sabre.userData.vitesse = 1.5;
-  sabre.userData.amplitude = 0.05;
-});
-
-// Objet 3 : Lampe d'Aladdin
-loader.load("/assets/Aladdin_lamp.glb", (gltf) => {
-  const lampe = gltf.scene;
-  lampe.name = "Lampe";
-  scene.add(lampe);
-  objetsCliquables.push(lampe);
-  lampe.position.set(5, 2, 0); // On la décale à droite
-  lampe.userData.flotte = true;
-  lampe.userData.baseY = lampe.position.y;
-  lampe.userData.vitesse = 0.5;
-  lampe.userData.amplitude = 0.15;
-});
-
-// Objet 4 : Chapeau de Cowboy
-loader.load("/assets/lowpoly_cowboy_hat.glb", (gltf) => {
-  const chapeau = gltf.scene;
-  chapeau.name = "Chapeau";
-  scene.add(chapeau);
-  objetsCliquables.push(chapeau);
-  chapeau.position.set(-5, 0, 0); // On le décale à gauche
-});
-
-// Objet 5 : Drapeau Cars
-loader.load("/assets/drapeau_cars.glb", (gltf) => {
-  const drapeau = gltf.scene;
-  drapeau.name = "Drapeau";
-  scene.add(drapeau);
-  objetsCliquables.push(drapeau);
-  drapeau.position.set(0, 0, -5); // On le décale au fond
-  drapeau.userData.flotte = true;
-  drapeau.userData.baseY = drapeau.position.y;
-  drapeau.userData.vitesse = 0.8;
-  drapeau.userData.amplitude = 0.08;
-});
-// Objet 6 : Kim Possible Telephone
-loader.load("/assets/Kim_Possible_CellPhone.glb", (gltf) => {
-  const CellPhone = gltf.scene;
-  CellPhone.name = "CellPhone";
-  scene.add(CellPhone);
-  objetsCliquables.push(CellPhone);
-  CellPhone.position.set(0, 0, 0);
-  CellPhone.userData.flotte = true;
-  CellPhone.userData.baseY = CellPhone.position.y;
-  CellPhone.userData.vitesse = 1.0;
-  CellPhone.userData.amplitude = 0.1;
-});
-// Objet 7 : Badge
-loader.load("/assets/badge.glb", (gltf) => {
-  const badge = gltf.scene; scene.add(badge);
-  badge.name = "Badge"; badge.position.set(-2, 0, 2); objetsCliquables.push(badge);
-});
-// Objet 8 : Bougie
-loader.load("/assets/bougie.glb", (gltf) => {
-  const bougie = gltf.scene; scene.add(bougie);
-  bougie.name = "Bougie"; bougie.position.set(2, 0, 2); objetsCliquables.push(bougie);
-});
-// Objet 9 : Casque kusco
-loader.load("/assets/casque_kusco.glb", (gltf) => {
-  const casque = gltf.scene; scene.add(casque);
-  casque.scale.set(5, 5, 5);
-  casque.name = "CasqueKuzco"; casque.position.set(-4, 0, 2); objetsCliquables.push(casque);
-});
-// Objet 10 : Collier pocahontas
-loader.load("/assets/collier_poca.glb", (gltf) => {
-  const collier = gltf.scene; scene.add(collier);
-  collier.scale.set(5, 5, 5);
-  collier.name = "Collier"; collier.position.set(4, 0, 2); objetsCliquables.push(collier);
-});
-// Objet 11 : Poele
-loader.load("/assets/poele.glb", (gltf) => {
-  const poele = gltf.scene; scene.add(poele);
-  poele.scale.set(5, 5, 5);
-  poele.name = "Poele"; poele.position.set(0, 0, 4); objetsCliquables.push(poele);
-});
-// Objet 12 : Pot miel
-loader.load("/assets/pot_miel.glb", (gltf) => {
-  const pot = gltf.scene; scene.add(pot);
-  pot.name = "PotMiel"; pot.position.set(0, 0, -2); objetsCliquables.push(pot);
-});
 // Objet 12 : Maison
 loader.load("/assets/MaisonV1.glb", (gltf) => {
   const maison = gltf.scene; scene.add(maison);
@@ -490,7 +374,7 @@ const animate = () => {
         Math.sin(elapsedTime * vitesse + offsetTiming) * amplitude;
     }
   });
-
+// --- MISE À JOUR DU LOD (Vérifie la distance du joueur) ---
   renderer.render(scene, camera);
   stats.update(); 
   perfData.polygones = renderer.info.render.triangles; 
