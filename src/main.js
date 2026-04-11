@@ -34,8 +34,10 @@ camera.position.y = 23;
 // 3. LE RENDERER
 const canvas = document.querySelector("#webgl");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+// Si l'écran est petit (téléphone), on bloque la résolution à 1 pour sauver les FPS.
+const pixelRatio = window.innerWidth < 768 ? 1 : Math.min(window.devicePixelRatio, 2);
+renderer.setPixelRatio(pixelRatio);
 
 // 4. ORBIT CONTROLS
 const controls = new OrbitControls(camera, renderer.domElement);

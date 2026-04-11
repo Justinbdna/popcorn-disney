@@ -1,6 +1,7 @@
 html,
 body {
   overflow: hidden;
+  touch-action: none; /* Interdit le zoom et le scroll sur mobile */
 }
 
 /* L'étoile (*) cible absolument TOUS les éléments pour tuer leurs marges */
@@ -14,4 +15,5 @@ body {
   position: fixed;
   top: 0;
   left: 0;
+  touch-action: none;
 }
