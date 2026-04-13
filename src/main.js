@@ -464,6 +464,7 @@ window.addEventListener("dblclick", (event) => {
 // 7. LA BOUCLE D'ANIMATION (Le coeur du jeu)
 const clock = new THREE.Clock();
 
+
 const animate = () => {
   controls.update();
   // --- MOTEUR DE DÉPLACEMENT (DOUBLE-CLIC) ---
@@ -476,7 +477,7 @@ const animate = () => {
      }
   }
 
-  const elapsedTime = clock.getElapsedTime();
+ const elapsedTime = clock.getElapsedTime();
 
   objetsCliquables.forEach((objet, i) => {
     if (objet.userData.flotte && objet.userData.flotteActive !== false) {
