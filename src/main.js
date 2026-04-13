@@ -22,9 +22,12 @@ const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
 // 1. LA SCÈNE
 const scene = new THREE.Scene();
 
-// 2. LA CAMÉRA
+// 1. On détecte le mobile TOUT DE SUITE
+const isMobile = window.innerWidth < 768; 
+
+// 2. LA CAMÉRA (Ajustement du FOV)
 const camera = new THREE.PerspectiveCamera(
-  75,
+  isMobile ? 90 : 75,
   window.innerWidth / window.innerHeight,
   0.1,
   1000,
@@ -34,7 +37,6 @@ camera.position.y = 23;
 
 // 3. LE RENDERER
 const canvas = document.querySelector("#webgl");
-const isMobile = window.innerWidth < 768; // 1. On détecte le mobile EN PREMIER
 
 // 2. On crée le renderer UNE SEULE FOIS (sans antialiasing sur mobile)
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile }); 
@@ -131,20 +133,30 @@ manager.onLoad = () => {
       }, 400);
   }
 };
+//T este pour identifier erreur 
+manager.onError = (url) => {
+  console.error("❌ Erreur critique de chargement sur : " + url);
+  alert("Le fichier " + url + " refuse de charger. Vérifie le poids ou le chemin !");
+};
 
 const loader = new GLTFLoader(manager);
 const objetsCliquables = []; // La liste de tes cibles
 
-// 🟢 CHARGEMENT AUTOMATISÉ (Depuis disneyData.js)
+// 🟢 CHARGEMENT AUTOMATISÉ AVEC LOD DU VIDE (20m)
 disneyData.forEach((item) => {
-  loader.load(`/assets/${item.id}.glb`, (gltf) => {
-    const objet = gltf.scene; objet.name = item.id; objet.userData = { ...item };
-    if (item.flotte) Object.assign(objet.userData, { flotteActive: true, baseY: item.y || 0, vitesse: item.vitesse || 0.8, amplitude: item.amplitude || 0.08 });
-    objet.position.set(item.x || 0, item.y || 0, item.z || 0);
-    scene.add(objet); objetsCliquables.push(objet);
-  });
-});
+  const lod = new THREE.LOD();
+  lod.name = item.id;
+  lod.userData = { ...item };
+  if (item.flotte) Object.assign(lod.userData, { flotteActive: true, baseY: item.y || 0, vitesse: item.vitesse || 0.8, amplitude: item.amplitude || 0.08 });
+  lod.position.set(item.x || 0, item.y || 0, item.z || 0);
 
+  // Niveau 0 : L'objet 3D normal
+  loader.load(`/assets/${item.id}.glb`, (gltf) => { lod.addLevel(gltf.scene, 0); });
+  // Niveau 1 : Le Vide absolu au-delà de 20 mètres
+  lod.addLevel(new THREE.Object3D(), 50);
+
+  scene.add(lod); objetsCliquables.push(lod);
+});
 // Objet 12 : Maison
 loader.load("/assets/MaisonV1.glb", (gltf) => {
   const maison = gltf.scene; scene.add(maison);
@@ -375,7 +387,11 @@ const animate = () => {
         Math.sin(elapsedTime * vitesse + offsetTiming) * amplitude;
     }
   });
-// --- MISE À JOUR DU LOD (Vérifie la distance du joueur) ---
+  // --- MISE À JOUR DU LOD (Vérifie la distance du joueur) ---
+  scene.traverse((objet) => {
+    if (objet instanceof THREE.LOD) objet.update(camera);
+  });
+  
   renderer.render(scene, camera);
   stats.update(); 
   perfData.polygones = renderer.info.render.triangles; 
