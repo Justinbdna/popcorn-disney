@@ -8,6 +8,31 @@
   </head>
   <body>
     <canvas id="webgl"></canvas>
-    
-    <script type="module" src="src/main.js"></script>
-  </body>
+
+   <div id="ui-overlay">
+        <div class="logo-container">
+            <img src="/vite.svg" alt="Disney Logo" class="disney-logo">
+        </div>
+
+        <div class="footer-controls">
+            <button id="btn-play">JOUER</button>
+        </div>
+    </div>
+
+    <div id="quiz-modal" class="modal-hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="disney-tag">Disney Quiz</span>
+                <button id="btn-close">×</button>
+            </div>
+            <h2>Devine le film !</h2>
+            <p>Tape un titre de film ou de série :</p>
+            <input type="text" id="answer-input" placeholder="Ex: Le Roi Lion...">
+            <div class="modal-footer">
+                <button id="btn-submit">Valider</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>

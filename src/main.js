@@ -1,6 +1,7 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import resize from './resize.js';
-
+import { disneyData } from './data.js';
 // 1. LA SCÈNE (Le monde 3D)
 // Correction : Tout en minuscules, sans accent
 const scene = new THREE.Scene();
@@ -32,7 +33,27 @@ scene.add(pointLight);
 // On ajoute la grille au sol et les flèches directionnelles
 const gridHelper = new THREE.GridHelper(20, 20); 
 scene.add(gridHelper);
+//  LOGIQUE CHARGEMENT DATA MOHAMED 
 
+const loader = new GLTFLoader();
+
+disneyData.forEach((item) => {
+  // On va chercher chaque modèle dans le dossier public/assets/models/
+  loader.load(`./assets/models/${item.id}.glb`, (gltf) => {
+    const model = gltf.scene;
+    
+    // On donne l'id au modèle pour que le clic (Raycaster) fonctionne plus tard
+    model.name = item.id; 
+    
+    // Positionnement aléatoire pour ne pas qu'ils soient tous au même endroit (0,0,0)
+    model.position.set(Math.random() * 10 - 5, 0, Math.random() * 10 - 5);
+    
+    scene.add(model);
+    console.log(`✅ Objet chargé : ${item.nom}`);
+  }, undefined, (error) => {
+    console.error(`❌ Erreur sur le modèle ${item.id}:`, error);
+  });
+});
 const axesHelper = new THREE.AxesHelper(3);
 scene.add(axesHelper); // Correction : Le 's' est bien là !
 
@@ -50,3 +71,41 @@ const animate = () => {
 
 // On allume le moteur !
 animate();
+// --- LOGIQUE INTERFACE MOHAMED ---
+
+// --- LOGIQUE INTERFACE MOHAMED ---
+
+// On récupère les éléments
+const btnPlay = document.querySelector('#btn-play');
+const quizModal = document.querySelector('#quiz-modal'); // La fenêtre de quiz
+const btnClose = document.querySelector('#btn-close'); // La petite croix
+
+if (btnPlay) {
+    btnPlay.addEventListener('click', () => {
+        console.log("Le jeu commence !");
+        
+        // 1. Animation de disparition du bouton
+        btnPlay.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+        btnPlay.style.opacity = "0";
+        btnPlay.style.transform = "translateY(20px) scale(0.8)";
+        
+        // 2. On affiche la modale de quiz juste après
+        setTimeout(() => {
+            btnPlay.style.display = "none";
+            if(quizModal) {
+                quizModal.classList.remove('modal-hidden'); // On enlève la classe qui cache
+            }
+        }, 500);
+    });
+}
+
+// 3. Logique pour fermer la modale avec la croix
+if (btnClose) {
+    btnClose.addEventListener('click', () => {
+        quizModal.classList.add('modal-hidden'); // On recache la modale
+    });
+}
+// Fonction pour récupérer les infos d'un objet cliqué
+export function getObjectInfo(objectId) {
+  return disneyData.find(item => item.id === objectId);
+}
