@@ -1,82 +1,13 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Disney Magic - 3D</title>
-  
-  <link rel="stylesheet" href="/src/stylisation.css" />
-  <link rel="stylesheet" href="/src/style.css" />
-  <link rel="icon" type="image/png" href="/favicon_disney.png" />
-</head>
-
-<body>
-  <div id="ecran-chargement">
-      <div id="galerie-personnages">
-          <img src="/pictures/lezard.png" class="perso-flottant pos-1" alt="Lézard">
-          <img src="/pictures/olaf.png" class="perso-flottant pos-2" alt="Olaf">
-          <img src="/pictures/stitch.png" class="perso-flottant pos-3" alt="Stitch">
-          <img src="/pictures/nemo.png" class="perso-flottant pos-4" alt="Nemo">
-          <img src="/pictures/vanellope.png" class="perso-flottant pos-5" alt="Vanellope">
-          <img src="/pictures/mike.png" class="perso-flottant pos-6" alt="Mike">
-      </div>
-     <div class="contenu-chargement">
-          <div class="cercle-image">
-              <img src="/pictures/chateau_disney.jpg" alt="Disney Magie" class="image-ronde" id="logo-loader">
-          </div>
-          <div style="position: relative; height: 50px; display: flex; justify-content: center; align-items: center; width: 100%;">
-              <p class="texte-chargement" style="position: absolute; margin: 0; transition: opacity 0.8s ease;">Éveil de la magie<span class="points-suspension">...</span></p>
-              <button id="btn-decouvrir" class="bouton-magique cache" style="position: absolute;">Découvrir !</button>
-          </div>
-      </div>
-  </div>
-
-  <div id="ecran-tutoriel" class="cache">
-      <video autoplay loop muted playsinline id="bg-video">
-          <source src="/pictures/live_background_disney.mp4" type="video/mp4">
-      </video>
-      <div class="overlay-sombre"></div>
-      <div class="contenu-tuto">
-          <h1 class="titre-tuto">TUTORIEL</h1>
-          <div class="etapes-container">
-              <div class="etape-tuto active" id="etape-0">
-                  <h2>Le But du Jeu</h2>
-                  <p>Bienvenue dans la salle aux merveilles ! Votre mission : explorer cet environnement 3D et dénicher les objets emblématiques de l'univers Disney dissimulés un peu partout.</p>
-              </div>
-              <div class="etape-tuto" id="etape-1">
-                  <h2>Identifier la Magie</h2>
-                  <p>Il ne suffit pas de les trouver... Cliquez sur un objet mystère et prouvez vos connaissances en devinant exactement de quel film d'animation il provient !</p>
-              </div>
-              <div class="etape-tuto" id="etape-2">
-                  <h2>Les Règles</h2>
-                  <p>Attention, le temps presse ! Vous disposez d'un chronomètre et de seulement <span class="vies">❤️❤️❤️</span> (3 vies). Chaque mauvaise réponse vous rapproche du Game Over.</p>
-              </div>
-              <div class="etape-tuto" id="etape-3">
-                  <h2>Le Score</h2>
-                  <p>Plus l'objet est difficile à trouver ou le film obscur, plus vous gagnez de points. Avez-vous l'œil assez exercé pour devenir le plus grand expert Disney ?</p>
-              </div>
-          </div>
-          <div class="navigation-tuto">
-              <button id="btn-suivant" class="bouton-magique">Suivant</button>
-              <button id="btn-rentrer" class="bouton-magique cache">Rentrer dans l'univers</button>
-          </div>
-      </div>
-  </div>
-
-  <div id="infobulle">
-      <div class="infobulle-contenu">
-          <img src="/pictures/chateau_disney.jpg" alt="Miniature" class="infobulle-image" id="infobulle-img">
-          <div class="infobulle-textes">
-              <h3 id="infobulle-titre">Objet Mystère</h3>
-              <p id="infobulle-film">Film : ???</p>
-          </div>
-      </div>
-      <span class="etincelle">✨</span>
-  </div>
-
-  <canvas id="webgl"></canvas>
-  
- <script type="module" src="/src/interaction.js"></script>
-  <script type="module" src="/src/main.js"></script>
-</body>
-</html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Popcorn Disney - Chambre 3D</title>
+    <link rel="stylesheet" href="src/style.css">
+  </head>
+  <body>
+    <canvas id="webgl"></canvas>
+    
+    <script type="module" src="src/main.js"></script>
+  </body>

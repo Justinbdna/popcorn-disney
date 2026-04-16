@@ -1,25 +1,8 @@
-import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import resize from "./resize.js";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import GUI from "lil-gui";
-import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
-import Stats from "three/examples/jsm/libs/stats.module.js";
-import { injectSpeedInsights } from '@vercel/speed-insights'; 
-import { inject } from "@vercel/analytics"
-import { disneyData } from "./disneyData.js";
+import * as THREE from 'three';
+import resize from './resize.js';
 
-// injection d'analytics
-inject()
-
-// injection de SpeedInsights
-injectSpeedInsights();
-// ==========================================
-// 🛠️ MODE DÉVELOPPEUR
-// ==========================================
-const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
-
-// 1. LA SCÈNE
+// 1. LA SCÈNE (Le monde 3D)
+// Correction : Tout en minuscules, sans accent
 const scene = new THREE.Scene();
 
 // 1. On détecte le mobile TOUT DE SUITE
@@ -171,49 +154,15 @@ const dirLight = new THREE.DirectionalLight(0xffffff, 5);
 dirLight.position.set(5, 10, 7);
 scene.add(dirLight);
 
-// 1. Éclairage (Fixe)
-const lumiereDossier = gui.addFolder("Éclairage");
-lumiereDossier
-  .add(dirLight, "intensity")
-  .min(0)
-  .max(10)
-  .step(0.1)
-  .name("Soleil");
+// 6. LES AIDES VISUELLES (Le chantier)
+// On ajoute la grille au sol et les flèches directionnelles
+const gridHelper = new THREE.GridHelper(20, 20); 
+scene.add(gridHelper);
 
-// 2. Dossier dynamique (Vide au départ)
-let dossierSelection = gui.addFolder("Aucun objet sélectionné");
+const axesHelper = new THREE.AxesHelper(3);
+scene.add(axesHelper); // Correction : Le 's' est bien là !
 
-const outils = {
-  exporter: () => {
-    const data = objetsCliquables.map((o) => {
-      const y = o.userData.flotte ? o.userData.baseY : o.position.y;
-      return `${o.name} | Pos: ${o.position.x.toFixed(2)}, ${y.toFixed(2)}, ${o.position.z.toFixed(2)} | Scale: ${o.scale.x.toFixed(2)}, ${o.scale.y.toFixed(2)}, ${o.scale.z.toFixed(2)}`;
-    }).join("\n");
-    navigator.clipboard.writeText(data);
-    alert("Coordonnées ET Tailles copiées ! 📋");
-  },
-};
-
-gui.add(outils, "exporter").name("💾 Exporter Coordonnées");
-
-// --- PERFORMANCES (FPS & POLYGONES) ---
-const stats = new Stats();
-document.body.appendChild(stats.dom); // Ajoute le compteur FPS en haut à gauche
-
-const perfData = { polygones: 0, drawCalls: 0, geometries: 0 };
-const perfFolder = gui.addFolder("Moniteur d'Activité");
-perfFolder.add(perfData, "polygones").name("Triangles").listen();
-perfFolder.add(perfData, "drawCalls").name("Draw Calls").listen();
-perfFolder.add(perfData, "geometries").name("Géométries (RAM)").listen();
-
-// --- 🔒 VERROU BLINDÉ : LIEN AVEC LE MASTER SWITCH ---
-// Placé ici, TOUT À LA FIN, le menu ne peut plus se réveiller.
-if (!MODE_DEV) {
-    gui.hide(); // Méthode officielle absolue pour cacher le menu noir
-    stats.dom.style.display = "none"; // Cache le compteur vert FPS
-}
-
-// Resize
+// Appel du fichier resize.js (le musicien externe)
 resize(camera, renderer);
 
 // --- LE LASER (RAYCASTER V3 - Le Clic Intelligent) ---

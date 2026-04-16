@@ -1,3 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+* {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 html,
 body {
   overflow: hidden;
@@ -16,4 +24,135 @@ body {
   top: 0;
   left: 0;
   touch-action: none;
+}
+/* Positionnement global de l'interface */
+#ui-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none; /* Permet de cliquer sur la 3D à travers le vide */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 40px;
+    z-index: 10;
+}
+
+/* Style du logo */
+.disney-logo {
+    width: 100px;
+       pointer-events: auto;
+}
+
+/* Centrage du bouton JOUER en bas */
+.footer-controls {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+#btn-play {
+    pointer-events: auto; /* Réactive le clic sur le bouton */
+    padding: 12px 60px;
+    background-color: white;
+    color: black;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 18px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+    transition: transform 0.2s ease;
+}
+
+#btn-play:hover {
+    transform: scale(1.05) translateY(-5px);
+}
+
+/* Style de la modale (cachée pour l'instant) */
+.modal-hidden {
+    display: none !important;
+}
+
+#quiz-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+}
+
+#quiz-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7); /* Fond sombre */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(8px); /* Effet de flou derrière */
+}
+
+.modal-content {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 450px;
+    text-align: center;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    color: #1a1a1a;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#btn-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+}
+
+#answer-input {
+    width: 100%;
+    padding: 15px;
+    margin: 20px 0;
+    border: 2px solid #eee;
+    border-radius: 12px;
+    font-size: 16px;
+}
+
+#btn-submit {
+    background: #1a1a1a;
+    color: white;
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* LA CLASSE QUI CACHE TOUT */
+.modal-hidden {
+    display: none !important;
 }
