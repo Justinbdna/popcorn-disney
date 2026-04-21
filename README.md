@@ -6,7 +6,7 @@
 
 **Popcorn Disney** est une expérience web 3D interactive et ludique en vue à la première personne. Plongez dans une chambre virtuelle remplie d'objets cultes, explorez les moindres recoins et testez vos connaissances sur la Pop Culture !
 
-👉 **[Jouer à Popcorn Disney maintenant !](https://[LIEN-DE-TON-JEU-VERCEL].vercel.app)** 👈
+👉 **[Jouer à Popcorn Disney maintenant !]([(https://popcorn-disney.vercel.app])** 👈
 
 ---
 
