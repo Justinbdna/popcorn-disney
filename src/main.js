@@ -63,6 +63,10 @@ const targetPosition = new THREE.Vector3();
 window.lancerJeu3D = () => {
   console.log("🎬 Le tutoriel est terminé, le jeu commence !");
 };
+// --- LE BRIDGE DE SÉCURITÉ ---
+window.bloquerControles3D = (etat) => {
+  if (controls) controls.enabled = !etat;
+};
 
 // 5. TRANSFORM CONTROLS
 const transformControls = new TransformControls(camera, renderer.domElement);
@@ -143,13 +147,28 @@ disneyData.forEach((item) => {
       amplitude: item.amplitude || 0.08,
     });
   lod.position.set(item.x || 0, item.y || 0, item.z || 0);
+
   loader.load(`/assets/${item.id}.glb`, (gltf) => {
     lod.addLevel(gltf.scene, 0);
-  });
+    const boite = new THREE.Box3().setFromObject(gltf.scene);
+    const taille = new THREE.Vector3();
+    boite.getSize(taille);
+    const hitbox = new THREE.Mesh(
+      new THREE.BoxGeometry(taille.x, taille.y, taille.z),
+      new THREE.MeshBasicMaterial({ visible: false }),
+    );
+    const center = new THREE.Vector3();
+    boite.getCenter(center);
+    hitbox.position.copy(center);
+    hitbox.name = lod.name;
+    hitbox.userData = lod.userData;
+    lod.add(hitbox);
+    objetsCliquables.push(hitbox);
+  }); // LOD de secours (vide) pour éviter les bugs d'apparition
   lod.addLevel(new THREE.Object3D(), 50);
   scene.add(lod);
-  objetsCliquables.push(lod);
 });
+// on ne push plus ici
 
 // Objet 12 : Maison
 loader.load("/assets/MaisonV1.glb", (gltf) => {
@@ -184,8 +203,11 @@ const outils = {
   exporter: () => {
     const data = objetsCliquables
       .map((o) => {
-        const y = o.userData.flotte ? o.userData.baseY : o.position.y;
-        return `${o.name} | Pos: ${o.position.x.toFixed(2)}, ${y.toFixed(2)}, ${o.position.z.toFixed(2)} | Scale: ${o.scale.x.toFixed(2)}, ${o.scale.y.toFixed(2)}, ${o.scale.z.toFixed(2)}`;
+        const vraiObjet = o.parent || o;
+        const y = vraiObjet.userData.flotte
+          ? vraiObjet.userData.baseY
+          : vraiObjet.position.y;
+        return `${vraiObjet.name} | Pos: ${vraiObjet.position.x.toFixed(2)}, ${y.toFixed(2)}, ${vraiObjet.position.z.toFixed(2)} | Scale: ${vraiObjet.scale.x.toFixed(2)}, ${vraiObjet.scale.y.toFixed(2)}, ${vraiObjet.scale.z.toFixed(2)}`;
       })
       .join("\n");
     navigator.clipboard.writeText(data);
@@ -375,6 +397,7 @@ window.addEventListener("dblclick", (event) => {
 
     if (cible.name === "Maison" && intersections[0].point.y < 2) {
       const pointClique = intersections[0].point;
+      pointClique.y = 1.7;
       targetTarget.copy(pointClique);
       const offset = new THREE.Vector3().subVectors(
         camera.position,
@@ -393,6 +416,10 @@ window.addEventListener("dblclick", (event) => {
 // 7. LA BOUCLE D'ANIMATION
 // ==========================================
 const clock = new THREE.Clock();
+
+const dirCamera = new THREE.Vector3();
+const dirLaterale = new THREE.Vector3();
+const vitesseZQSD = 0.15;
 
 const animate = () => {
   controls.update();
@@ -432,6 +459,30 @@ const animate = () => {
     }
   }
 
+  // --- MOTEUR GTA : Déplace la caméra avec ZQSD (quand on ne conduit pas un objet) ---
+  if (!objetActif) {
+    camera.getWorldDirection(dirCamera);
+    dirCamera.y = 0;
+    dirCamera.normalize();
+    dirLaterale.crossVectors(camera.up, dirCamera).normalize();
+    if (touches.z) {
+      camera.position.addScaledVector(dirCamera, vitesseZQSD);
+      controls.target.addScaledVector(dirCamera, vitesseZQSD);
+    }
+    if (touches.s) {
+      camera.position.addScaledVector(dirCamera, -vitesseZQSD);
+      controls.target.addScaledVector(dirCamera, -vitesseZQSD);
+    }
+    if (touches.q) {
+      camera.position.addScaledVector(dirLaterale, vitesseZQSD);
+      controls.target.addScaledVector(dirLaterale, vitesseZQSD);
+    }
+    if (touches.d) {
+      camera.position.addScaledVector(dirLaterale, -vitesseZQSD);
+      controls.target.addScaledVector(dirLaterale, -vitesseZQSD);
+    }
+  }
+
   // --- MOTEUR DE DÉPLACEMENT CAMÉRA (DOUBLE-CLIC) ---
   if (moveControls) {
     controls.target.lerp(targetTarget, 0.05);
@@ -451,7 +502,8 @@ const animate = () => {
       const vitesse = objet.userData.vitesse || 0.8;
       const amplitude = objet.userData.amplitude || 0.08;
       const offsetTiming = i * 1.2;
-      objet.position.y =
+      const cibleAnimation = objet.parent || objet;
+      cibleAnimation.position.y =
         objet.userData.baseY +
         Math.sin(elapsedTime * vitesse + offsetTiming) * amplitude;
     }
