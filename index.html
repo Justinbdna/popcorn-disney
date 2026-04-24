@@ -73,81 +73,10 @@
       </div>
       <span class="etincelle">✨</span>
   </div>
-      <div id="hud" class="cache">
-        <div class="hud-section hud-gauche">
-            <div class="hud-bulle vies-container">
-                <span id="vies-affichage">❤️❤️❤️</span>
-            </div>
-            <div class="hud-bulle score-container">
-                ⭐ <span id="score-affichage">0</span> pts
-            </div>
-        </div>
-
-        <div class="hud-section hud-centre">
-            <div class="hud-bulle chrono-container">
-                ⏱️ <span id="chrono-affichage">03:00</span>
-            </div>
-        </div>
-
-        <div class="hud-section hud-droite">
-            <button id="btn-ouvrir-parametres" class="bouton-icone">⚙️</button>
-        </div>
-    </div>
-
-    <div id="modal-quiz" class="modal cache">
-        <div class="overlay-sombre"></div>
-        <div class="modal-contenu effet-magique">
-            <h2 class="modal-titre">Objet Trouvé !</h2>
-            <div class="quiz-illustration">
-                <img src="" alt="Objet Mystère" id="quiz-image" class="cache">
-                <div class="lueur-magique"></div>
-            </div>
-            <p>De quel chef-d'œuvre Disney provient cet objet ?</p>
-            
-            <input type="text" id="quiz-input" placeholder="Entrez le nom du film..." autocomplete="off">
-            <p id="quiz-feedback" class="message-feedback"></p>
-            
-            <div class="modal-actions">
-                <button id="btn-annuler-quiz" class="bouton-secondaire">Annuler</button>
-                <button id="btn-valider-quiz" class="bouton-magique">Valider</button>
-            </div>
-        </div>
-    </div>
-
- <div id="modal-parametres" class="modal cache">
-        <div class="overlay-sombre"></div>
-        <div class="modal-contenu effet-magique">
-            <h2 class="modal-titre">Paramètres</h2>
-            
-            <div class="liste-parametres">
-                <div class="parametre-item">
-                    <span>🎵 Musique de fond</span>
-                    <label class="switch">
-                        <input type="checkbox" id="toggle-musique" checked>
-                        <span class="slider rond"></span>
-                    </label>
-                </div>
-                <div class="parametre-item">
-                    <span>✨ Effets sonores</span>
-                    <label class="switch">
-                        <input type="checkbox" id="toggle-sfx" checked>
-                        <span class="slider rond"></span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="modal-actions centrer">
-                <button id="btn-fermer-parametres" class="bouton-magique">Reprendre le jeu</button>
-            </div>
-        </div>
-    </div>
-
 
   <canvas id="webgl"></canvas>
   
  <script type="module" src="/src/interaction.js"></script>
   <script type="module" src="/src/main.js"></script>
-  
-
 </body>
 </html>

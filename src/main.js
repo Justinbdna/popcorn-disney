@@ -20,6 +20,7 @@ injectSpeedInsights();
 // 🛠️ MODE DÉVELOPPEUR
 // ==========================================
 const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
+window.easterEggDebloque = false; // La clé du mode GTA secret
 
 // 1. LA SCÈNE
 const scene = new THREE.Scene();
@@ -136,18 +137,16 @@ manager.onLoad = () => {
     }, 400);
   }
 };
-//T este pour identifier erreur 
+
 manager.onError = (url) => {
   console.error("❌ Erreur critique de chargement sur : " + url);
-  alert("Le fichier " + url + " refuse de charger. Vérifie le poids ou le chemin !");
+  alert(
+    "Le fichier " + url + " refuse de charger. Vérifie le poids ou le chemin !",
+  );
 };
 
 const loader = new GLTFLoader(manager);
-//DracoLoader
-const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
-loader.setDRACOLoader(dracoLoader);
-const objetsCliquables = [];
+const objetsCliquables = []; // La liste de tes cibles
 
 // 🟢 CHARGEMENT AUTOMATISÉ AVEC LOD
 disneyData.forEach((item) => {
@@ -163,31 +162,9 @@ disneyData.forEach((item) => {
     });
   lod.position.set(item.x || 0, item.y || 0, item.z || 0);
 
-  loader.load(`/assets/${item.id}.glb`, (gltf) => {
-    lod.addLevel(gltf.scene, 0);
-    const boite = new THREE.Box3().setFromObject(gltf.scene);
-    const taille = new THREE.Vector3();
-    boite.getSize(taille);
-    const hitX = Math.max(taille.x * 1.5, 2.5);
-    const hitY = Math.max(taille.y * 1.5, 2.5);
-    const hitZ = Math.max(taille.z * 1.5, 2.5);
-
-    const hitbox = new THREE.Mesh(
-      new THREE.BoxGeometry(hitX, hitY, hitZ),
-      new THREE.MeshBasicMaterial({
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-      }),
-    );
-    const center = new THREE.Vector3();
-    boite.getCenter(center);
-    hitbox.position.copy(center);
-    hitbox.name = lod.name;
-    hitbox.userData = lod.userData;
-    lod.add(hitbox);
-    objetsCliquables.push(hitbox);
-  }); // LOD de secours (vide) pour éviter les bugs d'apparition
+  // Niveau 0 : L'objet 3D normal
+  loader.load(`/assets/${item.id}.glb`, (gltf) => { lod.addLevel(gltf.scene, 0); });
+  // Niveau 1 : Le Vide absolu au-delà de 20 mètres
   lod.addLevel(new THREE.Object3D(), 50);
   scene.add(lod);
 });
@@ -225,15 +202,10 @@ let dossierSelection = gui.addFolder("Aucun objet sélectionné");
 
 const outils = {
   exporter: () => {
-    const data = objetsCliquables
-      .map((o) => {
-        const vraiObjet = o.parent || o;
-        const y = vraiObjet.userData.flotte
-          ? vraiObjet.userData.baseY
-          : vraiObjet.position.y;
-        return `${vraiObjet.name} | Pos: ${vraiObjet.position.x.toFixed(2)}, ${y.toFixed(2)}, ${vraiObjet.position.z.toFixed(2)} | Scale: ${vraiObjet.scale.x.toFixed(2)}, ${vraiObjet.scale.y.toFixed(2)}, ${vraiObjet.scale.z.toFixed(2)}`;
-      })
-      .join("\n");
+    const data = objetsCliquables.map((o) => {
+      const y = o.userData.flotte ? o.userData.baseY : o.position.y;
+      return `${o.name} | Pos: ${o.position.x.toFixed(2)}, ${y.toFixed(2)}, ${o.position.z.toFixed(2)} | Scale: ${o.scale.x.toFixed(2)}, ${o.scale.y.toFixed(2)}, ${o.scale.z.toFixed(2)}`;
+    }).join("\n");
     navigator.clipboard.writeText(data);
     alert("Coordonnées ET Tailles copiées ! 📋");
   },
@@ -258,36 +230,7 @@ if (!MODE_DEV) {
 // Resize
 resize(camera, renderer);
 
-// ==========================================
-// 🎮 MOTEUR DE CONDUITE (STYLE GTA)
-// ==========================================
-let objetActif = null; // L'objet qu'on est en train de conduire
-const touches = {
-  z: false,
-  q: false,
-  s: false,
-  d: false,
-  ArrowUp: false,
-  ArrowLeft: false,
-  ArrowDown: false,
-  ArrowRight: false,
-};
-
-window.addEventListener("keydown", (e) => {
-  if (touches.hasOwnProperty(e.key)) touches[e.key] = true;
-  if (e.key === "Escape" && objetActif) {
-    transformControls.detach();
-    objetActif = null;
-    dossierSelection.destroy();
-    dossierSelection = gui.addFolder("Aucun objet sélectionné");
-  }
-});
-
-window.addEventListener("keyup", (e) => {
-  if (touches.hasOwnProperty(e.key)) touches[e.key] = false;
-});
-
-// --- LE LASER (RAYCASTER) ---
+// --- LE LASER (RAYCASTER V3 - Le Clic Intelligent) ---
 const raycaster = new THREE.Raycaster();
 const souris = new THREE.Vector2();
 
@@ -318,8 +261,7 @@ window.addEventListener("click", (event) => {
     while (cible.parent && cible.parent.type !== "Scene") {
       cible = cible.parent;
     }
-
-    // Sécurité Maison
+  // --- SÉCURITÉ MAISON (CLIC SIMPLE) ---
     if (cible.name === "Maison") {
       transformControls.detach();
       objetActif = null;
@@ -455,9 +397,6 @@ window.addEventListener("dblclick", (event) => {
 // ==========================================
 const clock = new THREE.Clock();
 
-const dirCamera = new THREE.Vector3();
-const dirLaterale = new THREE.Vector3();
-const vitesseZQSD = 0.6;
 
 const animate = () => {
   controls.update();
@@ -466,8 +405,7 @@ const animate = () => {
   if (objetActif) {
     const vitesse = 0.3;
   
-
-   if (touches.q || touches.ArrowLeft) objetActif.translateX(-vitesse);
+    if (touches.q || touches.ArrowLeft) objetActif.translateX(-vitesse);
     if (touches.d || touches.ArrowRight) objetActif.translateX(vitesse);
     if (touches.z || touches.ArrowUp) objetActif.translateZ(-vitesse);
     if (touches.s || touches.ArrowDown) objetActif.translateZ(vitesse);
