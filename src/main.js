@@ -251,6 +251,12 @@ const touches = {
 
 window.addEventListener("keydown", (e) => {
   if (touches.hasOwnProperty(e.key)) touches[e.key] = true;
+  if (e.key === "Escape" && objetActif) {
+    transformControls.detach();
+    objetActif = null;
+    dossierSelection.destroy();
+    dossierSelection = gui.addFolder("Aucun objet sélectionné");
+  }
 });
 
 window.addEventListener("keyup", (e) => {
@@ -290,7 +296,15 @@ window.addEventListener("click", (event) => {
     }
 
     // Sécurité Maison
-    if (cible.name === "Maison") return;
+    if (cible.name === "Maison") {
+      transformControls.detach();
+      objetActif = null;
+      if (dossierSelection.title !== "Aucun objet sélectionné") {
+        dossierSelection.destroy();
+        dossierSelection = gui.addFolder("Aucun objet sélectionné");
+      }
+      return;
+    }
 
     // 👉 On désigne cet objet comme celui qu'on conduit
     objetActif = cible;
@@ -465,19 +479,19 @@ const animate = () => {
     dirCamera.y = 0;
     dirCamera.normalize();
     dirLaterale.crossVectors(camera.up, dirCamera).normalize();
-    if (touches.z) {
+    if (touches.z || touches.ArrowUp) {
       camera.position.addScaledVector(dirCamera, vitesseZQSD);
       controls.target.addScaledVector(dirCamera, vitesseZQSD);
     }
-    if (touches.s) {
+    if (touches.s || touches.ArrowDown) {
       camera.position.addScaledVector(dirCamera, -vitesseZQSD);
       controls.target.addScaledVector(dirCamera, -vitesseZQSD);
     }
-    if (touches.q) {
+    if (touches.q || touches.ArrowLeft) {
       camera.position.addScaledVector(dirLaterale, vitesseZQSD);
       controls.target.addScaledVector(dirLaterale, vitesseZQSD);
     }
-    if (touches.d) {
+    if (touches.d || touches.ArrowRight) {
       camera.position.addScaledVector(dirLaterale, -vitesseZQSD);
       controls.target.addScaledVector(dirLaterale, -vitesseZQSD);
     }
