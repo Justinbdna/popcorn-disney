@@ -99,6 +99,13 @@ window.addEventListener("keydown", (e) => {
 
 // --- INITIALISATION DU MENU (GUI) ---
 const gui = new GUI();
+const debugConfig = { afficherHitboxes: false };
+const dossierDebug = gui.addFolder("🛠️ Mode Debug");
+dossierDebug.add(debugConfig, "afficherHitboxes").name("Voir Collisions").onChange((val) => {
+  objetsCliquables.forEach(h => {
+    if (h.material) { h.material.opacity = val ? 0.4 : 0; h.material.wireframe = val; }
+  });
+});
 
 // 6. CHARGEMENT DES OBJETS
 const manager = new THREE.LoadingManager();
@@ -137,7 +144,7 @@ manager.onLoad = () => {
     }, 400);
   }
 };
-//T este pour identifier erreur 
+//Teste pour identifier erreur 
 manager.onError = (url) => {
   console.error("❌ Erreur critique de chargement sur : " + url);
   alert("Le fichier " + url + " refuse de charger. Vérifie le poids ou le chemin !");
@@ -176,10 +183,11 @@ disneyData.forEach((item) => {
     const hitbox = new THREE.Mesh(
       new THREE.BoxGeometry(hitX, hitY, hitZ),
       new THREE.MeshBasicMaterial({
+        color: 0xff0000, // Rouge vif pour le debug
         transparent: true,
-        opacity: 0,
+        opacity: 0, // Invisible par défaut
         depthWrite: false,
-      }),
+      })
     );
     const center = new THREE.Vector3();
     boite.getCenter(center);
@@ -200,8 +208,11 @@ loader.load("/assets/MaisonV1.glb", (gltf) => {
   scene.add(maison);
   maison.scale.set(15, 15, 15);
   maison.name = "Maison";
-  maison.position.set(0, 0, 0);
-  objetsCliquables.push(maison);
+ maison.position.set(0, 0, 0);
+  // On crée un sol mathématique ultra-léger pour le clic, au lieu de la vraie maison
+  const solHitbox = new THREE.Mesh(new THREE.BoxGeometry(300, 1, 300), new THREE.MeshBasicMaterial({ color: 0x0000ff, transparent: true, opacity: 0, wireframe: false }));
+  solHitbox.name = "Maison"; solHitbox.position.y = -0.5;
+  scene.add(solHitbox); objetsCliquables.push(solHitbox);
 });
 
 // 5. LA LUMIÈRE
