@@ -102,6 +102,15 @@ const gui = new GUI();
 
 const manager = new THREE.LoadingManager();
 
+// 🆘 SÉCURITÉ SAFARI : Si le chargement bloque plus de 10s, on force l'ouverture !
+setTimeout(() => {
+  const btn = document.getElementById("btn-decouvrir");
+  if (btn && btn.classList.contains("cache")) {
+      console.warn("⏳ Safari rame trop, on débloque le bouton de force !");
+      btn.classList.remove("cache");
+  }
+}, 10000); // 10000 millisecondes = 10 secondes
+
 manager.onProgress = (url, loaded, total) => {
   const percent = Math.round((loaded / total) * 100);
   const el = document.getElementById("loading-percent");
@@ -133,10 +142,12 @@ manager.onLoad = () => {
       }, 400);
   }
 };
-//T este pour identifier erreur 
+//Teste pour identifier erreur 
 manager.onError = (url) => {
-  console.error("❌ Erreur critique de chargement sur : " + url);
-  alert("Le fichier " + url + " refuse de charger. Vérifie le poids ou le chemin !");
+  console.error("❌ Safari a bloqué le fichier : " + url);
+  // On force l'apparition du bouton magique pour ne pas rester coincé
+  const btn = document.getElementById("btn-decouvrir");
+  if (btn) btn.classList.remove("cache");
 };
 
 const loader = new GLTFLoader(manager);
