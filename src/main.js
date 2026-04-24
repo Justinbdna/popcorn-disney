@@ -20,6 +20,7 @@ injectSpeedInsights();
 // 🛠️ MODE DÉVELOPPEUR
 // ==========================================
 const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
+window.easterEggDebloque = false; // La clé du mode GTA secret
 
 // 1. LA SCÈNE
 const scene = new THREE.Scene();
@@ -262,11 +263,19 @@ window.addEventListener("click", (event) => {
     }
   // --- SÉCURITÉ MAISON (CLIC SIMPLE) ---
     if (cible.name === "Maison") {
-      return; // On bloque l'apparition des flèches sur la maison
+      transformControls.detach();
+      objetActif = null;
+      if (dossierSelection.title !== "Aucun objet sélectionné") {
+        dossierSelection.destroy();
+        dossierSelection = gui.addFolder("Aucun objet sélectionné");
+      }
+      return;
     }
-    // --- LA MAGIE OPÈRE ICI ---
 
-    // A. On accroche les flèches 3D à l'objet cliqué
+    // 👉 On désigne cet objet comme celui qu'on conduit
+    objetActif = cible;
+
+    // Flèches 3D
     transformControls.attach(cible);
 
     // GUI dynamique
@@ -391,7 +400,67 @@ const clock = new THREE.Clock();
 
 const animate = () => {
   controls.update();
-  // --- MOTEUR DE DÉPLACEMENT (DOUBLE-CLIC) ---
+
+  // --- 🎮 MOTEUR GTA : Déplace l'objet sélectionné ---
+  if (objetActif) {
+    const vitesse = 0.3;
+    const vitesseRotation = 0.08;
+
+    if (touches.q || touches.ArrowLeft)
+      objetActif.rotation.y += vitesseRotation;
+    if (touches.d || touches.ArrowRight)
+      objetActif.rotation.y -= vitesseRotation;
+    if (touches.z || touches.ArrowUp) objetActif.translateZ(-vitesse);
+    if (touches.s || touches.ArrowDown) objetActif.translateZ(vitesse);
+
+    // La caméra suit l'objet quand il bouge (vraie caméra GTA)
+    const estEnMouvement =
+      touches.z ||
+      touches.s ||
+      touches.q ||
+      touches.d ||
+      touches.ArrowUp ||
+      touches.ArrowDown ||
+      touches.ArrowLeft ||
+      touches.ArrowRight;
+    if (estEnMouvement) {
+      // 1. On calcule de combien l'objet vient de se déplacer
+      const delta = new THREE.Vector3().subVectors(
+        objetActif.position,
+        controls.target,
+      );
+      // 2. On déplace la caméra exactement de la même distance
+      camera.position.add(delta);
+      // 3. On met à jour la cible
+      controls.target.copy(objetActif.position);
+    }
+  }
+
+  // --- MOTEUR GTA : Déplace la caméra avec ZQSD (quand on ne conduit pas un objet) ---
+  if (!objetActif) {
+    camera.getWorldDirection(dirCamera);
+    dirCamera.y = 0;
+    dirCamera.normalize();
+    dirLaterale.crossVectors(camera.up, dirCamera).normalize();
+    if (touches.z || touches.ArrowUp) {
+      camera.position.addScaledVector(dirCamera, vitesseZQSD);
+      controls.target.addScaledVector(dirCamera, vitesseZQSD);
+    }
+    if (touches.s || touches.ArrowDown) {
+      camera.position.addScaledVector(dirCamera, -vitesseZQSD);
+      controls.target.addScaledVector(dirCamera, -vitesseZQSD);
+    }
+    if (touches.q || touches.ArrowLeft) {
+      camera.position.addScaledVector(dirLaterale, vitesseZQSD);
+      controls.target.addScaledVector(dirLaterale, vitesseZQSD);
+    }
+    if (touches.d || touches.ArrowRight) {
+      camera.position.addScaledVector(dirLaterale, -vitesseZQSD);
+      controls.target.addScaledVector(dirLaterale, -vitesseZQSD);
+    }
+  }
+
+  // --- MOTEUR DE DÉPLACEMENT CAMÉRA (DOUBLE-CLIC) ---
   if (moveControls) {
     controls.target.lerp(targetTarget, 0.05);
     camera.position.lerp(targetPosition, 0.05);
