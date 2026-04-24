@@ -43,6 +43,9 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile });
 renderer.setSize(window.innerWidth, window.innerHeight);
 const pixelRatio = isMobile ? 1 : Math.min(window.devicePixelRatio, 2);
 renderer.setPixelRatio(pixelRatio);
+// Ombre dynamiques (rendu AAA)
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 // 4. ORBIT CONTROLS
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -205,6 +208,7 @@ const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3);
 scene.add(hemiLight);
 const dirLight = new THREE.DirectionalLight(0xffffff, 5);
 dirLight.position.set(5, 10, 7);
+dirLight.castShadow = true;
 scene.add(dirLight);
 
 // GUI - Éclairage
