@@ -153,9 +153,17 @@ disneyData.forEach((item) => {
     const boite = new THREE.Box3().setFromObject(gltf.scene);
     const taille = new THREE.Vector3();
     boite.getSize(taille);
+    const hitX = Math.max(taille.x * 1.5, 2.5);
+    const hitY = Math.max(taille.y * 1.5, 2.5);
+    const hitZ = Math.max(taille.z * 1.5, 2.5);
+
     const hitbox = new THREE.Mesh(
-      new THREE.BoxGeometry(taille.x, taille.y, taille.z),
-      new THREE.MeshBasicMaterial({ visible: false }),
+      new THREE.BoxGeometry(hitX, hitY, hitZ),
+      new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+      }),
     );
     const center = new THREE.Vector3();
     boite.getCenter(center);
@@ -433,15 +441,15 @@ const clock = new THREE.Clock();
 
 const dirCamera = new THREE.Vector3();
 const dirLaterale = new THREE.Vector3();
-const vitesseZQSD = 0.15;
+const vitesseZQSD = 0.6;
 
 const animate = () => {
   controls.update();
 
   // --- 🎮 MOTEUR GTA : Déplace l'objet sélectionné ---
   if (objetActif) {
-    const vitesse = 0.1;
-    const vitesseRotation = 0.05;
+    const vitesse = 0.3;
+    const vitesseRotation = 0.08;
 
     if (touches.q || touches.ArrowLeft)
       objetActif.rotation.y += vitesseRotation;
