@@ -404,12 +404,9 @@ const animate = () => {
   // --- 🎮 MOTEUR GTA : Déplace l'objet sélectionné ---
   if (objetActif) {
     const vitesse = 0.3;
-    const vitesseRotation = 0.08;
 
-    if (touches.q || touches.ArrowLeft)
-      objetActif.rotation.y += vitesseRotation;
-    if (touches.d || touches.ArrowRight)
-      objetActif.rotation.y -= vitesseRotation;
+    if (touches.q || touches.ArrowLeft) objetActif.translateX(-vitesse);
+    if (touches.d || touches.ArrowRight) objetActif.translateX(vitesse);
     if (touches.z || touches.ArrowUp) objetActif.translateZ(-vitesse);
     if (touches.s || touches.ArrowDown) objetActif.translateZ(vitesse);
 
