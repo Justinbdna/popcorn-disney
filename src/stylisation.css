@@ -23,7 +23,7 @@ html {
 }
 
 .cache {
-  opacity: 0 !important; /* Remis à 0 pour que ça se cache vraiment */
+  opacity: 0 !important;
   pointer-events: none !important;
   visibility: hidden !important;
 }
@@ -43,7 +43,7 @@ html {
   justify-content: center;
   align-items: center;
   transition: opacity 1s ease-in-out;
-  overflow: hidden; /* Empêche les images de déborder de l'écran */
+  overflow: hidden;
 }
 
 /* NOUVEAU : Galerie des personnages fantomatiques */
@@ -53,79 +53,32 @@ html {
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 0; /* Derrière le cercle central */
-  pointer-events: none; /* Ne bloque pas le clic */
+  z-index: 0;
+  pointer-events: none;
 }
 
 .perso-flottant {
   position: absolute;
-  opacity: 0; /* Temporarily set to debug visibility */
+  opacity: 0;
   max-width: 200px;
   filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.2));
-  /* Animation de 8s en boucle avec interpolation fluide */
   animation: memoireMagique 8s infinite ease-in-out;
   pointer-events: none;
 }
 
 /* Positionnement et délais personnalisés pour chaque personnage */
-.pos-1 {
-  top: 5%;
-  left: 5%;
-  max-width: 200px;
-  animation-delay: 0s;
-}
-.pos-2 {
-  top: 10%;
-  right: 15%;
-  max-width: 250px;
-  animation-delay: 2s;
-}
-.pos-3 {
-  bottom: 20%;
-  left: 20%;
-  max-width: 180px;
-  animation-delay: 4.5s;
-}
-.pos-4 {
-  top: 30%;
-  right: 25%;
-  max-width: 220px;
-  animation-delay: 1s;
-}
-.pos-5 {
-  bottom: 10%;
-  left: 10%;
-  max-width: 150px;
-  animation-delay: 6s;
-}
-.pos-6 {
-  top: 40%;
-  right: 5%;
-  max-width: 200px;
-  animation-delay: 3s;
-}
+.pos-1 { top: 5%; left: 5%; max-width: 200px; animation-delay: 0s; }
+.pos-2 { top: 10%; right: 15%; max-width: 250px; animation-delay: 2s; }
+.pos-3 { bottom: 20%; left: 20%; max-width: 180px; animation-delay: 4.5s; }
+.pos-4 { top: 30%; right: 25%; max-width: 220px; animation-delay: 1s; }
+.pos-5 { bottom: 10%; left: 10%; max-width: 150px; animation-delay: 6s; }
+.pos-6 { top: 40%; right: 5%; max-width: 200px; animation-delay: 3s; }
 
 @keyframes memoireMagique {
-  0% {
-    opacity: 0;
-    transform: scale(0.8) translateY(30px);
-    filter: blur(8px);
-  }
-  40% {
-    opacity: 0.5;
-    transform: scale(1) translateY(0px);
-    filter: blur(0px);
-  } /* Opacité max à 50% pour rester discret */
-  60% {
-    opacity: 0.5;
-    transform: scale(1.05) translateY(-5px);
-    filter: blur(0px);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.1) translateY(-30px);
-    filter: blur(8px);
-  }
+  0% { opacity: 0; transform: scale(0.8) translateY(30px); filter: blur(8px); }
+  40% { opacity: 0.5; transform: scale(1) translateY(0px); filter: blur(0px); }
+  60% { opacity: 0.5; transform: scale(1.05) translateY(-5px); filter: blur(0px); }
+  100% { opacity: 0; transform: scale(1.1) translateY(-30px); filter: blur(8px); }
 }
 
 /* Le contenu central */
@@ -135,7 +88,7 @@ html {
   flex-direction: column;
   align-items: center;
   gap: 30px;
-  z-index: 1; /* Devant la galerie */
+  z-index: 1;
 }
 
 .cercle-image {
@@ -156,14 +109,8 @@ html {
 }
 
 @keyframes flottaison {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-    box-shadow: 0 10px 40px rgba(255, 215, 0, 0.6);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); box-shadow: 0 10px 40px rgba(255, 215, 0, 0.6); }
 }
 
 .texte-chargement {
@@ -225,7 +172,7 @@ html {
   height: auto;
   transform: translate(-50%, -50%);
   z-index: -2;
-  filter: brightness(1.1) contrast(1.2); /* Enhance brightness and contrast for a cleaner look */
+  filter: brightness(1.1) contrast(1.2);
 }
 
 .overlay-sombre {
@@ -234,13 +181,8 @@ html {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(
-    0,
-    0,
-    0,
-    0.4
-  ); /* Reduce opacity for better video visibility */
-  backdrop-filter: blur(4px); /* Reduce blur for a cleaner look */
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
   z-index: -1;
 }
 
@@ -291,11 +233,13 @@ html {
   font-size: 1.8rem;
   margin-bottom: 15px;
 }
+
 .etape-tuto p {
   color: #cccccc;
   font-size: 1.2rem;
   line-height: 1.6;
 }
+
 .vies {
   letter-spacing: 5px;
 }
@@ -319,33 +263,239 @@ html {
   transition: opacity 0.4s ease;
   transform: translate(20px, 20px);
 }
+
 #infobulle.visible {
   opacity: 1;
 }
+
 .infobulle-contenu {
   display: flex;
   align-items: center;
   gap: 12px;
 }
+
 .infobulle-image {
   width: 45px;
   height: 45px;
   border-radius: 8px;
   object-fit: cover;
 }
+
 .infobulle-textes h3 {
   margin: 0 0 5px 0;
   font-size: 16px;
   color: var(--or-disney);
 }
+
 .infobulle-textes p {
   margin: 0;
   font-size: 12px;
   color: #e0e0e0;
 }
+
 body.survol-objet {
   cursor: pointer;
 }
+
+/* ==============================================
+   LE HUD (AFFICHAGE EN JEU)
+=============================================== */
+#hud {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100vw;
+  padding: 20px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  z-index: 500;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+.hud-section {
+  display: flex;
+  gap: 15px;
+  pointer-events: auto;
+}
+
+.hud-bulle {
+  background: var(--fond-ui);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chrono-container {
+  font-family: monospace;
+  font-size: 1.5rem;
+  color: #fff;
+  border-color: var(--or-disney);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+}
+
+.bouton-icone {
+  background: var(--fond-ui);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 50px; height: 50px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+}
+
+.bouton-icone:hover {
+  transform: rotate(90deg) scale(1.1);
+  border-color: var(--or-disney);
+}
+
+/* ==============================================
+   LES FENÊTRES MODALES (QUIZ & PARAMÈTRES)
+=============================================== */
+.modal {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.4s ease;
+}
+
+.modal-contenu {
+  background: rgba(10, 10, 15, 0.85);
+  backdrop-filter: blur(15px);
+  border: 2px solid var(--or-disney);
+  border-radius: 20px;
+  padding: 40px;
+  width: 90%;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.8), 0 0 30px rgba(255, 215, 0, 0.1) inset;
+  transform: scale(1);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal.cache .modal-contenu {
+  transform: scale(0.8) translateY(30px);
+}
+
+.modal-titre {
+  color: var(--or-disney);
+  font-size: 2rem;
+  margin-top: 0;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Champ de texte du Quiz */
+#quiz-input {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.2rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  color: white;
+  margin: 20px 0;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+#quiz-input:focus {
+  border-color: var(--or-disney);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.message-feedback {
+  min-height: 20px;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.message-feedback.erreur { color: #ff4757; }
+.message-feedback.succes { color: #2ed573; }
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+.modal-actions.centrer { justify-content: center; }
+
+.bouton-secondaire {
+  padding: 12px 30px;
+  font-size: 1.1rem;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.bouton-secondaire:hover { background: rgba(255, 255, 255, 0.2); }
+
+/* ==============================================
+   TOGGLE SWITCH (Boutons On/Off Paramètres)
+=============================================== */
+.liste-parametres {
+  text-align: left;
+  margin: 30px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.parametre-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.2rem;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px; height: 34px;
+}
+
+.switch input { opacity: 0; width: 0; height: 0; }
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #333;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px; width: 26px;
+  left: 4px; bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider { background-color: var(--or-disney); }
+input:checked + .slider:before { transform: translateX(26px); }
+
+.slider.rond { border-radius: 34px; }
+.slider.rond:before { border-radius: 50%; }
+
 /* ==============================================
    📱 RESPONSIVE (SMARTPHONES)
 =============================================== */

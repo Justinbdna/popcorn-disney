@@ -1,5 +1,5 @@
 /**
- * ui.js - Orchestration du SAS, du Tutoriel et du Feedback en jeu
+ * ui.js - Orchestration du SAS, du Tutoriel, du Feedback et du HUD en jeu
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,22 +15,37 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!btnDecouvrir) console.error('Discover button not found');
     if (!ecranTutoriel) console.error('Tutorial screen not found');
 
-  // Clic sur "Découvrir" -> On passe au Tutoriel
+    // 🆘 SÉCURITÉ SAFARI : Apparition du bouton "Découvrir" de force après 10s
+    setTimeout(() => {
+        if (btnDecouvrir && btnDecouvrir.classList.contains('cache')) {
+            console.warn("⏳ Safari rame trop, on débloque le bouton de force !");
+            btnDecouvrir.classList.remove('cache');
+            if (texteChargement) {
+                texteChargement.style.transition = "opacity 0.5s ease";
+                texteChargement.style.opacity = "0";
+                setTimeout(() => texteChargement.style.display = 'none', 500);
+            }
+        }
+    }, 10000);
+
+    // Clic sur "Découvrir" -> On passe au Tutoriel (Avec tes transitions fluides)
     btnDecouvrir.addEventListener('click', () => {
         console.log('Discover button clicked');
         btnDecouvrir.style.display = "none";
         
-       // 1 & 2. Tuto 100% opaque en dessous, seul l'écran noir fond (anti-trou)
+        // Tuto 100% opaque en dessous
         ecranTutoriel.style.transition = "none";
         ecranTutoriel.style.opacity = "1";
         ecranTutoriel.classList.remove('cache');
+        
+        // Fondu du sas
         ecranChargement.style.transition = "opacity 1.5s ease-in-out";
         setTimeout(() => ecranChargement.style.opacity = "0", 50);
         
-        // 3. On nettoie tout après le fondu (1.5s + marge)
+        // On nettoie tout après le fondu
         setTimeout(() => {
             ecranChargement.remove();
-            }, 1600);
+        }, 1600);
     });
 
     // --- 2. GESTION DU TUTORIEL FLUIDE ---
@@ -39,37 +54,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSuivant = document.getElementById('btn-suivant');
     const btnRentrer = document.getElementById('btn-rentrer');
 
-    btnSuivant.addEventListener('click', () => {
-        // Cacher l'étape actuelle
-        etapes[etapeActuelle].classList.remove('active');
-        
-        // Passer à la suivante
-        etapeActuelle++;
-        etapes[etapeActuelle].classList.add('active');
+    if (btnSuivant) {
+        btnSuivant.addEventListener('click', () => {
+            etapes[etapeActuelle].classList.remove('active');
+            etapeActuelle++;
+            etapes[etapeActuelle].classList.add('active');
 
-        // Si c'est la dernière étape, on change les boutons
-        if (etapeActuelle === etapes.length - 1) {
-            btnSuivant.classList.add('cache');
-            // Petit délai pour l'apparition du bouton final
-            setTimeout(() => {
-                btnRentrer.classList.remove('cache');
-            }, 300);
-        }
-    });
+            if (etapeActuelle === etapes.length - 1) {
+                btnSuivant.classList.add('cache');
+                setTimeout(() => {
+                    btnRentrer.classList.remove('cache');
+                }, 300);
+            }
+        });
+    }
 
- // Clic sur "Rentrer dans l'univers" -> Lancement du JEU
-    btnRentrer.addEventListener('click', () => {
-        // 1. On coupe la vidéo et on met un fond noir absolu pour éviter le glitch
-        ecranTutoriel.style.backgroundColor = "#050510"; 
-        const video = document.getElementById("bg-video");
-        if(video) video.style.opacity = "0"; 
+    // Clic sur "Rentrer dans l'univers" -> Lancement du JEU
+    if (btnRentrer) {
+        btnRentrer.addEventListener('click', () => {
+            // 1. On coupe la vidéo et on met un fond noir absolu pour éviter le glitch
+            ecranTutoriel.style.backgroundColor = "#050510"; 
+            const video = document.getElementById("bg-video");
+            if(video) video.style.opacity = "0"; 
 
-       // 2. Fondu vers la 3D (sans la classe 'cache' qui casse l'animation)
-        ecranTutoriel.style.transition = "opacity 1.5s ease-in-out";
-        ecranTutoriel.style.opacity = "0";
-        if (typeof window.lancerJeu3D === 'function') window.lancerJeu3D();
-        setTimeout(() => ecranTutoriel.remove(), 1500);
-    });
+            // 2. Fondu vers la 3D
+            ecranTutoriel.style.transition = "opacity 1.5s ease-in-out";
+            ecranTutoriel.style.opacity = "0";
+            
+            // 3. On affiche le HUD de Lévine
+            initialiserHUD();
+
+            if (typeof window.lancerJeu3D === 'function') window.lancerJeu3D();
+            
+            setTimeout(() => ecranTutoriel.remove(), 1500);
+        });
+    }
 
     // --- 3. GESTION DE L'INFOBULLE FLUIDE (EFFET LERP) ---
     const infobulle = document.getElementById('infobulle');
@@ -84,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function animerUI() {
-        if (estVisible) {
+        if (estVisible && infobulle) {
             infobulleX += (sourisX - infobulleX) * vitesseLerp;
             infobulleY += (sourisY - infobulleY) * vitesseLerp;
             infobulle.style.left = `${infobulleX}px`;
@@ -94,8 +113,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     animerUI();
 
-    // --- 4. API POUR TES COLLÈGUES 3D (Infobulle) ---
     window.afficherInfobulle = function(titre, film, urlImage = null) {
+        if (!infobulle) return;
         document.getElementById('infobulle-titre').textContent = titre;
         document.getElementById('infobulle-film').textContent = `Film : ${film}`;
         
@@ -118,8 +137,154 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.cacherInfobulle = function() {
+        if (!infobulle) return;
         infobulle.classList.remove('visible');
         document.body.classList.remove('survol-objet');
         estVisible = false;
     };
+
+    // ==============================================================
+    // 5. GESTION DU HUD (Vies, Score, Chrono) - Code de Lévine
+    // ==============================================================
+    const hud = document.getElementById('hud');
+    const affichageScore = document.getElementById('score-affichage');
+    const affichageVies = document.getElementById('vies-affichage');
+    const affichageChrono = document.getElementById('chrono-affichage');
+    
+    let score = 0;
+    let vies = 3;
+    let tempsRestant = 180; // 3 minutes en secondes
+    let intervalChrono;
+
+    function initialiserHUD() {
+        if (hud) hud.classList.remove('cache');
+        demarrerChrono();
+    }
+
+    window.ajouterScore = function(points) {
+        if (!affichageScore) return;
+        score += points;
+        affichageScore.textContent = score;
+        affichageScore.parentElement.style.transform = "scale(1.2)";
+        setTimeout(() => affichageScore.parentElement.style.transform = "scale(1)", 200);
+    };
+
+    window.perdreVie = function() {
+        if (vies > 0) vies--;
+        
+        let texteVies = "";
+        for(let i=0; i<3; i++) {
+            texteVies += (i < vies) ? "❤️" : "🖤";
+        }
+        if (affichageVies) affichageVies.textContent = texteVies;
+
+        if (vies === 0) {
+            console.log("GAME OVER !");
+            window.afficherInfobulle("GAME OVER", "Plus de vies...", null);
+        }
+    };
+
+    function demarrerChrono() {
+        clearInterval(intervalChrono);
+        intervalChrono = setInterval(() => {
+            if (tempsRestant > 0) {
+                tempsRestant--;
+                let minutes = Math.floor(tempsRestant / 60);
+                let secondes = tempsRestant % 60;
+                if (affichageChrono) affichageChrono.textContent = `${minutes.toString().padStart(2, '0')}:${secondes.toString().padStart(2, '0')}`;
+                
+                if(tempsRestant <= 30 && affichageChrono) {
+                    affichageChrono.style.color = "#ff4757";
+                }
+            } else {
+                clearInterval(intervalChrono);
+                console.log("TEMPS ÉCOULÉ !");
+            }
+        }, 1000);
+    }
+
+    // ==============================================================
+    // 6. GESTION DES MODALES (Quiz & Paramètres) - Code de Lévine
+    // ==============================================================
+    const modalQuiz = document.getElementById('modal-quiz');
+    const modalParametres = document.getElementById('modal-parametres');
+    
+    const btnOuvrirParam = document.getElementById('btn-ouvrir-parametres');
+    if (btnOuvrirParam) {
+        btnOuvrirParam.addEventListener('click', () => {
+            modalParametres.classList.remove('cache');
+        });
+    }
+    
+    const btnFermerParam = document.getElementById('btn-fermer-parametres');
+    if (btnFermerParam) {
+        btnFermerParam.addEventListener('click', () => {
+            modalParametres.classList.add('cache');
+        });
+    }
+
+    const toggleMusique = document.getElementById('toggle-musique');
+    if (toggleMusique) {
+        toggleMusique.addEventListener('change', (e) => {
+            console.log("Musique: ", e.target.checked ? "ON" : "OFF");
+        });
+    }
+
+    // --- Le Quiz ---
+    let objetActuelEnCoursDeQuiz = null;
+
+    window.ouvrirQuiz = function(idObjet, nomAttendu) {
+        if (!modalQuiz) return;
+        objetActuelEnCoursDeQuiz = nomAttendu;
+        const quizInput = document.getElementById('quiz-input');
+        const quizFeedback = document.getElementById('quiz-feedback');
+        
+        if (quizInput) quizInput.value = "";
+        if (quizFeedback) quizFeedback.textContent = "";
+        
+        modalQuiz.classList.remove('cache');
+        if(window.bloquerControles3D) window.bloquerControles3D(true);
+    };
+
+    const btnAnnulerQuiz = document.getElementById('btn-annuler-quiz');
+    if (btnAnnulerQuiz) {
+        btnAnnulerQuiz.addEventListener('click', () => {
+            modalQuiz.classList.add('cache');
+            if(window.bloquerControles3D) window.bloquerControles3D(false);
+        });
+    }
+
+    const btnValiderQuiz = document.getElementById('btn-valider-quiz');
+    if (btnValiderQuiz) {
+        btnValiderQuiz.addEventListener('click', () => {
+            const quizInput = document.getElementById('quiz-input');
+            const feedback = document.getElementById('quiz-feedback');
+            if (!quizInput || !feedback) return;
+
+            const reponseJoueur = quizInput.value.trim().toLowerCase();
+            
+            if (reponseJoueur === objetActuelEnCoursDeQuiz.toLowerCase()) {
+                feedback.textContent = "✨ Bonne réponse !";
+                feedback.className = "message-feedback succes";
+                window.ajouterScore(100);
+                
+                setTimeout(() => {
+                    modalQuiz.classList.add('cache');
+                    if(window.bloquerControles3D) window.bloquerControles3D(false);
+                    if(window.objetTrouve) window.objetTrouve(objetActuelEnCoursDeQuiz);
+                }, 1500);
+            } else {
+                feedback.textContent = "❌ Mauvaise réponse, essayez encore !";
+                feedback.className = "message-feedback erreur";
+                window.perdreVie();
+                
+                const modalContenu = modalQuiz.querySelector('.modal-contenu');
+                if (modalContenu) {
+                    modalContenu.style.transform = "translateX(10px)";
+                    setTimeout(() => modalContenu.style.transform = "translateX(-10px)", 50);
+                    setTimeout(() => modalContenu.style.transform = "translateX(0)", 100);
+                }
+            }
+        });
+    }
 });
