@@ -8,6 +8,7 @@ import Stats from "three/examples/jsm/libs/stats.module.js";
 import { injectSpeedInsights } from "@vercel/speed-insights";
 import { inject } from "@vercel/analytics";
 import { disneyData } from "./disneyData.js";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 
 // injection d'analytics
 inject();
@@ -18,7 +19,7 @@ injectSpeedInsights();
 // ==========================================
 // 🛠️ MODE DÉVELOPPEUR
 // ==========================================
-const MODE_DEV = false; // Mets sur 'false' pour le rendu final !
+const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
 
 // 1. LA SCÈNE
 const scene = new THREE.Scene();
@@ -139,6 +140,10 @@ manager.onError = (url) => {
 };
 
 const loader = new GLTFLoader(manager);
+//DracoLoader
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
+loader.setDRACOLoader(dracoLoader);
 const objetsCliquables = [];
 
 // 🟢 CHARGEMENT AUTOMATISÉ AVEC LOD
