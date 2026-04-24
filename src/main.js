@@ -20,6 +20,7 @@ injectSpeedInsights();
 // 🛠️ MODE DÉVELOPPEUR
 // ==========================================
 const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
+window.easterEggDebloque = false; // La clé du mode GTA secret
 
 // 1. LA SCÈNE
 const scene = new THREE.Scene();
@@ -333,8 +334,11 @@ window.addEventListener("click", (event) => {
     // 👉 On désigne cet objet comme celui qu'on conduit
     objetActif = cible;
 
-    // Flèches 3D
-    transformControls.attach(cible);
+
+    // Flèches 3D uniquement pour les développeurs
+    if (MODE_DEV) {
+      transformControls.attach(cible);
+    }
 
     // GUI dynamique
     dossierSelection.destroy();
@@ -463,7 +467,9 @@ const animate = () => {
   controls.update();
 
   // --- 🎮 MOTEUR GTA : Déplace l'objet sélectionné ---
-  if (objetActif) {
+  // 🎮 Conduite : Actif en Dev OU si le jeu est fini (Easter Egg)
+  if (objetActif && (MODE_DEV || window.easterEggDebloque)) {
+    // Déplacement
     const vitesse = 0.3;
     const vitesseRotation = 0.08;
 
@@ -484,6 +490,9 @@ const animate = () => {
       touches.ArrowDown ||
       touches.ArrowLeft ||
       touches.ArrowRight;
+      // Disparition des flèches pendant le mouvement
+    if (estEnMouvement && transformControls.object) transformControls.visible = false;
+    else if (!estEnMouvement && transformControls.object) transformControls.visible = true;
     if (estEnMouvement) {
       // 1. On calcule de combien l'objet vient de se déplacer
       const delta = new THREE.Vector3().subVectors(
@@ -498,7 +507,8 @@ const animate = () => {
   }
 
   // --- MOTEUR GTA : Déplace la caméra avec ZQSD (quand on ne conduit pas un objet) ---
-  if (!objetActif) {
+// 🎥 Vol libre : Actif en Dev OU si le jeu est fini
+  if (!objetActif && (MODE_DEV || window.easterEggDebloque)) {    
     camera.getWorldDirection(dirCamera);
     dirCamera.y = 0;
     dirCamera.normalize();
