@@ -5,15 +5,17 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import GUI from "lil-gui";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import Stats from "three/examples/jsm/libs/stats.module.js";
-import { injectSpeedInsights } from '@vercel/speed-insights'; 
-import { inject } from "@vercel/analytics"
+import { injectSpeedInsights } from "@vercel/speed-insights";
+import { inject } from "@vercel/analytics";
 import { disneyData } from "./disneyData.js";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 
 // injection d'analytics
-inject()
+inject();
 
 // injection de SpeedInsights
 injectSpeedInsights();
+
 // ==========================================
 // 🛠️ MODE DÉVELOPPEUR
 // ==========================================
@@ -41,6 +43,9 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile });
 renderer.setSize(window.innerWidth, window.innerHeight);
 const pixelRatio = isMobile ? 1 : Math.min(window.devicePixelRatio, 2);
 renderer.setPixelRatio(pixelRatio);
+// Ombre dynamiques (rendu AAA)
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 // 4. ORBIT CONTROLS
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -97,6 +102,15 @@ const gui = new GUI();
 // 6. CHARGEMENT DES OBJETS
 const manager = new THREE.LoadingManager();
 
+// 🆘 SÉCURITÉ SAFARI : Si le chargement bloque plus de 10s, on force l'ouverture !
+setTimeout(() => {
+  const btn = document.getElementById("btn-decouvrir");
+  if (btn && btn.classList.contains("cache")) {
+      console.warn("⏳ Safari rame trop, on débloque le bouton de force !");
+      btn.classList.remove("cache");
+  }
+}, 10000); // 10000 millisecondes = 10 secondes
+
 manager.onProgress = (url, loaded, total) => {
   const percent = Math.round((loaded / total) * 100);
   const el = document.getElementById("loading-percent");
@@ -131,7 +145,7 @@ manager.onError = (url) => {
 };
 
 const loader = new GLTFLoader(manager);
-const objetsCliquables = [];
+const objetsCliquables = []; // La liste de tes cibles
 
 // 🟢 CHARGEMENT AUTOMATISÉ AVEC LOD
 disneyData.forEach((item) => {
@@ -147,23 +161,9 @@ disneyData.forEach((item) => {
     });
   lod.position.set(item.x || 0, item.y || 0, item.z || 0);
 
-  loader.load(`/assets/${item.id}.glb`, (gltf) => {
-    lod.addLevel(gltf.scene, 0);
-    const boite = new THREE.Box3().setFromObject(gltf.scene);
-    const taille = new THREE.Vector3();
-    boite.getSize(taille);
-    const hitbox = new THREE.Mesh(
-      new THREE.BoxGeometry(taille.x, taille.y, taille.z),
-      new THREE.MeshBasicMaterial({ visible: false }),
-    );
-    const center = new THREE.Vector3();
-    boite.getCenter(center);
-    hitbox.position.copy(center);
-    hitbox.name = lod.name;
-    hitbox.userData = lod.userData;
-    lod.add(hitbox);
-    objetsCliquables.push(hitbox);
-  }); // LOD de secours (vide) pour éviter les bugs d'apparition
+  // Niveau 0 : L'objet 3D normal
+  loader.load(`/assets/${item.id}.glb`, (gltf) => { lod.addLevel(gltf.scene, 0); });
+  // Niveau 1 : Le Vide absolu au-delà de 20 mètres
   lod.addLevel(new THREE.Object3D(), 50);
   scene.add(lod);
 });
@@ -184,9 +184,10 @@ const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3);
 scene.add(hemiLight);
 const dirLight = new THREE.DirectionalLight(0xffffff, 5);
 dirLight.position.set(5, 10, 7);
+dirLight.castShadow = true;
 scene.add(dirLight);
 
-// 1. Éclairage (Fixe)
+// GUI - Éclairage
 const lumiereDossier = gui.addFolder("Éclairage");
 lumiereDossier
   .add(dirLight, "intensity")
@@ -195,68 +196,40 @@ lumiereDossier
   .step(0.1)
   .name("Soleil");
 
-// 2. Dossier dynamique (Vide au départ)
+// GUI - Sélection dynamique
 let dossierSelection = gui.addFolder("Aucun objet sélectionné");
 
 const outils = {
   exporter: () => {
-    const data = objetsCliquables
-      .map((o) => {
-        const y = o.userData.flotte ? o.userData.baseY : o.position.y;
-        return `${o.name} | Pos: ${o.position.x.toFixed(2)}, ${y.toFixed(2)}, ${o.position.z.toFixed(2)} | Scale: ${o.scale.x.toFixed(2)}, ${o.scale.y.toFixed(2)}, ${o.scale.z.toFixed(2)}`;
-      })
-      .join("\n");
+    const data = objetsCliquables.map((o) => {
+      const y = o.userData.flotte ? o.userData.baseY : o.position.y;
+      return `${o.name} | Pos: ${o.position.x.toFixed(2)}, ${y.toFixed(2)}, ${o.position.z.toFixed(2)} | Scale: ${o.scale.x.toFixed(2)}, ${o.scale.y.toFixed(2)}, ${o.scale.z.toFixed(2)}`;
+    }).join("\n");
     navigator.clipboard.writeText(data);
     alert("Coordonnées ET Tailles copiées ! 📋");
   },
 };
-
 gui.add(outils, "exporter").name("💾 Exporter Coordonnées");
 
-// --- PERFORMANCES (FPS & POLYGONES) ---
+// --- PERFORMANCES ---
 const stats = new Stats();
-document.body.appendChild(stats.dom); // Ajoute le compteur FPS en haut à gauche
-
+document.body.appendChild(stats.dom);
 const perfData = { polygones: 0, drawCalls: 0, geometries: 0 };
 const perfFolder = gui.addFolder("Moniteur d'Activité");
 perfFolder.add(perfData, "polygones").name("Triangles").listen();
 perfFolder.add(perfData, "drawCalls").name("Draw Calls").listen();
 perfFolder.add(perfData, "geometries").name("Géométries (RAM)").listen();
 
-// --- 🔒 VERROU BLINDÉ : LIEN AVEC LE MASTER SWITCH ---
-// Placé ici, TOUT À LA FIN, le menu ne peut plus se réveiller.
+// 🔒 MODE PROD : Cache le GUI et les stats
 if (!MODE_DEV) {
-    gui.hide(); // Méthode officielle absolue pour cacher le menu noir
-    stats.dom.style.display = "none"; // Cache le compteur vert FPS
+  gui.hide();
+  stats.dom.style.display = "none";
 }
 
 // Resize
 resize(camera, renderer);
 
-// ==========================================
-// 🎮 MOTEUR DE CONDUITE (STYLE GTA)
-// ==========================================
-let objetActif = null; // L'objet qu'on est en train de conduire
-const touches = {
-  z: false,
-  q: false,
-  s: false,
-  d: false,
-  ArrowUp: false,
-  ArrowLeft: false,
-  ArrowDown: false,
-  ArrowRight: false,
-};
-
-window.addEventListener("keydown", (e) => {
-  if (touches.hasOwnProperty(e.key)) touches[e.key] = true;
-});
-
-window.addEventListener("keyup", (e) => {
-  if (touches.hasOwnProperty(e.key)) touches[e.key] = false;
-});
-
-// --- LE LASER (RAYCASTER) ---
+// --- LE LASER (RAYCASTER V3 - Le Clic Intelligent) ---
 const raycaster = new THREE.Raycaster();
 const souris = new THREE.Vector2();
 
@@ -287,14 +260,13 @@ window.addEventListener("click", (event) => {
     while (cible.parent && cible.parent.type !== "Scene") {
       cible = cible.parent;
     }
+  // --- SÉCURITÉ MAISON (CLIC SIMPLE) ---
+    if (cible.name === "Maison") {
+      return; // On bloque l'apparition des flèches sur la maison
+    }
+    // --- LA MAGIE OPÈRE ICI ---
 
-    // Sécurité Maison
-    if (cible.name === "Maison") return;
-
-    // 👉 On désigne cet objet comme celui qu'on conduit
-    objetActif = cible;
-
-    // Flèches 3D
+    // A. On accroche les flèches 3D à l'objet cliqué
     transformControls.attach(cible);
 
     // GUI dynamique
@@ -416,73 +388,10 @@ window.addEventListener("dblclick", (event) => {
 // ==========================================
 const clock = new THREE.Clock();
 
-const dirCamera = new THREE.Vector3();
-const dirLaterale = new THREE.Vector3();
-const vitesseZQSD = 0.15;
 
 const animate = () => {
   controls.update();
-
-  // --- 🎮 MOTEUR GTA : Déplace l'objet sélectionné ---
-  if (objetActif) {
-    const vitesse = 0.1;
-    const vitesseRotation = 0.05;
-
-    if (touches.q || touches.ArrowLeft)
-      objetActif.rotation.y += vitesseRotation;
-    if (touches.d || touches.ArrowRight)
-      objetActif.rotation.y -= vitesseRotation;
-    if (touches.z || touches.ArrowUp) objetActif.translateZ(-vitesse);
-    if (touches.s || touches.ArrowDown) objetActif.translateZ(vitesse);
-
-    // La caméra suit l'objet quand il bouge (vraie caméra GTA)
-    const estEnMouvement =
-      touches.z ||
-      touches.s ||
-      touches.q ||
-      touches.d ||
-      touches.ArrowUp ||
-      touches.ArrowDown ||
-      touches.ArrowLeft ||
-      touches.ArrowRight;
-    if (estEnMouvement) {
-      // 1. On calcule de combien l'objet vient de se déplacer
-      const delta = new THREE.Vector3().subVectors(
-        objetActif.position,
-        controls.target,
-      );
-      // 2. On déplace la caméra exactement de la même distance
-      camera.position.add(delta);
-      // 3. On met à jour la cible
-      controls.target.copy(objetActif.position);
-    }
-  }
-
-  // --- MOTEUR GTA : Déplace la caméra avec ZQSD (quand on ne conduit pas un objet) ---
-  if (!objetActif) {
-    camera.getWorldDirection(dirCamera);
-    dirCamera.y = 0;
-    dirCamera.normalize();
-    dirLaterale.crossVectors(camera.up, dirCamera).normalize();
-    if (touches.z) {
-      camera.position.addScaledVector(dirCamera, vitesseZQSD);
-      controls.target.addScaledVector(dirCamera, vitesseZQSD);
-    }
-    if (touches.s) {
-      camera.position.addScaledVector(dirCamera, -vitesseZQSD);
-      controls.target.addScaledVector(dirCamera, -vitesseZQSD);
-    }
-    if (touches.q) {
-      camera.position.addScaledVector(dirLaterale, vitesseZQSD);
-      controls.target.addScaledVector(dirLaterale, vitesseZQSD);
-    }
-    if (touches.d) {
-      camera.position.addScaledVector(dirLaterale, -vitesseZQSD);
-      controls.target.addScaledVector(dirLaterale, -vitesseZQSD);
-    }
-  }
-
-  // --- MOTEUR DE DÉPLACEMENT CAMÉRA (DOUBLE-CLIC) ---
+  // --- MOTEUR DE DÉPLACEMENT (DOUBLE-CLIC) ---
   if (moveControls) {
     controls.target.lerp(targetTarget, 0.05);
     camera.position.lerp(targetPosition, 0.05);
