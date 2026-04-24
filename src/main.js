@@ -99,6 +99,13 @@ window.addEventListener("keydown", (e) => {
 
 // --- INITIALISATION DU MENU (GUI) ---
 const gui = new GUI();
+const debugConfig = { afficherHitboxes: false };
+const dossierDebug = gui.addFolder("🛠️ Mode Debug");
+dossierDebug.add(debugConfig, "afficherHitboxes").name("Voir Collisions").onChange((val) => {
+  objetsCliquables.forEach(h => {
+    if (h.material) { h.material.opacity = val ? 0.4 : 0; h.material.wireframe = val; }
+  });
+});
 
 // 6. CHARGEMENT DES OBJETS
 const manager = new THREE.LoadingManager();
@@ -137,7 +144,7 @@ manager.onLoad = () => {
     }, 400);
   }
 };
-
+//Teste pour identifier erreur 
 manager.onError = (url) => {
   console.error("❌ Erreur critique de chargement sur : " + url);
   alert(
@@ -162,9 +169,31 @@ disneyData.forEach((item) => {
     });
   lod.position.set(item.x || 0, item.y || 0, item.z || 0);
 
-  // Niveau 0 : L'objet 3D normal
-  loader.load(`/assets/${item.id}.glb`, (gltf) => { lod.addLevel(gltf.scene, 0); });
-  // Niveau 1 : Le Vide absolu au-delà de 20 mètres
+  loader.load(`/assets/${item.id}.glb`, (gltf) => {
+    lod.addLevel(gltf.scene, 0);
+    const boite = new THREE.Box3().setFromObject(gltf.scene);
+    const taille = new THREE.Vector3();
+    boite.getSize(taille);
+    const hitX = Math.max(taille.x * 1.5, 2.5);
+    const hitY = Math.max(taille.y * 1.5, 2.5);
+    const hitZ = Math.max(taille.z * 1.5, 2.5);
+
+    const hitbox = new THREE.Mesh(
+      new THREE.BoxGeometry(hitX, hitY, hitZ),
+      new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+      }),
+    );
+    const center = new THREE.Vector3();
+    boite.getCenter(center);
+    hitbox.position.copy(center);
+    hitbox.name = lod.name;
+    hitbox.userData = lod.userData;
+    lod.add(hitbox);
+    objetsCliquables.push(hitbox);
+  }); // LOD de secours (vide) pour éviter les bugs d'apparition
   lod.addLevel(new THREE.Object3D(), 50);
   scene.add(lod);
 });
@@ -176,8 +205,11 @@ loader.load("/assets/MaisonV1.glb", (gltf) => {
   scene.add(maison);
   maison.scale.set(15, 15, 15);
   maison.name = "Maison";
-  maison.position.set(0, 0, 0);
-  objetsCliquables.push(maison);
+ maison.position.set(0, 0, 0);
+  // On crée un sol mathématique ultra-léger pour le clic, au lieu de la vraie maison
+  const solHitbox = new THREE.Mesh(new THREE.BoxGeometry(300, 1, 300), new THREE.MeshBasicMaterial({ color: 0x0000ff, transparent: true, opacity: 0, wireframe: false }));
+  solHitbox.name = "Maison"; solHitbox.position.y = -0.5;
+  scene.add(solHitbox); objetsCliquables.push(solHitbox);
 });
 
 // 5. LA LUMIÈRE
