@@ -234,7 +234,7 @@ const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3);
 scene.add(hemiLight);
 const dirLight = new THREE.DirectionalLight(0xffffff, 5);
 dirLight.position.set(5, 10, 7);
-dirLight.castShadow = true;
+dirLight.castShadow = false;
 scene.add(dirLight);
 
 // GUI - Éclairage
