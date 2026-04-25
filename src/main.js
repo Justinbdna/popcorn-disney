@@ -166,7 +166,6 @@ manager.onError = (url) => {
 };
 
 const loader = new GLTFLoader(manager);
-loader.setPath(''); // ✅ AJOUT : active la gestion des extensions PBR legacy
 //DracoLoader
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
@@ -278,29 +277,6 @@ if (!MODE_DEV) {
 
 // Resize
 resize(camera, renderer);
-
-// ==========================================
-// 🎮 MOTEUR DE CONDUITE (STYLE GTA)
-// ==========================================
-let objetActif = null; // L'objet qu'on est en train de conduire
-const touches = {
-  z: false,
-  q: false,
-  s: false,
-  d: false,
-  ArrowUp: false,
-  ArrowLeft: false,
-  ArrowDown: false,
-  ArrowRight: false,
-};
-
-window.addEventListener("keydown", (e) => {
-  if (touches.hasOwnProperty(e.key)) touches[e.key] = true;
-});
-
-window.addEventListener("keyup", (e) => {
-  if (touches.hasOwnProperty(e.key)) touches[e.key] = false;
-});
 
 // --- LE LASER (RAYCASTER) ---
 const raycaster = new THREE.Raycaster();
@@ -506,10 +482,10 @@ const animate = () => {
   if (objetActif) {
     const vitesse = 0.1;
 
-    if (touches.q || touches.ArrowLeft) objetActif.translateZ(-vitesse);
-    if (touches.d || touches.ArrowRight) objetActif.translateZ(-vitesse);
-    if (touches.z || touches.ArrowUp) objetActif.translateZ(-vitesse);
-    if (touches.s || touches.ArrowDown) objetActif.translateZ(vitesse);
+   if (touches.q || touches.ArrowLeft) objetActif.translateX(-vitesse);
+   if (touches.d || touches.ArrowRight) objetActif.translateX(vitesse);
+   if (touches.z || touches.ArrowUp) objetActif.translateZ(-vitesse);
+   if (touches.s || touches.ArrowDown) objetActif.translateZ(vitesse);
 
     // La caméra suit l'objet quand il bouge (vraie caméra GTA)
     const estEnMouvement =
