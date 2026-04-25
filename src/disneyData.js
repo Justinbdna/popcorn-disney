@@ -117,5 +117,15 @@ export const disneyData = [
     reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
     flotte: false, y: 0, x: 0, z: -2, 
     hasLowPoly: true
+  },
+  { 
+    id: "cj_gta_sa2014", // 🟢 GTA Easter Egg
+    nom: "CJ",
+    question: "",
+    options: ["", "", "", ""],
+    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
+    flotte: false, y: 0, x: 0, z: -2,
+    hasLowPoly: true
   }
 ];
+
