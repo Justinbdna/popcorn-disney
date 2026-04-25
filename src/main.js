@@ -155,7 +155,6 @@ const loader = new GLTFLoader(manager);
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
 loader.setDRACOLoader(dracoLoader);
-const objetsCliquables = [];
 
 // 🟢 CHARGEMENT AUTOMATISÉ AVEC LOD
 disneyData.forEach((item) => {
