@@ -279,7 +279,30 @@ if (!MODE_DEV) {
 // Resize
 resize(camera, renderer);
 
-// --- LE LASER (RAYCASTER V3 - Le Clic Intelligent) ---
+// ==========================================
+// 🎮 MOTEUR DE CONDUITE (STYLE GTA)
+// ==========================================
+let objetActif = null; // L'objet qu'on est en train de conduire
+const touches = {
+  z: false,
+  q: false,
+  s: false,
+  d: false,
+  ArrowUp: false,
+  ArrowLeft: false,
+  ArrowDown: false,
+  ArrowRight: false,
+};
+
+window.addEventListener("keydown", (e) => {
+  if (touches.hasOwnProperty(e.key)) touches[e.key] = true;
+});
+
+window.addEventListener("keyup", (e) => {
+  if (touches.hasOwnProperty(e.key)) touches[e.key] = false;
+});
+
+// --- LE LASER (RAYCASTER) ---
 const raycaster = new THREE.Raycaster();
 const souris = new THREE.Vector2();
 
@@ -314,18 +337,11 @@ window.addEventListener("click", (event) => {
     while (cible.parent && cible.parent.type !== "Scene") {
       cible = cible.parent;
     }
-  // --- SÉCURITÉ MAISON (CLIC SIMPLE) ---
-    if (cible.name === "Maison") {
-      transformControls.detach();
-      objetActif = null;
-      if (dossierSelection.title !== "Aucun objet sélectionné") {
-        dossierSelection.destroy();
-        dossierSelection = gui.addFolder("Aucun objet sélectionné");
-      }
-      return;
-    }
 
-   // ✅ AJOUT : On désigne cet objet comme actif (moteur GTA)
+    // Sécurité Maison
+    if (cible.name === "Maison") return;
+
+    // 👉 On désigne cet objet comme celui qu'on conduit
     objetActif = cible;
 
     // 🟢 Déclenchement du Quiz en mode joueur
@@ -488,10 +504,10 @@ const animate = () => {
 
   // --- 🎮 MOTEUR GTA : Déplace l'objet sélectionné ---
   if (objetActif) {
-    const vitesse = 0.3;
-  
-    if (touches.q || touches.ArrowLeft) objetActif.translateX(-vitesse);
-    if (touches.d || touches.ArrowRight) objetActif.translateX(vitesse);
+    const vitesse = 0.1;
+
+    if (touches.q || touches.ArrowLeft) objetActif.translateZ(-vitesse);
+    if (touches.d || touches.ArrowRight) objetActif.translateZ(-vitesse);
     if (touches.z || touches.ArrowUp) objetActif.translateZ(-vitesse);
     if (touches.s || touches.ArrowDown) objetActif.translateZ(vitesse);
 
