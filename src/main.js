@@ -10,7 +10,6 @@ import { inject } from "@vercel/analytics";
 import { disneyData } from "./disneyData.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 
-
 // injection d'analytics
 inject();
 
@@ -47,7 +46,7 @@ const pixelRatio = isMobile ? 1 : Math.min(window.devicePixelRatio, 2);
 renderer.setPixelRatio(pixelRatio);
 // Ombre dynamiques (rendu AAA)
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 
 // 4. ORBIT CONTROLS
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -469,7 +468,6 @@ window.addEventListener("dblclick", (event) => {
 // 7. LA BOUCLE D'ANIMATION
 // ==========================================
 const clock = new THREE.Clock();
-
 const dirCamera = new THREE.Vector3();
 const dirLaterale = new THREE.Vector3();
 const vitesseZQSD = 0.6;
