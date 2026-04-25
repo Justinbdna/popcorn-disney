@@ -45,7 +45,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 const pixelRatio = isMobile ? 1 : Math.min(window.devicePixelRatio, 2);
 renderer.setPixelRatio(pixelRatio);
 // Ombre dynamiques (rendu AAA)
-renderer.shadowMap.enabled = true;
+renderer.shadowMap.enabled = false;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 
 // 4. ORBIT CONTROLS
@@ -63,6 +63,15 @@ controls.maxDistance = 250;
 let moveControls = false;
 const targetTarget = new THREE.Vector3();
 const targetPosition = new THREE.Vector3();
+// ✅ AJOUT : Variables manquantes du moteur GTA
+let objetActif = null;
+const touches = {
+  z: false, q: false, s: false, d: false,
+  ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false,
+};
+window.addEventListener("keyup", (e) => {
+  if (touches.hasOwnProperty(e.key)) touches[e.key] = false;
+});
 
 // --- LE PONT AVEC L'INTERFACE ---
 window.lancerJeu3D = () => {
@@ -90,11 +99,17 @@ transformControls.addEventListener("dragging-changed", (event) => {
 
 transformControls.setMode("translate");
 
-// 🎮 Contrôles clavier TransformControls
-// ⚠️ "s" retiré ici car il est réservé au déplacement d'objet
+/// 🎮 Contrôles clavier TransformControls
 window.addEventListener("keydown", (e) => {
+  if (touches.hasOwnProperty(e.key)) touches[e.key] = true;
   if (e.key === "g") transformControls.setMode("translate");
   if (e.key === "r") transformControls.setMode("rotate");
+  if (e.key === "Escape" && objetActif) {
+    transformControls.detach();
+    objetActif = null;
+    dossierSelection.destroy();
+    dossierSelection = gui.addFolder("Aucun objet sélectionné");
+  }
 });
 
 // --- INITIALISATION DU MENU (GUI) ---
@@ -151,6 +166,7 @@ manager.onError = (url) => {
 };
 
 const loader = new GLTFLoader(manager);
+loader.setPath(''); // ✅ AJOUT : active la gestion des extensions PBR legacy
 //DracoLoader
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
@@ -309,14 +325,18 @@ window.addEventListener("click", (event) => {
       return;
     }
 
+   // ✅ AJOUT : On désigne cet objet comme actif (moteur GTA)
+    objetActif = cible;
+
     // 🟢 Déclenchement du Quiz en mode joueur
     if (!MODE_DEV && window.ouvrirQuiz) {
       window.ouvrirQuiz(cible.userData.id || cible.name, cible.userData.nom || cible.name);
     }
 
-    // Flèches 3D
-    transformControls.attach(cible);
-
+    // Flèches 3D uniquement pour les développeurs
+    if (MODE_DEV) {
+      transformControls.attach(cible);
+    }
     // GUI dynamique
     dossierSelection.destroy();
     dossierSelection = gui.addFolder("Objet : " + cible.name);
@@ -434,7 +454,22 @@ window.addEventListener("dblclick", (event) => {
 window.objetTrouve = (idObjet) => {
   const objetASupprimer = scene.getObjectByName(idObjet);
   if (objetASupprimer) {
+    // 1. On purge la mémoire (RAM)
+    objetASupprimer.traverse((child) => {
+      if (child.isMesh) {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach(mat => mat.dispose());
+          } else {
+            child.material.dispose();
+          }
+        }
+      }
+    });
+    // 2. On le retire visuellement
     scene.remove(objetASupprimer);
+    // 3. On coupe l'interactivité
     const index = objetsCliquables.findIndex(obj => obj.name === idObjet);
     if (index > -1) objetsCliquables.splice(index, 1);
   }
