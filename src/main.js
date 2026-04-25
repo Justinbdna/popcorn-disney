@@ -10,6 +10,7 @@ import { inject } from "@vercel/analytics";
 import { disneyData } from "./disneyData.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 
+
 // injection d'analytics
 inject();
 
@@ -24,7 +25,7 @@ window.easterEggDebloque = false; // La clé du mode GTA secret
 
 // 1. LA SCÈNE
 const scene = new THREE.Scene();
-
+const objetsCliquables = []; 
 // On détecte le mobile TOUT DE SUITE
 const isMobile = window.innerWidth < 768;
 
@@ -147,15 +148,14 @@ manager.onLoad = () => {
 //Teste pour identifier erreur 
 manager.onError = (url) => {
   console.error("❌ Erreur critique de chargement sur : " + url);
-  alert("Le fichier " + url + " refuse de charger. Vérifie le poids ou le chemin !");
 };
 
 const loader = new GLTFLoader(manager);
 //DracoLoader
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
+dracoLoader.setWorkerLimit(4); // 🟢 INSÉRER : Limite la charge CPU pour éviter le crash
 loader.setDRACOLoader(dracoLoader);
-const objetsCliquables = [];
 
 // 🟢 CHARGEMENT AUTOMATISÉ AVEC LOD
 disneyData.forEach((item) => {
