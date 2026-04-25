@@ -24,7 +24,7 @@ window.easterEggDebloque = false; // La clé du mode GTA secret
 
 // 1. LA SCÈNE
 const scene = new THREE.Scene();
-
+const objetsCliquables = []; 
 // On détecte le mobile TOUT DE SUITE
 const isMobile = window.innerWidth < 768;
 
@@ -46,7 +46,7 @@ const pixelRatio = isMobile ? 1 : Math.min(window.devicePixelRatio, 2);
 renderer.setPixelRatio(pixelRatio);
 // Ombre dynamiques (rendu AAA)
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 
 // 4. ORBIT CONTROLS
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -147,13 +147,15 @@ manager.onLoad = () => {
 //Teste pour identifier erreur 
 manager.onError = (url) => {
   console.error("❌ Erreur critique de chargement sur : " + url);
-  alert(
-    "Le fichier " + url + " refuse de charger. Vérifie le poids ou le chemin !",
-  );
+  alert("Le fichier " + url + " refuse de charger. Vérifie le poids ou le chemin !");
 };
 
 const loader = new GLTFLoader(manager);
-const objetsCliquables = []; // La liste de tes cibles
+//DracoLoader
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
+loader.setDRACOLoader(dracoLoader);
+const objetsCliquables = [];
 
 // 🟢 CHARGEMENT AUTOMATISÉ AVEC LOD
 disneyData.forEach((item) => {
@@ -273,10 +275,14 @@ window.addEventListener("pointermove", (event) => {
   // Curseur pointer sur les objets
   const hits = raycaster.intersectObjects(objetsCliquables, true);
   const cibleHover = hits[0]?.object;
-  const estMaison =
-    cibleHover?.name === "Maison" || cibleHover?.parent?.name === "Maison";
-  document.body.style.cursor =
-    hits.length > 0 && !estMaison ? "pointer" : "default";
+  const estMaison = cibleHover?.name === "Maison" || cibleHover?.parent?.name === "Maison";
+  if (hits.length > 0 && !estMaison) {
+    document.body.style.cursor = "pointer";
+    if (!MODE_DEV && window.afficherInfobulle) window.afficherInfobulle(cibleHover.name, "");
+  } else {
+    document.body.style.cursor = "default";
+    if (!MODE_DEV && window.cacherInfobulle) window.cacherInfobulle();
+  }
 });
 
 window.addEventListener("click", (event) => {
@@ -304,8 +310,10 @@ window.addEventListener("click", (event) => {
       return;
     }
 
-    // 👉 On désigne cet objet comme celui qu'on conduit
-    objetActif = cible;
+    // 🟢 Déclenchement du Quiz en mode joueur
+    if (!MODE_DEV && window.ouvrirQuiz) {
+      window.ouvrirQuiz(cible.userData.id || cible.name, cible.userData.nom || cible.name);
+    }
 
     // Flèches 3D
     transformControls.attach(cible);
@@ -423,12 +431,23 @@ window.addEventListener("dblclick", (event) => {
     }
   }
 });
-
+// 🟢 Fonction appelée par l'UI quand le joueur trouve la bonne réponse
+window.objetTrouve = (idObjet) => {
+  const objetASupprimer = scene.getObjectByName(idObjet);
+  if (objetASupprimer) {
+    scene.remove(objetASupprimer);
+    const index = objetsCliquables.findIndex(obj => obj.name === idObjet);
+    if (index > -1) objetsCliquables.splice(index, 1);
+  }
+};
 // ==========================================
 // 7. LA BOUCLE D'ANIMATION
 // ==========================================
 const clock = new THREE.Clock();
 
+const dirCamera = new THREE.Vector3();
+const dirLaterale = new THREE.Vector3();
+const vitesseZQSD = 0.6;
 
 const animate = () => {
   controls.update();
