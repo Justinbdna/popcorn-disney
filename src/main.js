@@ -211,7 +211,7 @@ disneyData.forEach((item) => {
     lod.add(hitbox);
     objetsCliquables.push(hitbox);
   }); // LOD de secours (vide) pour éviter les bugs d'apparition
-  lod.addLevel(new THREE.Object3D(), 50);
+  lod.addLevel(new THREE.Object3D(), 140);
   scene.add(lod);
 });
 // on ne push plus ici

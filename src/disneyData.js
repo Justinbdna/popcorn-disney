@@ -32,7 +32,7 @@ export const disneyData = [
     reponseCorrecte: 2,
     anecdoteSucces: "C'est ça ! Robin Williams a tellement improvisé qu'il a changé le film.",
     anecdoteEchec: "Perdu ! C'était Robin Williams.",
-    flotte: true, y: 2, x: 5, z: 0, vitesse: 0.5, amplitude: 0.15, 
+    flotte: true, y: 2, x: -52.4419806717569, z: 0, vitesse: 0.5, amplitude: 0.15, 
     hasLowPoly: true
   },
   {
