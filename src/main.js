@@ -309,10 +309,14 @@ window.addEventListener("pointermove", (event) => {
   // Curseur pointer sur les objets
   const hits = raycaster.intersectObjects(objetsCliquables, true);
   const cibleHover = hits[0]?.object;
-  const estMaison =
-    cibleHover?.name === "Maison" || cibleHover?.parent?.name === "Maison";
-  document.body.style.cursor =
-    hits.length > 0 && !estMaison ? "pointer" : "default";
+  const estMaison = cibleHover?.name === "Maison" || cibleHover?.parent?.name === "Maison";
+  if (hits.length > 0 && !estMaison) {
+    document.body.style.cursor = "pointer";
+    if (!MODE_DEV && window.afficherInfobulle) window.afficherInfobulle(cibleHover.name, "");
+  } else {
+    document.body.style.cursor = "default";
+    if (!MODE_DEV && window.cacherInfobulle) window.cacherInfobulle();
+  }
 });
 
 window.addEventListener("click", (event) => {
@@ -341,8 +345,10 @@ window.addEventListener("click", (event) => {
       return;
     }
 
-    // 👉 On désigne cet objet comme celui qu'on conduit
-    objetActif = cible;
+    // 🟢 Déclenchement du Quiz en mode joueur
+    if (!MODE_DEV && window.ouvrirQuiz) {
+      window.ouvrirQuiz(cible.userData.id || cible.name, cible.userData.nom || cible.name);
+    }
 
 
     // Flèches 3D uniquement pour les développeurs
@@ -463,7 +469,15 @@ window.addEventListener("dblclick", (event) => {
     }
   }
 });
-
+// 🟢 Fonction appelée par l'UI quand le joueur trouve la bonne réponse
+window.objetTrouve = (idObjet) => {
+  const objetASupprimer = scene.getObjectByName(idObjet);
+  if (objetASupprimer) {
+    scene.remove(objetASupprimer);
+    const index = objetsCliquables.findIndex(obj => obj.name === idObjet);
+    if (index > -1) objetsCliquables.splice(index, 1);
+  }
+};
 // ==========================================
 // 7. LA BOUCLE D'ANIMATION
 // ==========================================
