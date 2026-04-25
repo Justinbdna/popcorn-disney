@@ -25,11 +25,11 @@ Le joueur se retrouve dans une pièce modélisée en 3D. Le but est d'explorer l
 
 Ce projet a été réalisé en équipe avec une architecture claire et une répartition des rôles stricte :
 
-* **Justin ([@TonLienGithub](https://github.com/TonLienGithub))** - Lead Tech & Optimisation (Architecture, Raycaster, Mémoire, Sécurité Safari).
-* **David ([@LienGithubDavid](https://github.com/LienGithubDavid))** - Core Engine (Moteur de déplacement FPS, Hitboxes de collision).
-* **Juliana ([@LienGithubJuliana](https://github.com/LienGithubJuliana))** - Lead 3D (Optimisation des assets, Low Poly, Compression des textures).
-* **Lévine ([@LienGithubLevine](https://github.com/LienGithubLevine))** - Lead UI/UX (Design de l'interface, HUD, Modales, Responsive).
-* **Mohamed ([@LienGithubMohamed](https://github.com/LienGithubMohamed))** - Lead Content & Data (Base de données du quiz, anecdotes, lore).
+* **Justin (https://github.com/Justinbdna)** - Lead Tech & Optimisation (Architecture, Raycaster, Mémoire, Sécurité Safari).
+* **David (https://github.com/LienGithubDavid)** - Core Engine (Moteur de déplacement FPS, Hitboxes de collision).
+* **Juliana (https://github.com/Juliana68)** - Lead 3D (Optimisation des assets, Low Poly, Compression des textures).
+* **Lévine (https://github.com/Lostvayne142)** - Lead UI/UX (Design de l'interface, HUD, Modales, Responsive).
+* **Mohamed (https://github.com/mohamedsamassi-19)** - Lead Content & Data (Base de données du quiz, anecdotes, lore).
 
 ---
 
@@ -39,6 +39,6 @@ Ce projet a été réalisé en équipe avec une architecture claire et une répa
 * **Bundler :** [Vite](https://vitejs.dev/)
 * **Analytics & Performance :** [@vercel/analytics](https://vercel.com/docs/analytics) & [@vercel/speed-insights](https://vercel.com/docs/speed-insights)
 * **Déploiement :** Vercel
-* **Modélisation 3D :** Blender
+* **Modélisation 3D :** Blender + Sketchfab
 
 ---
