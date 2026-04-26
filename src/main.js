@@ -124,6 +124,8 @@ dossierDebug.add(debugConfig, "afficherHitboxes").name("Voir Collisions").onChan
 
 // 6. CHARGEMENT DES OBJETS
 const manager = new THREE.LoadingManager();
+const mursCollision = [];
+const raycasterColl = new THREE.Raycaster();
 
 // 🆘 SÉCURITÉ SAFARI : Si le chargement bloque plus de 10s, on force l'ouverture !
 setTimeout(() => {
@@ -216,13 +218,20 @@ disneyData.forEach((item) => {
 });
 // on ne push plus ici
 
-// Objet 12 : Maison
-loader.load("/assets/MaisonV1.glb", (gltf) => {
+// Asset: Maison
+loader.load("/assets/MaisonV2.glb", (gltf) => {
   const maison = gltf.scene;
-  scene.add(maison);
   maison.scale.set(15, 15, 15);
   maison.name = "Maison";
- maison.position.set(0, 0, 0);
+  
+  maison.traverse((obj) => {
+    if (obj.isMesh && obj.name.includes("MurFictif")) {
+      obj.visible = false; // Magie : les planches grises disparaissent
+      mursCollision.push(obj); // Elles deviennent des obstacles physiques
+    }
+  });
+  scene.add(maison);
+
   // On crée un sol mathématique ultra-léger pour le clic, au lieu de la vraie maison
   const solHitbox = new THREE.Mesh(new THREE.BoxGeometry(300, 1, 300), new THREE.MeshBasicMaterial({ color: 0x0000ff, transparent: true, opacity: 0, wireframe: false }));
   solHitbox.name = "Maison"; solHitbox.position.y = -0.5;
@@ -480,7 +489,7 @@ const animate = () => {
   controls.update();
 
   // --- 🎮 MOTEUR GTA : Déplace l'objet sélectionné ---
-  if (objetActif) {
+  if (objetActif && MODE_DEV) {
     const vitesse = 0.1;
 
    if (touches.q || touches.ArrowLeft) objetActif.translateX(-vitesse);
@@ -510,26 +519,38 @@ const animate = () => {
       controls.target.copy(objetActif.position);
     }
   }
+ // ✅ RADAR COLLISION — doit être avant le ZQSD
+  const peutBouger = (direction) => {
+    if (mursCollision.length === 0) return true; // Sécurité si la maison n'est pas chargée
+    raycasterColl.set(camera.position, direction.clone().normalize());
+    const intersect = raycasterColl.intersectObjects(mursCollision);
+    return intersect.length === 0 || intersect[0].distance > 1.5;
+  };
 
+  // --- MOTEUR GTA : Déplace la caméra avec ZQSD ---
+  if (!objetActif) {
+    // ... (ton code corrigé)
+  }
   // --- MOTEUR GTA : Déplace la caméra avec ZQSD (quand on ne conduit pas un objet) ---
   if (!objetActif) {
     camera.getWorldDirection(dirCamera);
     dirCamera.y = 0;
     dirCamera.normalize();
     dirLaterale.crossVectors(camera.up, dirCamera).normalize();
-    if (touches.z || touches.ArrowUp) {
+
+    if ((touches.z || touches.ArrowUp) && peutBouger(dirCamera)) {
       camera.position.addScaledVector(dirCamera, vitesseZQSD);
       controls.target.addScaledVector(dirCamera, vitesseZQSD);
     }
-    if (touches.s || touches.ArrowDown) {
+    if ((touches.s || touches.ArrowDown) && peutBouger(dirCamera.clone().negate())) {
       camera.position.addScaledVector(dirCamera, -vitesseZQSD);
       controls.target.addScaledVector(dirCamera, -vitesseZQSD);
     }
-    if (touches.q || touches.ArrowLeft) {
+    if ((touches.q || touches.ArrowLeft) && peutBouger(dirLaterale)) {
       camera.position.addScaledVector(dirLaterale, vitesseZQSD);
       controls.target.addScaledVector(dirLaterale, vitesseZQSD);
     }
-    if (touches.d || touches.ArrowRight) {
+    if ((touches.d || touches.ArrowRight) && peutBouger(dirLaterale.clone().negate())) {
       camera.position.addScaledVector(dirLaterale, -vitesseZQSD);
       controls.target.addScaledVector(dirLaterale, -vitesseZQSD);
     }
