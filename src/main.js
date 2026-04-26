@@ -202,6 +202,9 @@ disneyData.forEach((item) => {
     const hitX = Math.max(taille.x * 1.5, 2.5);
     const hitY = Math.max(taille.y * 1.5, 2.5);
     const hitZ = Math.max(taille.z * 1.5, 2.5);
+    const modelScale = item.scale !== undefined ? item.scale : 1;
+    gltf.scene.scale.set(modelScale, modelScale, modelScale);
+    lod.addLevel(gltf.scene, 0);
 
     const hitbox = new THREE.Mesh(
       new THREE.BoxGeometry(hitX, hitY, hitZ),

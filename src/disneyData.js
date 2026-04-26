@@ -11,6 +11,7 @@ export const disneyData = [
     anecdoteSucces: "Bravo ! Le sabre était bleu. Il devient vert dans 'Le Retour du Jedi'.",
     anecdoteEchec: "Faux ! C'était Bleu dans le premier film.",
     flotte: true, y: 0, x: -10, z: 0, vitesse: 1.5, amplitude: 0.05, 
+    scale: 1, // 👈 NOUVEAU: Gère l'échelle de l'objet
     hasLowPoly: true
   },
   {
@@ -125,6 +126,16 @@ export const disneyData = [
     options: ["", "", "", ""],
     reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
     flotte: false, y: 0, x: 0, z: -2,
+    hasLowPoly: true
+  },
+  {
+    id: "Carpet_aladdin", // 🟢 Carpet Aladdin
+    nom: "Tapis Aladdin",
+    question: "",
+    options: ["", "", "", ""],
+    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
+    flotte: false, y: 1, x: 0, z: 0,
+    scale: 0.3,
     hasLowPoly: true
   }
 ];
