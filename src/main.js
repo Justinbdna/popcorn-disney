@@ -222,7 +222,7 @@ disneyData.forEach((item) => {
     lod.add(hitbox);
     objetsCliquables.push(hitbox);
 }); // LOD de secours (vide) pour éviter les bugs d'apparition
-  lod.addLevel(new THREE.Object3D(), 40);
+  lod.addLevel(new THREE.Object3D(), 200);
   scene.add(lod);
 });
 // on ne push plus ici
@@ -270,8 +270,9 @@ let dossierSelection = gui.addFolder("Aucun objet sélectionné");
 const outils = {
   exporter: () => {
     const data = objetsCliquables.map((o) => {
-      const y = o.userData.flotte ? o.userData.baseY : o.position.y;
-      return `${o.name} | Pos: ${o.position.x.toFixed(2)}, ${y.toFixed(2)}, ${o.position.z.toFixed(2)} | Scale: ${o.scale.x.toFixed(2)}, ${o.scale.y.toFixed(2)}, ${o.scale.z.toFixed(2)}`;
+      const lod = o.parent || o; // ✅ On remonte au LOD parent, pas la hitbox
+      const y = lod.userData.flotte ? lod.userData.baseY : lod.position.y;
+      return `${lod.name} | x: ${lod.position.x.toFixed(2)}, y: ${y.toFixed(2)}, z: ${lod.position.z.toFixed(2)} | scale: ${lod.scale.x.toFixed(2)}`;
     }).join("\n");
     navigator.clipboard.writeText(data);
     alert("Coordonnées ET Tailles copiées ! 📋");
@@ -371,17 +372,17 @@ window.addEventListener("click", (event) => {
       agrandir: () => transformControls.setMode("scale"),
     };
 
-    dossierSelection.add(cible.position, "x").name("Pos X").listen();
-    if (cible.userData.flotte) {
-      dossierSelection
-        .add(cible.userData, "baseY")
-        .name("Pos Y (Base)")
-        .listen();
-    } else {
-      dossierSelection.add(cible.position, "y").name("Pos Y").listen();
-    }
+  // ✅ On affiche la position du LOD parent, pas de la hitbox
+    const lodParent = cible.parent || cible;
+      dossierSelection.add(lodParent.position, "x").name("Pos X").listen();
+        if (cible.userData.flotte) {
+      dossierSelection.add(cible.userData, "baseY").name("Pos Y (Base)").listen();
+        } else {
+      dossierSelection.add(lodParent.position, "y").name("Pos Y").listen();
+}
+dossierSelection.add(lodParent.position, "z").name("Pos Z").listen();
+   
     dossierSelection.add(cible.position, "z").name("Pos Z").listen();
-
     dossierSelection.add(cible.rotation, "x").name("Rot X").listen();
     dossierSelection.add(cible.rotation, "y").name("Rot Y").listen();
     dossierSelection.add(cible.rotation, "z").name("Rot Z").listen();
@@ -507,7 +508,7 @@ const animate = () => {
 
   // --- 🎮 MOTEUR GTA : Déplace l'objet sélectionné ---
   if (objetActif && MODE_DEV) {
-    const vitesse = 0.1;
+    const vitesse = 1;
 
    if (touches.q || touches.ArrowLeft) objetActif.translateX(-vitesse);
    if (touches.d || touches.ArrowRight) objetActif.translateX(vitesse);

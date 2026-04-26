@@ -1,6 +1,8 @@
 // Fichier : src/disneyData.js
 // MISSION POUR MOHAMED : Remplir les questions, les 4 options, indiquer la bonne réponse (0, 1, 2 ou 3) et faire l'anecdote !
 
+import { Scale } from "chart.js";
+
 export const disneyData = [
   {
     id: "low_poly_lightsaber", // 🟢 Star Wars
@@ -11,7 +13,7 @@ export const disneyData = [
     anecdoteSucces: "Bravo ! Le sabre était bleu. Il devient vert dans 'Le Retour du Jedi'.",
     anecdoteEchec: "Faux ! C'était Bleu dans le premier film.",
     flotte: true, y: 0, x: -10, z: 0, vitesse: 1.5, amplitude: 0.05, 
-    scale: 1, // 👈 NOUVEAU: Gère l'échelle de l'objet
+    scale: 0.1, // 👈 NOUVEAU: Gère l'échelle de l'objet
     hasLowPoly: true
   },
   {
@@ -22,7 +24,8 @@ export const disneyData = [
     reponseCorrecte: 1, 
     anecdoteSucces: "Exact ! Prof, Joyeux, Atchoum, Grincheux, Dormeur, Timide et Simplet.",
     anecdoteEchec: "Faux ! Ils sont 7.",
-    flotte: false, y: 0, x: 14, z: 0, 
+    flotte: false, y: 0, x: 14, z: 0,
+    scale: 1, 
     hasLowPoly: true
   },
   {
@@ -34,6 +37,7 @@ export const disneyData = [
     anecdoteSucces: "C'est ça ! Robin Williams a tellement improvisé qu'il a changé le film.",
     anecdoteEchec: "Perdu ! C'était Robin Williams.",
     flotte: true, y: 2, x: -52.4419806717569, z: 0, vitesse: 0.5, amplitude: 0.15, 
+    scale: 1,
     hasLowPoly: true
   },
   {
@@ -45,6 +49,7 @@ export const disneyData = [
     anecdoteSucces: "[Mohamed : Ton anecdote ici]", 
     anecdoteEchec: "[Mohamed : Ta phrase d'erreur ici]",
     flotte: false, y: 0, x: -5, z: 0, 
+    scale: 50,
     hasLowPoly: true
   },
   {
@@ -54,6 +59,7 @@ export const disneyData = [
     options: ["", "", "", ""],
     reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
     flotte: true, y: 0, x: 0, z: -5, vitesse: 0.8, amplitude: 0.08, 
+    scale: 3,
     hasLowPoly: true
   },
   {
@@ -63,6 +69,7 @@ export const disneyData = [
     options: ["", "", "", ""],
     reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
     flotte: true, y: 0, x: 0, z: 0, vitesse: 1.0, amplitude: 0.1, 
+    scale: 10,
     hasLowPoly: true
   },
   {
@@ -72,15 +79,17 @@ export const disneyData = [
     options: ["", "", "", ""],
     reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
     flotte: false, y: 0, x: -2, z: 2, 
+    scale: 10,
     hasLowPoly: true
   },
   {
-    id: "bougie", // 🟢 La Belle et la Bête
-    nom: "Lumière la Bougie",
+    id: "bougie", // 🟢 Encanto
+    nom: "Bougie Encanto",
     question: "",
     options: ["", "", "", ""],
     reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
     flotte: false, y: 0, x: 2, z: 2, 
+    scale: 10,
     hasLowPoly: true
   },
   {
@@ -90,6 +99,7 @@ export const disneyData = [
     options: ["", "", "", ""],
     reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
     flotte: false, y: 0, x: -4, z: 2, 
+    scale: 10,
     hasLowPoly: true
   },
   {
@@ -99,6 +109,7 @@ export const disneyData = [
     options: ["", "", "", ""],
     reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
     flotte: false, y: 0, x: 4, z: 2, 
+    scale: 10,
     hasLowPoly: true
   },
   {
@@ -107,7 +118,8 @@ export const disneyData = [
     question: "",
     options: ["", "", "", ""],
     reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: false, y: 0, x: 0, z: 4, 
+    flotte: false, y: 0, x: 0, z: 4,
+    scale: 10,
     hasLowPoly: true
   },
   {
@@ -117,6 +129,7 @@ export const disneyData = [
     options: ["", "", "", ""],
     reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
     flotte: false, y: 0, x: 0, z: -2, 
+    scale: 10,
     hasLowPoly: true
   },
   { 
@@ -125,7 +138,8 @@ export const disneyData = [
     question: "",
     options: ["", "", "", ""],
     reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: false, y: 0, x: 0, z: -2,
+    flotte: false, y: 0, x: 51, z: -223.61,
+    scale: 2.7,
     hasLowPoly: true
   },
   {
@@ -134,7 +148,7 @@ export const disneyData = [
     question: "",
     options: ["", "", "", ""],
     reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: false, y: 1, x: 0, z: 0,
+    flotte: false, y: 1, x: 10, z: 10,
     scale: 0.3,
     hasLowPoly: true
   }
