@@ -551,7 +551,6 @@ const animate = () => {
       controls.target.addScaledVector(dirLaterale, -vitesseZQSD);
     }
   }
-
   // --- MOTEUR DE DÉPLACEMENT CAMÉRA (DOUBLE-CLIC) ---
   if (moveControls) {
     controls.target.lerp(targetTarget, 0.05);
