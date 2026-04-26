@@ -508,18 +508,6 @@ const animate = () => {
   }
   padAPrevious = padA;
 
-  // 🎮 LECTURE MANETTE XBOX
-  let padX = 0, padY = 0, padRotX = 0, padA = false;
-  const pad = navigator.getGamepads()[0];
-  if (pad) {
-    if (Math.abs(pad.axes[0]) > 0.15) padX = pad.axes[0]; // Stick gauche X
-    if (Math.abs(pad.axes[1]) > 0.15) padY = pad.axes[1]; // Stick gauche Y
-    if (Math.abs(pad.axes[2]) > 0.15) padRotX = pad.axes[2]; // Stick droit X
-    padA = pad.buttons[0].pressed; // Bouton A
-  }
-  if (padA && !padAPrevious) canvas.dispatchEvent(new MouseEvent('click', { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 }));
-  padAPrevious = padA;
-
   // --- 🎮 MOTEUR GTA : Déplace l'objet sélectionné ---
   if (objetActif && MODE_DEV) {
     const vitesse = 1;
