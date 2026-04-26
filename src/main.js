@@ -338,6 +338,7 @@ window.addEventListener("click", (event) => {
 
     // 👉 On désigne cet objet comme celui qu'on conduit
     objetActif = cible;
+    controls.target.copy(cible.position);
 
     // 🟢 Déclenchement du Quiz en mode joueur
     if (!MODE_DEV && window.ouvrirQuiz) {
@@ -372,7 +373,7 @@ window.addEventListener("click", (event) => {
     };
 
   // ✅ On affiche la position du LOD parent, pas de la hitbox
-    const lodParent = cible.parent || cible;
+    const lodParent = cible; // 🛡️ Fix : On verrouille l'objet, pas la Scène !
       dossierSelection.add(lodParent.position, "x").name("Pos X").listen();
         if (cible.userData.flotte) {
       dossierSelection.add(cible.userData, "baseY").name("Pos Y (Base)").listen();
