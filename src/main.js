@@ -526,11 +526,7 @@ const animate = () => {
     const intersect = raycasterColl.intersectObjects(mursCollision);
     return intersect.length === 0 || intersect[0].distance > 1.5;
   };
-
-  // --- MOTEUR GTA : Déplace la caméra avec ZQSD ---
-  if (!objetActif) {
-    // ... (ton code corrigé)
-  }
+  
   // --- MOTEUR GTA : Déplace la caméra avec ZQSD (quand on ne conduit pas un objet) ---
   if (!objetActif) {
     camera.getWorldDirection(dirCamera);
