@@ -1,7 +1,6 @@
 // Fichier : src/disneyData.js
 // MISSION POUR MOHAMED : Remplir les questions, les 4 options, indiquer la bonne réponse (0, 1, 2 ou 3) et faire l'anecdote !
 
-import { Scale } from "chart.js";
 
 export const disneyData = [
   {

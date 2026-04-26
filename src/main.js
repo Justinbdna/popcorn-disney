@@ -11,16 +11,14 @@ import { disneyData } from "./disneyData.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import nipplejs from "nipplejs";
 
-// injection d'analytics
-inject();
-
-// injection de SpeedInsights
-injectSpeedInsights();
+// injection d'analytics et SpeedInsights (Désactivé pour Opera/AdBlock)
+// inject();
+// injectSpeedInsights();
 
 // ==========================================
 // 🛠️ MODE DÉVELOPPEUR
 // ==========================================
-const MODE_DEV = false; // Mets sur 'false' pour le rendu final !
+const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
 window.easterEggDebloque = false; // La clé du mode GTA secret
 
 // 1. LA SCÈNE
@@ -485,34 +483,6 @@ window.addEventListener("click", (event) => {
   }
 });
 
-// --- DOUBLE-CLIC : Déplacement caméra sur la Maison ---
-window.addEventListener("dblclick", (event) => {
-  if (event.target !== canvas) return;
-  souris.x = (event.clientX / window.innerWidth) * 2 - 1;
-  souris.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  raycaster.setFromCamera(souris, camera);
-  const intersections = raycaster.intersectObjects(objetsCliquables, true);
-
-  if (intersections.length > 0) {
-    let cible = intersections[0].object;
-    while (cible.parent && cible.parent.type !== "Scene") cible = cible.parent;
-
-    if (cible.name === "Maison" && intersections[0].point.y < 2) {
-      const pointClique = intersections[0].point;
-      pointClique.y = 1.7;
-      targetTarget.copy(pointClique);
-      const offset = new THREE.Vector3().subVectors(
-        camera.position,
-        controls.target,
-      );
-      targetPosition.copy(pointClique).add(offset);
-      moveControls = true;
-      transformControls.detach();
-      dossierSelection.destroy();
-      dossierSelection = gui.addFolder("🚶‍♂️ Déplacement en cours...");
-    }
-  }
-});
 // 🟢 Fonction appelée par l'UI quand le joueur trouve la bonne réponse
 window.objetTrouve = (idObjet) => {
   const objetASupprimer = scene.getObjectByName(idObjet);
@@ -548,6 +518,15 @@ const vitesseZQSD = 0.6;
 let deltaAccumule = 0;
 const intervalleFPS = 1 / 90; // La limite stricte à 90 FPS
 
+// 🎯 VISEUR ET MÉMOIRE MANETTE
+let padAPrevious = false, padBPrevious = false, padYPrevious = false;
+const crosshair = document.createElement("div");
+crosshair.style.cssText = "display:none; position:fixed;top:50%;left:50%;width:6px;height:6px;background:white;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:9999;box-shadow: 0 0 4px black;";
+document.body.appendChild(crosshair);
+
+window.addEventListener("gamepadconnected", (e) => {
+  console.log("🎮 MANETTE DÉTECTÉE ! Port:", e.gamepad.index, "Nom:", e.gamepad.id);
+});
 const animate = () => {
   window.requestAnimationFrame(animate); // On déplace l'appel ici
   const delta = clock.getDelta();
@@ -557,6 +536,62 @@ const animate = () => {
   deltaAccumule = deltaAccumule % intervalleFPS; // On reset le compteur
   controls.update();
 
+  // --- 🎮 LECTURE MANETTE INTELLIGENTE ---
+  let padX = 0, padY = 0, padRotX = 0, padRotY = 0;
+  let padA = false, padB = false, padYBtn = false;
+  let gamepadActif = null;
+  let padLT = 0, padRT = 0;
+  
+  const gamepads = navigator.getGamepads();
+  for (let i = 0; i < gamepads.length; i++) {
+    if (gamepads[i] && gamepads[i].connected) { gamepadActif = gamepads[i]; break; }
+  }
+
+  if (gamepadActif) {
+    crosshair.style.display = "block";
+    if (Math.abs(gamepadActif.axes[0]) > 0.15) padX = gamepadActif.axes[0]; // Stick gauche X
+    if (Math.abs(gamepadActif.axes[1]) > 0.15) padY = gamepadActif.axes[1]; // Stick gauche Y
+    if (Math.abs(gamepadActif.axes[2]) > 0.15) padRotX = gamepadActif.axes[2]; // Stick droit X
+    if (Math.abs(gamepadActif.axes[3]) > 0.15) padRotY = gamepadActif.axes[3]; // Stick droit Y (Haut/Bas)
+    padA = gamepadActif.buttons[0].pressed; // Bouton A (Sélectionner)
+    padB = gamepadActif.buttons[1].pressed; // Bouton B (Quitter)
+    padYBtn = gamepadActif.buttons[3].pressed; // Bouton Y (Menu)
+    padLT = gamepadActif.buttons[6].value;
+    padRT = gamepadActif.buttons[7].value;
+  } else {
+    crosshair.style.display = "none";
+  }
+
+  // --- 🎮 ACTIONS DES BOUTONS ---
+  // BOUTON A : Clic intelligent (Interface ou 3D)
+  if (padA && !padAPrevious) {
+    const uiAuCentre = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
+    // Si on vise un bouton du menu HTML, on clique physiquement dessus
+    if (uiAuCentre && (uiAuCentre.tagName === 'BUTTON' || uiAuCentre.closest('button'))) {
+      uiAuCentre.click();
+    } else {
+      // Sinon, on clique dans le monde 3D
+     canvas.dispatchEvent(new MouseEvent("click", { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2, bubbles: true }));
+    }
+  }
+
+  // BOUTON B : Quitter l'objet (Comme Echap)
+  if (padB && !padBPrevious) {
+    if (objetActif) {
+      transformControls.detach();
+      objetActif = null;
+      dossierSelection.destroy();
+      dossierSelection = gui.addFolder("Aucun objet sélectionné");
+    }
+    // (Ajout futur : Fermer la fenêtre du Quiz avec B)
+  }
+
+  // BOUTON Y : Menu
+  if (padYBtn && !padYPrevious) {
+    console.log("Bouton Y pressé - Ouverture du menu à coder !");
+  }
+
+  padAPrevious = padA; padBPrevious = padB; padYPrevious = padYBtn;
   // --- 🎮 MOTEUR GTA : Déplace l'objet sélectionné ---
   if (objetActif && MODE_DEV) {
     const vitesse = 1;
@@ -603,6 +638,25 @@ const animate = () => {
     dirCamera.normalize();
     dirLaterale.crossVectors(camera.up, dirCamera).normalize();
 
+   // 🎮 MOUVEMENT & ROTATION MANETTE
+    if (padY < -0.15 && peutBouger(dirCamera)) { camera.position.addScaledVector(dirCamera, -padY * vitesseZQSD); controls.target.addScaledVector(dirCamera, -padY * vitesseZQSD); }
+    if (padY > 0.15 && peutBouger(dirCamera.clone().negate())) { camera.position.addScaledVector(dirCamera, -padY * vitesseZQSD); controls.target.addScaledVector(dirCamera, -padY * vitesseZQSD); }
+    if (padX < -0.15 && peutBouger(dirLaterale)) { camera.position.addScaledVector(dirLaterale, -padX * vitesseZQSD); controls.target.addScaledVector(dirLaterale, -padX * vitesseZQSD); }
+    if (padX > 0.15 && peutBouger(dirLaterale.clone().negate())) { camera.position.addScaledVector(dirLaterale, -padX * vitesseZQSD); controls.target.addScaledVector(dirLaterale, -padX * vitesseZQSD); }
+   if (padRotX !== 0) {
+      const offset = new THREE.Vector3().subVectors(controls.target, camera.position);
+      offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), -padRotX * 0.05);
+      controls.target.copy(camera.position).add(offset);
+    }
+    
+    // 🎮 INCLINAISON DE LA TÊTE (Joystick Droit Y)
+    if (padRotY !== 0) controls.target.y -= padRotY * 0.4; 
+
+    // 🎮 ÉLÉVATION / DRONE MODE (Gâchettes LT / RT)
+    if (typeof padLT !== 'undefined' && padLT > 0.1) { camera.position.y += padLT * 0.4; controls.target.y += padLT * 0.4; }
+    if (typeof padRT !== 'undefined' && padRT > 0.1) { camera.position.y -= padRT * 0.4; controls.target.y -= padRT * 0.4; }
+
+    // ⌨️ MOUVEMENT CLAVIER (Touche Z réparée)
     if ((touches.z || touches.ArrowUp) && peutBouger(dirCamera)) {
       camera.position.addScaledVector(dirCamera, vitesseZQSD);
       controls.target.addScaledVector(dirCamera, vitesseZQSD);
@@ -626,17 +680,7 @@ const animate = () => {
       controls.target.addScaledVector(dirLaterale, -vitesseZQSD);
     }
   }
-  // --- MOTEUR DE DÉPLACEMENT CAMÉRA (DOUBLE-CLIC) ---
-  if (moveControls) {
-    controls.target.lerp(targetTarget, 0.05);
-    camera.position.lerp(targetPosition, 0.05);
-    if (controls.target.distanceTo(targetTarget) < 0.1) {
-      moveControls = false;
-      dossierSelection.destroy();
-      dossierSelection = gui.addFolder("Aucun objet sélectionné");
-    }
-  }
-
+ 
   const elapsedTime = clock.getElapsedTime();
 
   // --- ANIMATION FLOTTANTE ---
