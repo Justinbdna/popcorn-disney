@@ -493,8 +493,16 @@ const clock = new THREE.Clock();
 const dirCamera = new THREE.Vector3();
 const dirLaterale = new THREE.Vector3();
 const vitesseZQSD = 0.6;
+let deltaAccumule = 0;
+const intervalleFPS = 1 / 90; // La limite stricte à 90 FPS
 
 const animate = () => {
+  window.requestAnimationFrame(animate); // On déplace l'appel ici
+  const delta = clock.getDelta();
+  deltaAccumule += delta;
+  
+  if (deltaAccumule < intervalleFPS) return; // Frein activé : on passe cette frame
+  deltaAccumule = deltaAccumule % intervalleFPS; // On reset le compteur
   controls.update();
 
   // --- 🎮 MOTEUR GTA : Déplace l'objet sélectionné ---
@@ -597,7 +605,6 @@ const animate = () => {
   perfData.polygones = renderer.info.render.triangles;
   perfData.drawCalls = renderer.info.render.calls;
   perfData.geometries = renderer.info.memory.geometries;
-  window.requestAnimationFrame(animate);
 };
 
 animate();
