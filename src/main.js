@@ -19,7 +19,7 @@ injectSpeedInsights();
 // ==========================================
 // 🛠️ MODE DÉVELOPPEUR
 // ==========================================
-const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
+const MODE_DEV = false; // Mets sur 'false' pour le rendu final !
 window.easterEggDebloque = false; // La clé du mode GTA secret
 
 // 1. LA SCÈNE
@@ -549,7 +549,6 @@ const animate = () => {
       controls.target.addScaledVector(dirLaterale, -vitesseZQSD);
     }
   }
-
   // --- MOTEUR DE DÉPLACEMENT CAMÉRA (DOUBLE-CLIC) ---
   if (moveControls) {
     controls.target.lerp(targetTarget, 0.05);
