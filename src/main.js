@@ -83,29 +83,30 @@ window.addEventListener("keyup", (e) => {
 window.lancerJeu3D = () => {
   console.log("🎬 Jeu lancé !");
   if (isMobile || 'ontouchstart' in window) {
-    const zoneJoystick = document.getElementById("zone-joystick") || document.body;
-    // Bloque le défilement natif du navigateur sur la zone du joystick
-    zoneJoystick.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
-    zoneJoystick.addEventListener("touchmove", (e) => e.stopPropagation(), { passive: true });
-
+   const zoneJoystick = document.getElementById("zone-joystick") || document.body;
+    // Isolation topologique du DOM
+    zoneJoystick.style.position = "absolute"; 
+    zoneJoystick.style.zIndex = "9999";
+    zoneJoystick.style.touchAction = "none";
+    zoneJoystick.addEventListener("pointerdown", (e) => e.stopPropagation(), { passive: true });
     const joystick = nipplejs.create({
       zone: zoneJoystick,
       mode: "dynamic",
       color: "white",
       restOpacity: 0.75,
     });
-    
+
     joystick.on("move", (evt, data) => {
-      const v = data?.vector;
-      if (!v) return;
-      padMobile.x = v.x;
-      padMobile.y = -(v.y);
+      if (!data || typeof data.vector === 'undefined') return;
+      padMobile.x = data.vector.x;
+      padMobile.y = data.vector.y;
       padMobile.actif = true;
-      controls.enabled = false;
     });
- joystick.on("end", () => {
+
+ joystick.on("start", () => bloquerControles3D(true));
+    joystick.on("end", () => {
       padMobile.x = 0; padMobile.y = 0; padMobile.actif = false;
-      controls.enabled = true;
+      bloquerControles3D(false);
     });
   }
 };
@@ -666,24 +667,20 @@ const animate = () => {
     if (typeof padLT !== 'undefined' && padLT > 0.1) { camera.position.y += padLT * 0.4; controls.target.y += padLT * 0.4; }
     if (typeof padRT !== 'undefined' && padRT > 0.1) { camera.position.y -= padRT * 0.4; controls.target.y -= padRT * 0.4; }
 
- // 📱 MOUVEMENT JOYSTICK MOBILE (Lecture Globale)
-    const fM = vitesseZQSD * 1.5;
+// 📱 MOUVEMENT JOYSTICK MOBILE (Calcul Déterministe)
+    const fM = vitesseZQSD * 15.0 * delta; 
     const mY = padMobile.y;
     const mX = padMobile.x;
 
-    if (mY < -0.05 && peutBouger(dirCamera)) {
-      camera.position.addScaledVector(dirCamera, -mY * fM);
-      controls.target.addScaledVector(dirCamera, -mY * fM);
+  if (mY > 0.05 && peutBouger(dirCamera)) {
+      camera.position.addScaledVector(dirCamera, mY * fM);
+      controls.target.addScaledVector(dirCamera, mY * fM);
     }
-    if (mY > 0.05 && peutBouger(dirCamera.clone().negate())) {
-      camera.position.addScaledVector(dirCamera, -mY * fM);
-      controls.target.addScaledVector(dirCamera, -mY * fM);
+    if (mY < -0.05 && peutBouger(dirCamera.clone().negate())) {
+      camera.position.addScaledVector(dirCamera, mY * fM);
+      controls.target.addScaledVector(dirCamera, mY * fM);
     }
-    if (mX < -0.05 && peutBouger(dirLaterale)) {
-      camera.position.addScaledVector(dirLaterale, -mX * fM);
-      controls.target.addScaledVector(dirLaterale, -mX * fM);
-    }
-    if (mX > 0.05 && peutBouger(dirLaterale.clone().negate())) {
+    if (Math.abs(mX) > 0.05 && peutBouger(mX > 0 ? dirLaterale.clone().negate() : dirLaterale)) {
       camera.position.addScaledVector(dirLaterale, -mX * fM);
       controls.target.addScaledVector(dirLaterale, -mX * fM);
     }
