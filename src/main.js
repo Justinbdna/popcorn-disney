@@ -19,7 +19,7 @@ injectSpeedInsights();
 // ==========================================
 // 🛠️ MODE DÉVELOPPEUR
 // ==========================================
-const MODE_DEV = false; // Mets sur 'false' pour le rendu final !
+const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
 window.easterEggDebloque = false; // La clé du mode GTA secret
 
 // 1. LA SCÈNE
@@ -477,6 +477,12 @@ const vitesseZQSD = 0.6;
 let deltaAccumule = 0;
 const intervalleFPS = 1 / 90; // La limite stricte à 90 FPS
 
+// 🎯 VISEUR ET MÉMOIRE MANETTE
+let padAPrevious = false;
+const crosshair = document.createElement("div");
+crosshair.style.cssText = "position:fixed;top:50%;left:50%;width:6px;height:6px;background:white;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:9999;box-shadow: 0 0 4px black;";
+document.body.appendChild(crosshair);
+
 const animate = () => {
   window.requestAnimationFrame(animate); // On déplace l'appel ici
   const delta = clock.getDelta();
@@ -485,6 +491,34 @@ const animate = () => {
   if (deltaAccumule < intervalleFPS) return; // Frein activé : on passe cette frame
   deltaAccumule = deltaAccumule % intervalleFPS; // On reset le compteur
   controls.update();
+
+  // 🎮 LECTURE MANETTE XBOX ET CLIC (Bouton A)
+  let padX = 0, padY = 0, padRotX = 0, padA = false;
+  const pad = navigator.getGamepads()[0];
+  if (pad) {
+    if (Math.abs(pad.axes[0]) > 0.15) padX = pad.axes[0]; // Stick gauche X
+    if (Math.abs(pad.axes[1]) > 0.15) padY = pad.axes[1]; // Stick gauche Y
+    if (Math.abs(pad.axes[2]) > 0.15) padRotX = pad.axes[2]; // Stick droit X
+    padA = pad.buttons[0].pressed; // Bouton A
+  }
+  
+  // Si on appuie sur A et qu'on ne l'avait pas déjà pressé la frame d'avant
+  if (padA && !padAPrevious) {
+    canvas.dispatchEvent(new MouseEvent('click', { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 }));
+  }
+  padAPrevious = padA;
+
+  // 🎮 LECTURE MANETTE XBOX
+  let padX = 0, padY = 0, padRotX = 0, padA = false;
+  const pad = navigator.getGamepads()[0];
+  if (pad) {
+    if (Math.abs(pad.axes[0]) > 0.15) padX = pad.axes[0]; // Stick gauche X
+    if (Math.abs(pad.axes[1]) > 0.15) padY = pad.axes[1]; // Stick gauche Y
+    if (Math.abs(pad.axes[2]) > 0.15) padRotX = pad.axes[2]; // Stick droit X
+    padA = pad.buttons[0].pressed; // Bouton A
+  }
+  if (padA && !padAPrevious) canvas.dispatchEvent(new MouseEvent('click', { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 }));
+  padAPrevious = padA;
 
   // --- 🎮 MOTEUR GTA : Déplace l'objet sélectionné ---
   if (objetActif && MODE_DEV) {
@@ -531,6 +565,13 @@ const animate = () => {
     dirCamera.y = 0;
     dirCamera.normalize();
     dirLaterale.crossVectors(camera.up, dirCamera).normalize();
+
+   // 🎮 MOUVEMENT & ROTATION MANETTE
+    if (padY < -0.15 && peutBouger(dirCamera)) { camera.position.addScaledVector(dirCamera, -padY * vitesseZQSD); controls.target.addScaledVector(dirCamera, -padY * vitesseZQSD); }
+    if (padY > 0.15 && peutBouger(dirCamera.clone().negate())) { camera.position.addScaledVector(dirCamera, -padY * vitesseZQSD); controls.target.addScaledVector(dirCamera, -padY * vitesseZQSD); }
+    if (padX < -0.15 && peutBouger(dirLaterale)) { camera.position.addScaledVector(dirLaterale, -padX * vitesseZQSD); controls.target.addScaledVector(dirLaterale, -padX * vitesseZQSD); }
+    if (padX > 0.15 && peutBouger(dirLaterale.clone().negate())) { camera.position.addScaledVector(dirLaterale, -padX * vitesseZQSD); controls.target.addScaledVector(dirLaterale, -padX * vitesseZQSD); }
+    if (padRotX !== 0) { const offset = new THREE.Vector3().subVectors(controls.target, camera.position); offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), -padRotX * 0.05); controls.target.copy(camera.position).add(offset); } 
 
     if ((touches.z || touches.ArrowUp) && peutBouger(dirCamera)) {
       camera.position.addScaledVector(dirCamera, vitesseZQSD);
