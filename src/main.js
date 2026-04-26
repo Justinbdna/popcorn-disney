@@ -143,11 +143,17 @@ manager.onProgress = (url, loaded, total) => {
 };
 
 manager.onLoad = () => {
-  console.log("✅ 3D chargée à 100% !");
-  if (MODE_DEV) {
-    document.getElementById("ecran-chargement").style.display = "none";
-    document.getElementById("ecran-tutoriel").style.display = "none";
-    if (window.lancerJeu3D) window.lancerJeu3D();
+  console.log("✅ 3D téléchargée ! Pré-compilation GPU en cours...");
+  // On force le GPU à tout calculer avant de lever le rideau
+  renderer.compile(scene, camera); 
+  
+ if (MODE_DEV) {
+    // On attend 1 petite seconde que le compile finisse avant de cacher l'écran
+    setTimeout(() => {
+      document.getElementById("ecran-chargement").style.display = "none";
+      document.getElementById("ecran-tutoriel").style.display = "none";
+      if (window.lancerJeu3D) window.lancerJeu3D();
+    }, 1000); 
     return;
   }
   const btnDecouvrir = document.getElementById("btn-decouvrir");
@@ -212,8 +218,8 @@ disneyData.forEach((item) => {
     hitbox.userData = lod.userData;
     lod.add(hitbox);
     objetsCliquables.push(hitbox);
-  }); // LOD de secours (vide) pour éviter les bugs d'apparition
-  lod.addLevel(new THREE.Object3D(), 140);
+}); // LOD de secours (vide) pour éviter les bugs d'apparition
+  lod.addLevel(new THREE.Object3D(), 40);
   scene.add(lod);
 });
 // on ne push plus ici
