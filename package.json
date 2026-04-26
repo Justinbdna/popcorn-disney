@@ -15,6 +15,7 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "lil-gui": "^0.21.0",
+    "nipplejs": "^1.0.1",
     "three": "^0.183.1"
   }
 }

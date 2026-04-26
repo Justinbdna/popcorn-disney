@@ -9,6 +9,7 @@ import { injectSpeedInsights } from "@vercel/speed-insights";
 import { inject } from "@vercel/analytics";
 import { disneyData } from "./disneyData.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import nipplejs from "nipplejs";
 
 // injection d'analytics
 inject();
@@ -24,7 +25,7 @@ window.easterEggDebloque = false; // La clé du mode GTA secret
 
 // 1. LA SCÈNE
 const scene = new THREE.Scene();
-const objetsCliquables = []; 
+const objetsCliquables = [];
 // On détecte le mobile TOUT DE SUITE
 const isMobile = window.innerWidth < 768;
 
@@ -66,12 +67,35 @@ const targetPosition = new THREE.Vector3();
 // ✅ AJOUT : Variables manquantes du moteur GTA
 let objetActif = null;
 const touches = {
-  z: false, q: false, s: false, d: false,
-  ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false,
+  z: false,
+  q: false,
+  s: false,
+  d: false,
+  ArrowUp: false,
+  ArrowLeft: false,
+  ArrowDown: false,
+  ArrowRight: false,
 };
 window.addEventListener("keyup", (e) => {
   if (touches.hasOwnProperty(e.key)) touches[e.key] = false;
 });
+
+if (isMobile) {
+  const joystick = nipplejs.create({
+    zone: document.getElementById("zone-joystick"),
+    mode: "dynamic",
+    color: "white",
+  });
+  joystick.on("move", (evt, data) => {
+    touches.z = data.vector.y > 0.3;
+    touches.s = data.vector.y < -0.3;
+    touches.q = data.vector.x < -0.3;
+    touches.d = data.vector.x > 0.3;
+  });
+  joystick.on("end", () => {
+    touches.z = touches.s = touches.q = touches.d = false;
+  });
+}
 
 // --- LE PONT AVEC L'INTERFACE ---
 window.lancerJeu3D = () => {
@@ -116,11 +140,17 @@ window.addEventListener("keydown", (e) => {
 const gui = new GUI();
 const debugConfig = { afficherHitboxes: false };
 const dossierDebug = gui.addFolder("🛠️ Mode Debug");
-dossierDebug.add(debugConfig, "afficherHitboxes").name("Voir Collisions").onChange((val) => {
-  objetsCliquables.forEach(h => {
-    if (h.material) { h.material.opacity = val ? 0.4 : 0; h.material.wireframe = val; }
+dossierDebug
+  .add(debugConfig, "afficherHitboxes")
+  .name("Voir Collisions")
+  .onChange((val) => {
+    objetsCliquables.forEach((h) => {
+      if (h.material) {
+        h.material.opacity = val ? 0.4 : 0;
+        h.material.wireframe = val;
+      }
+    });
   });
-});
 
 // 6. CHARGEMENT DES OBJETS
 const manager = new THREE.LoadingManager();
@@ -131,8 +161,8 @@ const raycasterColl = new THREE.Raycaster();
 setTimeout(() => {
   const btn = document.getElementById("btn-decouvrir");
   if (btn && btn.classList.contains("cache")) {
-      console.warn("⏳ Safari rame trop, on débloque le bouton de force !");
-      btn.classList.remove("cache");
+    console.warn("⏳ Safari rame trop, on débloque le bouton de force !");
+    btn.classList.remove("cache");
   }
 }, 10000); // 10000 millisecondes = 10 secondes
 
@@ -145,15 +175,15 @@ manager.onProgress = (url, loaded, total) => {
 manager.onLoad = () => {
   console.log("✅ 3D téléchargée ! Pré-compilation GPU en cours...");
   // On force le GPU à tout calculer avant de lever le rideau
-  renderer.compile(scene, camera); 
-  
- if (MODE_DEV) {
+  renderer.compile(scene, camera);
+
+  if (MODE_DEV) {
     // On attend 1 petite seconde que le compile finisse avant de cacher l'écran
     setTimeout(() => {
       document.getElementById("ecran-chargement").style.display = "none";
       document.getElementById("ecran-tutoriel").style.display = "none";
       if (window.lancerJeu3D) window.lancerJeu3D();
-    }, 1000); 
+    }, 1000);
     return;
   }
   const btnDecouvrir = document.getElementById("btn-decouvrir");
@@ -167,17 +197,21 @@ manager.onLoad = () => {
     }, 400);
   }
 };
-//Teste pour identifier erreur 
+//Teste pour identifier erreur
 manager.onError = (url) => {
   console.error("❌ Erreur critique de chargement sur : " + url);
-  alert("Le fichier " + url + " refuse de charger. Vérifie le poids ou le chemin !");
+  alert(
+    "Le fichier " + url + " refuse de charger. Vérifie le poids ou le chemin !",
+  );
 };
 
 const loader = new GLTFLoader(manager);
 
 //DracoLoader
 const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
+dracoLoader.setDecoderPath(
+  "https://www.gstatic.com/draco/versioned/decoders/1.5.6/",
+);
 loader.setDRACOLoader(dracoLoader);
 
 // 🟢 CHARGEMENT AUTOMATISÉ AVEC LOD
@@ -194,7 +228,7 @@ disneyData.forEach((item) => {
     });
   lod.position.set(item.x || 0, item.y || 0, item.z || 0);
   lod.rotation.set(item.rotX || 0, item.rotY || 0, item.rotZ || 0);
-  if (item.scale) lod.scale.setScalar(item.scale);                 
+  if (item.scale) lod.scale.setScalar(item.scale);
 
   loader.load(`/assets/${item.id}.glb`, (gltf) => {
     const boite = new THREE.Box3().setFromObject(gltf.scene);
@@ -220,18 +254,17 @@ disneyData.forEach((item) => {
     hitbox.userData = lod.userData;
     lod.add(hitbox);
     objetsCliquables.push(hitbox);
-}); // LOD de secours (vide) pour éviter les bugs d'apparition
+  }); // LOD de secours (vide) pour éviter les bugs d'apparition
   lod.addLevel(new THREE.Object3D(), 200);
   scene.add(lod);
 });
-
 
 // Asset: Maison
 loader.load("/assets/MaisonV2.glb", (gltf) => {
   const maison = gltf.scene;
   maison.scale.set(15, 15, 15);
   maison.name = "Maison";
-  
+
   maison.traverse((obj) => {
     if (obj.isMesh && obj.name.includes("MurFictif")) {
       obj.visible = false; // Magie : les planches grises disparaissent
@@ -241,9 +274,19 @@ loader.load("/assets/MaisonV2.glb", (gltf) => {
   scene.add(maison);
 
   // On crée un sol mathématique ultra-léger pour le clic, au lieu de la vraie maison
-  const solHitbox = new THREE.Mesh(new THREE.BoxGeometry(300, 1, 300), new THREE.MeshBasicMaterial({ color: 0x0000ff, transparent: true, opacity: 0, wireframe: false }));
-  solHitbox.name = "Maison"; solHitbox.position.y = -0.5;
-  scene.add(solHitbox); objetsCliquables.push(solHitbox);
+  const solHitbox = new THREE.Mesh(
+    new THREE.BoxGeometry(300, 1, 300),
+    new THREE.MeshBasicMaterial({
+      color: 0x0000ff,
+      transparent: true,
+      opacity: 0,
+      wireframe: false,
+    }),
+  );
+  solHitbox.name = "Maison";
+  solHitbox.position.y = -0.5;
+  scene.add(solHitbox);
+  objetsCliquables.push(solHitbox);
 });
 
 // 5. LA LUMIÈRE
@@ -268,11 +311,13 @@ let dossierSelection = gui.addFolder("Aucun objet sélectionné");
 
 const outils = {
   exporter: () => {
-    const data = objetsCliquables.map((o) => {
-      const lod = o.parent || o; // ✅ On remonte au LOD parent, pas la hitbox
-      const y = lod.userData.flotte ? lod.userData.baseY : lod.position.y;
-      return `${lod.name} | x: ${lod.position.x.toFixed(2)}, y: ${y.toFixed(2)}, z: ${lod.position.z.toFixed(2)} | rotX: ${lod.rotation.x.toFixed(3)}, rotY: ${lod.rotation.y.toFixed(3)}, rotZ: ${lod.rotation.z.toFixed(3)} | scale: ${lod.scale.x.toFixed(2)}`;
-    }).join("\n");
+    const data = objetsCliquables
+      .map((o) => {
+        const lod = o.parent || o; // ✅ On remonte au LOD parent, pas la hitbox
+        const y = lod.userData.flotte ? lod.userData.baseY : lod.position.y;
+        return `${lod.name} | x: ${lod.position.x.toFixed(2)}, y: ${y.toFixed(2)}, z: ${lod.position.z.toFixed(2)} | rotX: ${lod.rotation.x.toFixed(3)}, rotY: ${lod.rotation.y.toFixed(3)}, rotZ: ${lod.rotation.z.toFixed(3)} | scale: ${lod.scale.x.toFixed(2)}`;
+      })
+      .join("\n");
     navigator.clipboard.writeText(data);
     alert("Coordonnées ET Tailles copiées ! 📋");
   },
@@ -308,10 +353,12 @@ window.addEventListener("pointermove", (event) => {
   // Curseur pointer sur les objets
   const hits = raycaster.intersectObjects(objetsCliquables, true);
   const cibleHover = hits[0]?.object;
-  const estMaison = cibleHover?.name === "Maison" || cibleHover?.parent?.name === "Maison";
+  const estMaison =
+    cibleHover?.name === "Maison" || cibleHover?.parent?.name === "Maison";
   if (hits.length > 0 && !estMaison) {
     document.body.style.cursor = "pointer";
-    if (!MODE_DEV && window.afficherInfobulle) window.afficherInfobulle(cibleHover.name, "");
+    if (!MODE_DEV && window.afficherInfobulle)
+      window.afficherInfobulle(cibleHover.name, "");
   } else {
     document.body.style.cursor = "default";
     if (!MODE_DEV && window.cacherInfobulle) window.cacherInfobulle();
@@ -342,7 +389,10 @@ window.addEventListener("click", (event) => {
 
     // 🟢 Déclenchement du Quiz en mode joueur
     if (!MODE_DEV && window.ouvrirQuiz) {
-      window.ouvrirQuiz(cible.userData.id || cible.name, cible.userData.nom || cible.name);
+      window.ouvrirQuiz(
+        cible.userData.id || cible.name,
+        cible.userData.nom || cible.name,
+      );
     }
 
     // Flèches 3D uniquement pour les développeurs
@@ -372,14 +422,17 @@ window.addEventListener("click", (event) => {
       agrandir: () => transformControls.setMode("scale"),
     };
 
-  // ✅ On affiche la position du LOD parent, pas de la hitbox
+    // ✅ On affiche la position du LOD parent, pas de la hitbox
     const lodParent = cible; // 🛡️ Fix : On verrouille l'objet, pas la Scène !
-      dossierSelection.add(lodParent.position, "x").name("Pos X").listen();
-        if (cible.userData.flotte) {
-      dossierSelection.add(cible.userData, "baseY").name("Pos Y (Base)").listen();
-        } else {
+    dossierSelection.add(lodParent.position, "x").name("Pos X").listen();
+    if (cible.userData.flotte) {
+      dossierSelection
+        .add(cible.userData, "baseY")
+        .name("Pos Y (Base)")
+        .listen();
+    } else {
       dossierSelection.add(lodParent.position, "y").name("Pos Y").listen();
-}
+    }
     dossierSelection.add(lodParent.position, "z").name("Pos Z").listen();
     dossierSelection.add(lodParent.rotation, "x").name("Rot X").listen(); // ✅ lodParent
     dossierSelection.add(lodParent.rotation, "y").name("Rot Y").listen(); // ✅ lodParent
@@ -395,9 +448,27 @@ window.addEventListener("click", (event) => {
     };
     const cfg = configScale[cible.name] || { min: 0.001, max: 20, step: 0.01 };
 
-dossierSelection.add(lodParent.scale, "x").min(cfg.min).max(cfg.max).step(cfg.step).name("Largeur").listen();
-    dossierSelection.add(lodParent.scale, "y").min(cfg.min).max(cfg.max).step(cfg.step).name("Profondeur").listen();
-    dossierSelection.add(lodParent.scale, "z").min(cfg.min).max(cfg.max).step(cfg.step).name("Hauteur").listen();
+    dossierSelection
+      .add(lodParent.scale, "x")
+      .min(cfg.min)
+      .max(cfg.max)
+      .step(cfg.step)
+      .name("Largeur")
+      .listen();
+    dossierSelection
+      .add(lodParent.scale, "y")
+      .min(cfg.min)
+      .max(cfg.max)
+      .step(cfg.step)
+      .name("Profondeur")
+      .listen();
+    dossierSelection
+      .add(lodParent.scale, "z")
+      .min(cfg.min)
+      .max(cfg.max)
+      .step(cfg.step)
+      .name("Hauteur")
+      .listen();
 
     dossierSelection.add(actionsOutils, "deplacer").name("Activer Déplacement");
     dossierSelection.add(actionsOutils, "tourner").name("Activer Rotation");
@@ -452,7 +523,7 @@ window.objetTrouve = (idObjet) => {
         if (child.geometry) child.geometry.dispose();
         if (child.material) {
           if (Array.isArray(child.material)) {
-            child.material.forEach(mat => mat.dispose());
+            child.material.forEach((mat) => mat.dispose());
           } else {
             child.material.dispose();
           }
@@ -462,7 +533,7 @@ window.objetTrouve = (idObjet) => {
     // 2. On le retire visuellement
     scene.remove(objetASupprimer);
     // 3. On coupe l'interactivité
-    const index = objetsCliquables.findIndex(obj => obj.name === idObjet);
+    const index = objetsCliquables.findIndex((obj) => obj.name === idObjet);
     if (index > -1) objetsCliquables.splice(index, 1);
   }
 };
@@ -481,7 +552,7 @@ const animate = () => {
   window.requestAnimationFrame(animate); // On déplace l'appel ici
   const delta = clock.getDelta();
   deltaAccumule += delta;
-  
+
   if (deltaAccumule < intervalleFPS) return; // Frein activé : on passe cette frame
   deltaAccumule = deltaAccumule % intervalleFPS; // On reset le compteur
   controls.update();
@@ -490,10 +561,10 @@ const animate = () => {
   if (objetActif && MODE_DEV) {
     const vitesse = 1;
 
-   if (touches.q || touches.ArrowLeft) objetActif.translateX(-vitesse);
-   if (touches.d || touches.ArrowRight) objetActif.translateX(vitesse);
-   if (touches.z || touches.ArrowUp) objetActif.translateZ(-vitesse);
-   if (touches.s || touches.ArrowDown) objetActif.translateZ(vitesse);
+    if (touches.q || touches.ArrowLeft) objetActif.translateX(-vitesse);
+    if (touches.d || touches.ArrowRight) objetActif.translateX(vitesse);
+    if (touches.z || touches.ArrowUp) objetActif.translateZ(-vitesse);
+    if (touches.s || touches.ArrowDown) objetActif.translateZ(vitesse);
 
     // La caméra suit l'objet quand il bouge (vraie caméra GTA)
     const estEnMouvement =
@@ -517,14 +588,14 @@ const animate = () => {
       controls.target.copy(objetActif.position);
     }
   }
- // ✅ RADAR COLLISION — doit être avant le ZQSD
+  // ✅ RADAR COLLISION — doit être avant le ZQSD
   const peutBouger = (direction) => {
     if (mursCollision.length === 0) return true; // Sécurité si la maison n'est pas chargée
     raycasterColl.set(camera.position, direction.clone().normalize());
     const intersect = raycasterColl.intersectObjects(mursCollision);
     return intersect.length === 0 || intersect[0].distance > 1.5;
   };
-  
+
   // --- MOTEUR GTA : Déplace la caméra avec ZQSD (quand on ne conduit pas un objet) ---
   if (!objetActif) {
     camera.getWorldDirection(dirCamera);
@@ -536,7 +607,10 @@ const animate = () => {
       camera.position.addScaledVector(dirCamera, vitesseZQSD);
       controls.target.addScaledVector(dirCamera, vitesseZQSD);
     }
-    if ((touches.s || touches.ArrowDown) && peutBouger(dirCamera.clone().negate())) {
+    if (
+      (touches.s || touches.ArrowDown) &&
+      peutBouger(dirCamera.clone().negate())
+    ) {
       camera.position.addScaledVector(dirCamera, -vitesseZQSD);
       controls.target.addScaledVector(dirCamera, -vitesseZQSD);
     }
@@ -544,7 +618,10 @@ const animate = () => {
       camera.position.addScaledVector(dirLaterale, vitesseZQSD);
       controls.target.addScaledVector(dirLaterale, vitesseZQSD);
     }
-    if ((touches.d || touches.ArrowRight) && peutBouger(dirLaterale.clone().negate())) {
+    if (
+      (touches.d || touches.ArrowRight) &&
+      peutBouger(dirLaterale.clone().negate())
+    ) {
       camera.position.addScaledVector(dirLaterale, -vitesseZQSD);
       controls.target.addScaledVector(dirLaterale, -vitesseZQSD);
     }
