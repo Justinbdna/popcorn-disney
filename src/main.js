@@ -143,11 +143,17 @@ manager.onProgress = (url, loaded, total) => {
 };
 
 manager.onLoad = () => {
-  console.log("✅ 3D chargée à 100% !");
-  if (MODE_DEV) {
-    document.getElementById("ecran-chargement").style.display = "none";
-    document.getElementById("ecran-tutoriel").style.display = "none";
-    if (window.lancerJeu3D) window.lancerJeu3D();
+  console.log("✅ 3D téléchargée ! Pré-compilation GPU en cours...");
+  // On force le GPU à tout calculer avant de lever le rideau
+  renderer.compile(scene, camera); 
+  
+ if (MODE_DEV) {
+    // On attend 1 petite seconde que le compile finisse avant de cacher l'écran
+    setTimeout(() => {
+      document.getElementById("ecran-chargement").style.display = "none";
+      document.getElementById("ecran-tutoriel").style.display = "none";
+      if (window.lancerJeu3D) window.lancerJeu3D();
+    }, 1000); 
     return;
   }
   const btnDecouvrir = document.getElementById("btn-decouvrir");
@@ -187,15 +193,17 @@ disneyData.forEach((item) => {
       amplitude: item.amplitude || 0.08,
     });
   lod.position.set(item.x || 0, item.y || 0, item.z || 0);
+  lod.rotation.set(item.rotX || 0, item.rotY || 0, item.rotZ || 0);
+  if (item.scale) lod.scale.setScalar(item.scale);                 
 
   loader.load(`/assets/${item.id}.glb`, (gltf) => {
-    lod.addLevel(gltf.scene, 0);
     const boite = new THREE.Box3().setFromObject(gltf.scene);
     const taille = new THREE.Vector3();
     boite.getSize(taille);
     const hitX = Math.max(taille.x * 1.5, 2.5);
     const hitY = Math.max(taille.y * 1.5, 2.5);
     const hitZ = Math.max(taille.z * 1.5, 2.5);
+    lod.addLevel(gltf.scene, 0);
 
     const hitbox = new THREE.Mesh(
       new THREE.BoxGeometry(hitX, hitY, hitZ),
@@ -212,11 +220,11 @@ disneyData.forEach((item) => {
     hitbox.userData = lod.userData;
     lod.add(hitbox);
     objetsCliquables.push(hitbox);
-  }); // LOD de secours (vide) pour éviter les bugs d'apparition
-  lod.addLevel(new THREE.Object3D(), 140);
+}); // LOD de secours (vide) pour éviter les bugs d'apparition
+  lod.addLevel(new THREE.Object3D(), 200);
   scene.add(lod);
 });
-// on ne push plus ici
+
 
 // Asset: Maison
 loader.load("/assets/MaisonV2.glb", (gltf) => {
@@ -261,8 +269,9 @@ let dossierSelection = gui.addFolder("Aucun objet sélectionné");
 const outils = {
   exporter: () => {
     const data = objetsCliquables.map((o) => {
-      const y = o.userData.flotte ? o.userData.baseY : o.position.y;
-      return `${o.name} | Pos: ${o.position.x.toFixed(2)}, ${y.toFixed(2)}, ${o.position.z.toFixed(2)} | Scale: ${o.scale.x.toFixed(2)}, ${o.scale.y.toFixed(2)}, ${o.scale.z.toFixed(2)}`;
+      const lod = o.parent || o; // ✅ On remonte au LOD parent, pas la hitbox
+      const y = lod.userData.flotte ? lod.userData.baseY : lod.position.y;
+      return `${lod.name} | x: ${lod.position.x.toFixed(2)}, y: ${y.toFixed(2)}, z: ${lod.position.z.toFixed(2)} | rotX: ${lod.rotation.x.toFixed(3)}, rotY: ${lod.rotation.y.toFixed(3)}, rotZ: ${lod.rotation.z.toFixed(3)} | scale: ${lod.scale.x.toFixed(2)}`;
     }).join("\n");
     navigator.clipboard.writeText(data);
     alert("Coordonnées ET Tailles copiées ! 📋");
@@ -362,20 +371,18 @@ window.addEventListener("click", (event) => {
       agrandir: () => transformControls.setMode("scale"),
     };
 
-    dossierSelection.add(cible.position, "x").name("Pos X").listen();
-    if (cible.userData.flotte) {
-      dossierSelection
-        .add(cible.userData, "baseY")
-        .name("Pos Y (Base)")
-        .listen();
-    } else {
-      dossierSelection.add(cible.position, "y").name("Pos Y").listen();
-    }
-    dossierSelection.add(cible.position, "z").name("Pos Z").listen();
-
-    dossierSelection.add(cible.rotation, "x").name("Rot X").listen();
-    dossierSelection.add(cible.rotation, "y").name("Rot Y").listen();
-    dossierSelection.add(cible.rotation, "z").name("Rot Z").listen();
+  // ✅ On affiche la position du LOD parent, pas de la hitbox
+    const lodParent = cible.parent || cible;
+      dossierSelection.add(lodParent.position, "x").name("Pos X").listen();
+        if (cible.userData.flotte) {
+      dossierSelection.add(cible.userData, "baseY").name("Pos Y (Base)").listen();
+        } else {
+      dossierSelection.add(lodParent.position, "y").name("Pos Y").listen();
+}
+    dossierSelection.add(lodParent.position, "z").name("Pos Z").listen();
+    dossierSelection.add(lodParent.rotation, "x").name("Rot X").listen(); // ✅ lodParent
+    dossierSelection.add(lodParent.rotation, "y").name("Rot Y").listen(); // ✅ lodParent
+    dossierSelection.add(lodParent.rotation, "z").name("Rot Z").listen(); // ✅ lodParent
 
     const configScale = {
       Sabre: { min: 0.001, max: 1, step: 0.001 },
@@ -387,27 +394,9 @@ window.addEventListener("click", (event) => {
     };
     const cfg = configScale[cible.name] || { min: 0.001, max: 20, step: 0.01 };
 
-    dossierSelection
-      .add(cible.scale, "x")
-      .min(cfg.min)
-      .max(cfg.max)
-      .step(cfg.step)
-      .name("Largeur")
-      .listen();
-    dossierSelection
-      .add(cible.scale, "y")
-      .min(cfg.min)
-      .max(cfg.max)
-      .step(cfg.step)
-      .name("Profondeur")
-      .listen();
-    dossierSelection
-      .add(cible.scale, "z")
-      .min(cfg.min)
-      .max(cfg.max)
-      .step(cfg.step)
-      .name("Hauteur")
-      .listen();
+dossierSelection.add(lodParent.scale, "x").min(cfg.min).max(cfg.max).step(cfg.step).name("Largeur").listen();
+    dossierSelection.add(lodParent.scale, "y").min(cfg.min).max(cfg.max).step(cfg.step).name("Profondeur").listen();
+    dossierSelection.add(lodParent.scale, "z").min(cfg.min).max(cfg.max).step(cfg.step).name("Hauteur").listen();
 
     dossierSelection.add(actionsOutils, "deplacer").name("Activer Déplacement");
     dossierSelection.add(actionsOutils, "tourner").name("Activer Rotation");
@@ -484,13 +473,21 @@ const clock = new THREE.Clock();
 const dirCamera = new THREE.Vector3();
 const dirLaterale = new THREE.Vector3();
 const vitesseZQSD = 0.6;
+let deltaAccumule = 0;
+const intervalleFPS = 1 / 90; // La limite stricte à 90 FPS
 
 const animate = () => {
+  window.requestAnimationFrame(animate); // On déplace l'appel ici
+  const delta = clock.getDelta();
+  deltaAccumule += delta;
+  
+  if (deltaAccumule < intervalleFPS) return; // Frein activé : on passe cette frame
+  deltaAccumule = deltaAccumule % intervalleFPS; // On reset le compteur
   controls.update();
 
   // --- 🎮 MOTEUR GTA : Déplace l'objet sélectionné ---
   if (objetActif && MODE_DEV) {
-    const vitesse = 0.1;
+    const vitesse = 1;
 
    if (touches.q || touches.ArrowLeft) objetActif.translateX(-vitesse);
    if (touches.d || touches.ArrowRight) objetActif.translateX(vitesse);
@@ -587,7 +584,6 @@ const animate = () => {
   perfData.polygones = renderer.info.render.triangles;
   perfData.drawCalls = renderer.info.render.calls;
   perfData.geometries = renderer.info.memory.geometries;
-  window.requestAnimationFrame(animate);
 };
 
 animate();
