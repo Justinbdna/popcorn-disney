@@ -63,6 +63,8 @@ let moveControls = false;
 const targetTarget = new THREE.Vector3();
 const targetPosition = new THREE.Vector3();
 // ✅ AJOUT : Variables manquantes du moteur GTA
+let mobilePadX = 0;
+let mobilePadY = 0;
 let objetActif = null;
 const touches = {
   z: false,
@@ -78,26 +80,20 @@ window.addEventListener("keyup", (e) => {
   if (touches.hasOwnProperty(e.key)) touches[e.key] = false;
 });
 
-if (isMobile) {
-  const joystick = nipplejs.create({
-    zone: document.getElementById("zone-joystick"),
-    mode: "dynamic",
-    color: "white",
-  });
-  joystick.on("move", (evt, data) => {
-    touches.z = data.vector.y > 0.3;
-    touches.s = data.vector.y < -0.3;
-    touches.q = data.vector.x < -0.3;
-    touches.d = data.vector.x > 0.3;
-  });
-  joystick.on("end", () => {
-    touches.z = touches.s = touches.q = touches.d = false;
-  });
-}
-
 // --- LE PONT AVEC L'INTERFACE ---
 window.lancerJeu3D = () => {
-  console.log("🎬 Le tutoriel est terminé, le jeu commence !");
+  console.log("🎬 Jeu lancé !");
+  if (isMobile || 'ontouchstart' in window) {
+    const joystick = nipplejs.create({ zone: document.getElementById("zone-joystick") || document.body, mode: "dynamic", color: "white" });
+    joystick.on("move", (evt, data) => {
+      mobilePadX = data.vector.x; mobilePadY = -data.vector.y;
+      controls.enabled = false;
+    });
+    joystick.on("end", () => {
+      mobilePadX = mobilePadY = 0;
+      controls.enabled = true;
+    });
+  }
 };
 // --- LE BRIDGE DE SÉCURITÉ ---
 window.bloquerControles3D = (etat) => {
@@ -173,7 +169,7 @@ manager.onProgress = (url, loaded, total) => {
 manager.onLoad = () => {
   console.log("✅ 3D téléchargée ! Pré-compilation GPU en cours...");
   // On force le GPU à tout calculer avant de lever le rideau
-  renderer.compile(scene, camera);
+  scene.traverse((obj) => { if (obj.isMesh) renderer.compile(obj, camera); });
 
   if (MODE_DEV) {
     // On attend 1 petite seconde que le compile finisse avant de cacher l'écran
@@ -655,7 +651,15 @@ const animate = () => {
     // 🎮 ÉLÉVATION / DRONE MODE (Gâchettes LT / RT)
     if (typeof padLT !== 'undefined' && padLT > 0.1) { camera.position.y += padLT * 0.4; controls.target.y += padLT * 0.4; }
     if (typeof padRT !== 'undefined' && padRT > 0.1) { camera.position.y -= padRT * 0.4; controls.target.y -= padRT * 0.4; }
-
+   const forceMobile = vitesseZQSD * 1.5;
+    if (Math.abs(mobilePadY) > 0.05 && peutBouger(dirCamera)) {
+      camera.position.addScaledVector(dirCamera, -mobilePadY * forceMobile);
+      controls.target.addScaledVector(dirCamera, -mobilePadY * forceMobile);
+    }
+    if (Math.abs(mobilePadX) > 0.05 && peutBouger(dirLaterale)) {
+      camera.position.addScaledVector(dirLaterale, -mobilePadX * forceMobile);
+      controls.target.addScaledVector(dirLaterale, -mobilePadX * forceMobile);
+    }
     // ⌨️ MOUVEMENT CLAVIER (Touche Z réparée)
     if ((touches.z || touches.ArrowUp) && peutBouger(dirCamera)) {
       camera.position.addScaledVector(dirCamera, vitesseZQSD);
