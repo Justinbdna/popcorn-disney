@@ -63,8 +63,7 @@ let moveControls = false;
 const targetTarget = new THREE.Vector3();
 const targetPosition = new THREE.Vector3();
 // ✅ AJOUT : Variables manquantes du moteur GTA
-let mobilePadX = 0;
-let mobilePadY = 0;
+const padMobile = { x: 0, y: 0, actif: false };
 let objetActif = null;
 const touches = {
   z: false,
@@ -84,13 +83,28 @@ window.addEventListener("keyup", (e) => {
 window.lancerJeu3D = () => {
   console.log("🎬 Jeu lancé !");
   if (isMobile || 'ontouchstart' in window) {
-    const joystick = nipplejs.create({ zone: document.getElementById("zone-joystick") || document.body, mode: "dynamic", color: "white" });
+    const zoneJoystick = document.getElementById("zone-joystick") || document.body;
+    // Bloque le défilement natif du navigateur sur la zone du joystick
+    zoneJoystick.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
+    zoneJoystick.addEventListener("touchmove", (e) => e.stopPropagation(), { passive: true });
+
+    const joystick = nipplejs.create({
+      zone: zoneJoystick,
+      mode: "dynamic",
+      color: "white",
+      restOpacity: 0.75,
+    });
+    
     joystick.on("move", (evt, data) => {
-      mobilePadX = data.vector.x; mobilePadY = -data.vector.y;
+      const v = data?.vector;
+      if (!v) return;
+      padMobile.x = v.x;
+      padMobile.y = -(v.y);
+      padMobile.actif = true;
       controls.enabled = false;
     });
-    joystick.on("end", () => {
-      mobilePadX = mobilePadY = 0;
+ joystick.on("end", () => {
+      padMobile.x = 0; padMobile.y = 0; padMobile.actif = false;
       controls.enabled = true;
     });
   }
@@ -651,15 +665,29 @@ const animate = () => {
     // 🎮 ÉLÉVATION / DRONE MODE (Gâchettes LT / RT)
     if (typeof padLT !== 'undefined' && padLT > 0.1) { camera.position.y += padLT * 0.4; controls.target.y += padLT * 0.4; }
     if (typeof padRT !== 'undefined' && padRT > 0.1) { camera.position.y -= padRT * 0.4; controls.target.y -= padRT * 0.4; }
-   const forceMobile = vitesseZQSD * 1.5;
-    if (Math.abs(mobilePadY) > 0.05 && peutBouger(dirCamera)) {
-      camera.position.addScaledVector(dirCamera, -mobilePadY * forceMobile);
-      controls.target.addScaledVector(dirCamera, -mobilePadY * forceMobile);
+
+ // 📱 MOUVEMENT JOYSTICK MOBILE (Lecture Globale)
+    const fM = vitesseZQSD * 1.5;
+    const mY = padMobile.y;
+    const mX = padMobile.x;
+
+    if (mY < -0.05 && peutBouger(dirCamera)) {
+      camera.position.addScaledVector(dirCamera, -mY * fM);
+      controls.target.addScaledVector(dirCamera, -mY * fM);
     }
-    if (Math.abs(mobilePadX) > 0.05 && peutBouger(dirLaterale)) {
-      camera.position.addScaledVector(dirLaterale, -mobilePadX * forceMobile);
-      controls.target.addScaledVector(dirLaterale, -mobilePadX * forceMobile);
+    if (mY > 0.05 && peutBouger(dirCamera.clone().negate())) {
+      camera.position.addScaledVector(dirCamera, -mY * fM);
+      controls.target.addScaledVector(dirCamera, -mY * fM);
     }
+    if (mX < -0.05 && peutBouger(dirLaterale)) {
+      camera.position.addScaledVector(dirLaterale, -mX * fM);
+      controls.target.addScaledVector(dirLaterale, -mX * fM);
+    }
+    if (mX > 0.05 && peutBouger(dirLaterale.clone().negate())) {
+      camera.position.addScaledVector(dirLaterale, -mX * fM);
+      controls.target.addScaledVector(dirLaterale, -mX * fM);
+    }
+    
     // ⌨️ MOUVEMENT CLAVIER (Touche Z réparée)
     if ((touches.z || touches.ArrowUp) && peutBouger(dirCamera)) {
       camera.position.addScaledVector(dirCamera, vitesseZQSD);
