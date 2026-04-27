@@ -3,119 +3,135 @@
 
 export const disneyData = [
   {
-    id: "low_poly_lightsaber", // 🟢 Star Wars
+    id: "star_wars_lightsaber", // 🟢 Star Wars
     nom: "Le Sabre Laser",
     question: "De quelle couleur est le sabre original de Luke Skywalker ?",
     options: ["Bleu", "Vert", "Rouge", "Violet"],
-    reponseCorrecte: 0, 
+    reponseCorrecte: 0,
     anecdoteSucces: "Bravo ! Le sabre était bleu. Il devient vert dans 'Le Retour du Jedi'.",
     anecdoteEchec: "Faux ! C'était Bleu dans le premier film.",
-    flotte: true, y: 0, x: -10, z: 0, vitesse: 1.5, amplitude: 0.05, 
+    flotte: true, y: 0, x: -10, z: 0, vitesse: 1.5, amplitude: 0.05,
     hasLowPoly: true
   },
   {
-    id: "princess_snow_white_dress", // 🟢 Blanche-Neige
+    id: "blanche_neige_robe", // 🟢 Blanche-Neige
     nom: "La Robe de Princesse",
     question: "Combien de nains accompagnent Blanche-Neige ?",
     options: ["5", "7", "9", "12"],
-    reponseCorrecte: 1, 
+    reponseCorrecte: 1,
     anecdoteSucces: "Exact ! Prof, Joyeux, Atchoum, Grincheux, Dormeur, Timide et Simplet.",
     anecdoteEchec: "Faux ! Ils sont 7.",
-    flotte: false, y: 0, x: 14, z: 0, 
+    flotte: false, y: 0, x: 14, z: 0,
     hasLowPoly: true
   },
   {
-    id: "Aladdin_lamp", // 🟢 Aladdin
+    id: "aladdin_lamp", // 🟢 Aladdin
     nom: "La Lampe Magique",
     question: "Quel acteur célèbre double le Génie dans Aladdin (1992) ?",
     options: ["Tom Hanks", "Jim Carrey", "Robin Williams", "Eddie Murphy"],
     reponseCorrecte: 2,
     anecdoteSucces: "C'est ça ! Robin Williams a tellement improvisé qu'il a changé le film.",
     anecdoteEchec: "Perdu ! C'était Robin Williams.",
-    flotte: true, y: 2, x: 5, z: 0, vitesse: 0.5, amplitude: 0.15, 
+    flotte: true, y: 2, x: 5, z: 0, vitesse: 0.5, amplitude: 0.15,
     hasLowPoly: true
   },
   {
-    id: "lowpoly_cowboy_hat", // 🟢 Toy Story (Woody)
+    id: "toy_story_chapeau", // 🟢 Toy Story (Woody)
     nom: "Le Chapeau de Cowboy",
-    question: "[Mohamed : Ta question ici]",
-    options: ["Choix 1", "Choix 2", "Choix 3", "Choix 4"],
-    reponseCorrecte: 0, 
-    anecdoteSucces: "[Mohamed : Ton anecdote ici]", 
-    anecdoteEchec: "[Mohamed : Ta phrase d'erreur ici]",
-    flotte: false, y: 0, x: -5, z: 0, 
+    question: "Quel nom est écrit sous la botte du propriétaire de ce chapeau ?",
+    options: ["Sid", "Andy", "Buzz", "Bonnie"],
+    reponseCorrecte: 1,
+    anecdoteSucces: "Slay ! C'est bien Andy. Un détail iconique qui définit la loyauté de Woody.",
+    anecdoteEchec: "Dommage ! C'est Andy (ou Bonnie dans les derniers films) qui marque son territoire.",
+    flotte: false, y: 0, x: -5, z: 0,
     hasLowPoly: true
   },
   {
-    id: "drapeau_cars", // 🟢 Cars
+    id: "cars_drapeau", // 🟢 Cars
     nom: "Le Drapeau de Course",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: true, y: 0, x: 0, z: -5, vitesse: 0.8, amplitude: 0.08, 
+    question: "Dans quelle ville imaginaire se déroule la majeure partie du premier film Cars ?",
+    options: ["Radiator Springs", "Route 66 City", "Piston Cup Ville", "Turbo Town"],
+    reponseCorrecte: 0,
+    anecdoteSucces: "Vroom ! Radiator Springs, le plus beau petit village du comté de Carburateur !",
+    anecdoteEchec: "Raté ! C'était Radiator Springs, sur la célèbre Route 66.",
+    flotte: true, y: 0, x: 0, z: -5, vitesse: 0.8, amplitude: 0.08,
     hasLowPoly: true
   },
   {
-    id: "Kim_Possible_CellPhone", // 🟢 Kim Possible
+    id: "kim_possible_phone", // 🟢 Kim Possible
     nom: "Le Kimmunicateur",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: true, y: 0, x: 0, z: 0, vitesse: 1.0, amplitude: 0.1, 
+    question: "Quel est le nom du génie de l'informatique qui aide Kim via cet appareil ?",
+    options: ["Ron Stoppable", "Wade", "Rufus", "Drakken"],
+    reponseCorrecte: 1,
+    anecdoteSucces: "Bip-bip ! Exact, Wade gère tout depuis sa chambre sans jamais sortir.",
+    anecdoteEchec: "Nope ! C'est Wade, le petit génie de 10 ans qui a créé ce gadget.",
+    flotte: true, y: 0, x: 8, z: 3, vitesse: 1.0, amplitude: 0.1, 
     hasLowPoly: true
   },
   {
-    id: "badge", // 🟢 Là-Haut
+    id: "la_haut_badge", // 🟢 Là-Haut
     nom: "Le Badge d'Explorateur",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: false, y: 0, x: -2, z: 2, 
+    question: "À l'origine, quel objet servait de badge de 'L'assistant de l'explorateur' ?",
+    options: ["Une capsule de soda", "Une pièce d'or", "Un bouton de chemise", "Une épingle à nourrice"],
+    reponseCorrecte: 0,
+    anecdoteSucces: "L'aventure est au bout du chemin ! La capsule de soda 'Ellie' est le symbole ultime du film.",
+    anecdoteEchec: "C'était une simple capsule de soda de raisin ! Un trésor sentimental.",
+    flotte: false, y: 0, x: -2, z: 2,
     hasLowPoly: true
   },
   {
-    id: "bougie", // 🟢 La Belle et la Bête
+    id: "belle_bete_bougie", // 🟢 La Belle et la Bête
     nom: "Lumière la Bougie",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: false, y: 0, x: 2, z: 2, 
+    question: "Quel est le métier de Lumière avant d'être transformé en chandelier ?",
+    options: ["Cuisinier", "Maître d'hôtel", "Garde du corps", "Bibliothécaire"],
+    reponseCorrecte: 1,
+    anecdoteSucces: "C'est la fête ! En tant que maître d'hôtel, il sait recevoir ses invités.",
+    anecdoteEchec: "Et non, Lumière était le maître d'hôtel du château.",
+    flotte: false, y: 0, x: 2, z: 2,
     hasLowPoly: true
   },
   {
-    id: "casque_kusco", // 🟢 Kuzco
+    id: "kuzco_casque", // 🟢 Kuzco
     nom: "Le Casque de l'Empereur",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: false, y: 0, x: -4, z: 2, 
+    question: "En quel animal Kuzco est-il transformé par erreur par Yzma ?",
+    options: ["Un alpaga", "Un lama", "Une tortue", "Un condor"], 
+    reponseCorrecte: 1,
+    anecdoteSucces: "Booyah ! Un lama ! 'Lama de compet', comme il dit.",
+    anecdoteEchec: "Mauvaise pioche ! Il devient un lama. Pas de chance pour un empereur.",
+    flotte: false, y: 0, x: -4, z: 2,
     hasLowPoly: true
   },
   {
-    id: "collier_poca", // 🟢 Pocahontas
+    id: "pocahontas_collier", // 🟢 Pocahontas
     nom: "Le Collier de Pocahontas",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: false, y: 0, x: 4, z: 2, 
+    question: "De quelle couleur est la pierre centrale du collier de Pocahontas ?",
+    options: ["Rouge", "Vert émeraude", "Bleu turquoise", "Jaune ambre"],
+    reponseCorrecte: 2,
+    anecdoteSucces: "Juste ! Ce bleu turquoise appartient à l'héritage de sa mère.",
+    anecdoteEchec: "C'était le bleu turquoise ! Un bijou iconique de la culture Powhatan.",
+    flotte: false, y: 0, x: 4, z: 2,
     hasLowPoly: true
   },
   {
-    id: "poele", // 🟢 Raiponce
+    id: "raiponce_poele", // 🟢 Raiponce
     nom: "La Poêle à Frire",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: false, y: 0, x: 0, z: 4, 
+    question: "Qui apprend à Flynn Rider que la poêle est une arme redoutable ?",
+    options: ["Raiponce", "Maximus", "Pascal", "Mère Gothel"],
+    reponseCorrecte: 0,
+    anecdoteSucces: "Exact ! 'On devrait tous en avoir une !' dixit Flynn après l'avoir testée.",
+    anecdoteEchec: "C'est Raiponce ! Elle prouve qu'un ustensile de cuisine bat une épée.",
+    flotte: false, y: 0, x: 0, z: 4,
     hasLowPoly: true
   },
   {
-    id: "pot_miel", // 🟢 Winnie l'Ourson
+    id: "winnie_pot_miel", // 🟢 Winnie l'Ourson
     nom: "Le Pot de Miel",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: false, y: 0, x: 0, z: -2, 
+    question: "Comment Winnie écrit-il souvent le mot 'Miel' sur ses pots ?",
+    options: ["MIEL", "HUNNY", "HONEY", "MYEL"],
+    reponseCorrecte: 1,
+    anecdoteSucces: "Miam ! Winnie l'écrit 'HUNNY' avec sa petite touche personnelle.",
+    anecdoteEchec: "Hé non ! Winnie fait souvent la faute et écrit 'HUNNY'.",
+    flotte: false, y: 0, x: 0, z: -2,
     hasLowPoly: true
   }
 ];
