@@ -23,7 +23,7 @@ window.easterEggDebloque = false; // La clé du mode GTA secret
 
 // 1. LA SCÈNE
 const scene = new THREE.Scene();
-const objetsCliquables = [];
+const objetsCliquables =[];
 // On détecte le mobile TOUT DE SUITE
 const isMobile = window.innerWidth < 768;
 
@@ -158,7 +158,7 @@ dossierDebug
 
 // 6. CHARGEMENT DES OBJETS
 const manager = new THREE.LoadingManager();
-const mursCollision = [];
+const mursCollision =[];
 const raycasterColl = new THREE.Raycaster();
 
 // 🆘 SÉCURITÉ SAFARI : Si le chargement bloque plus de 10s, on force l'ouverture !
