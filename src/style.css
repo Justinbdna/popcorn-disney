@@ -88,8 +88,9 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    backdrop-filter: blur(8px);
-}
+    -webkit-backdrop-filter: blur(8px);
+     backdrop-filter: blur(8px);
+
 
 #quiz-modal {
     position: fixed;
@@ -103,7 +104,8 @@ body {
     align-items: center;
     z-index: 1000;
     backdrop-filter: blur(8px); /* Effet de flou derrière */
-}
+-webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);}
 
 .modal-content {
     background: white;
@@ -155,4 +157,4 @@ body {
 /* LA CLASSE QUI CACHE TOUT */
 .modal-hidden {
     display: none !important;
-}
+}}

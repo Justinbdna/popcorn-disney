@@ -184,7 +184,9 @@ html {
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(4px);
   z-index: -1;
-}
+background: rgba(0, 0, 0, 0.4);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);}
 
 .contenu-tuto {
   text-align: center;
@@ -262,7 +264,9 @@ html {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
   transition: opacity 0.4s ease;
   transform: translate(20px, 20px);
-}
+background: var(--fond-ui);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);}
 
 #infobulle.visible {
   opacity: 1;
@@ -331,7 +335,9 @@ body.survol-objet {
   display: flex;
   align-items: center;
   gap: 10px;
-}
+background: var(--fond-ui);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);}
 
 .chrono-container {
   font-family: monospace;
@@ -350,8 +356,9 @@ body.survol-objet {
   font-size: 1.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  color: white;
-}
+  color: white;background: var(--fond-ui);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 
 .bouton-icone:hover {
   transform: rotate(90deg) scale(1.1);
@@ -384,7 +391,9 @@ body.survol-objet {
   box-shadow: 0 25px 50px rgba(0,0,0,0.8), 0 0 30px rgba(255, 215, 0, 0.1) inset;
   transform: scale(1);
   transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
+background: rgba(10, 10, 15, 0.85);
+  -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(15px);}
 
 .modal.cache .modal-contenu {
   transform: scale(0.8) translateY(30px);
@@ -507,4 +516,4 @@ input:checked + .slider:before { transform: translateX(26px); }
   #infobulle { transform: translate(-50%, -100%); margin-top: -30px; }
   .cercle-image { width: 150px; height: 150px; }
   .texte-chargement { font-size: 1rem; }
-}
+}}

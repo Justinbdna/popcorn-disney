@@ -1,72 +1,75 @@
 // Fichier : src/disneyData.js
-// MISSION POUR MOHAMED : Remplir les questions, les 4 options, indiquer la bonne réponse (0, 1, 2 ou 3) et faire l'anecdote !
+// Fusion : Copywriting de Mohamed + Données techniques strictes (ID, Scale, Coordonnées)
 
-
-export const disneyData = [
+export const disneyData =[
   {
     id: "low_poly_lightsaber", // 🟢 Star Wars
     nom: "Le Sabre Laser",
     question: "De quelle couleur est le sabre original de Luke Skywalker ?",
-    options: ["Bleu", "Vert", "Rouge", "Violet"],
-    reponseCorrecte: 0, 
+    options:["Bleu", "Vert", "Rouge", "Violet"],
+    reponseCorrecte: 0,
     anecdoteSucces: "Bravo ! Le sabre était bleu. Il devient vert dans 'Le Retour du Jedi'.",
     anecdoteEchec: "Faux ! C'était Bleu dans le premier film.",
-    flotte: true, y: 0, x: -10, z: 0, vitesse: 1.5, amplitude: 0.05, 
-    scale: 0.1, // 👈 NOUVEAU: Gère l'échelle de l'objet
+    flotte: true, y: 0, x: -10, z: 0, vitesse: 1.5, amplitude: 0.05,
+    scale: 0.1,
     hasLowPoly: true
   },
   {
     id: "princess_snow_white_dress", // 🟢 Blanche-Neige
     nom: "La Robe de Princesse",
     question: "Combien de nains accompagnent Blanche-Neige ?",
-    options: ["5", "7", "9", "12"],
-    reponseCorrecte: 1, 
+    options:["5", "7", "9", "12"],
+    reponseCorrecte: 1,
     anecdoteSucces: "Exact ! Prof, Joyeux, Atchoum, Grincheux, Dormeur, Timide et Simplet.",
     anecdoteEchec: "Faux ! Ils sont 7.",
     flotte: false, y: 0, x: 14, z: 0,
-    scale: 1, 
+    scale: 1,
     hasLowPoly: true
   },
   {
     id: "Aladdin_lamp", // 🟢 Aladdin
     nom: "La Lampe Magique",
     question: "Quel acteur célèbre double le Génie dans Aladdin (1992) ?",
-    options: ["Tom Hanks", "Jim Carrey", "Robin Williams", "Eddie Murphy"],
+    options:["Tom Hanks", "Jim Carrey", "Robin Williams", "Eddie Murphy"],
     reponseCorrecte: 2,
     anecdoteSucces: "C'est ça ! Robin Williams a tellement improvisé qu'il a changé le film.",
     anecdoteEchec: "Perdu ! C'était Robin Williams.",
-    flotte: true, y: 2, x: -52.4419806717569, z: 0, vitesse: 0.5, amplitude: 0.15, 
+    flotte: true, y: 2, x: -52.4419806717569, z: 0, vitesse: 0.5, amplitude: 0.15,
     scale: 1,
     hasLowPoly: true
   },
   {
     id: "lowpoly_cowboy_hat", // 🟢 Toy Story (Woody)
     nom: "Le Chapeau de Cowboy",
-    question: "[Mohamed : Ta question ici]",
-    options: ["Choix 1", "Choix 2", "Choix 3", "Choix 4"],
-    reponseCorrecte: 0, 
-    anecdoteSucces: "[Mohamed : Ton anecdote ici]", 
-    anecdoteEchec: "[Mohamed : Ta phrase d'erreur ici]",
-    flotte: false, y: 0, x: -5, z: 0, 
+    question: "Quel nom est écrit sous la botte du propriétaire de ce chapeau ?",
+    options: ["Sid", "Andy", "Buzz", "Bonnie"],
+    reponseCorrecte: 1,
+    anecdoteSucces: "Slay ! C'est bien Andy. Un détail iconique qui définit la loyauté de Woody.",
+    anecdoteEchec: "Dommage ! C'est Andy (ou Bonnie dans les derniers films) qui marque son territoire.",
+    flotte: false, y: 0, x: -5, z: 0,
     scale: 50,
     hasLowPoly: true
   },
   {
     id: "drapeau_cars", // 🟢 Cars
     nom: "Le Drapeau de Course",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: true, y: 0, x: 0, z: -5, vitesse: 0.8, amplitude: 0.08, 
+    question: "Dans quelle ville imaginaire se déroule la majeure partie du premier film Cars ?",
+    options:["Radiator Springs", "Route 66 City", "Piston Cup Ville", "Turbo Town"],
+    reponseCorrecte: 0,
+    anecdoteSucces: "Vroom ! Radiator Springs, le plus beau petit village du comté de Carburateur !",
+    anecdoteEchec: "Raté ! C'était Radiator Springs, sur la célèbre Route 66.",
+    flotte: true, y: 0, x: 0, z: -5, vitesse: 0.8, amplitude: 0.08,
     scale: 3,
     hasLowPoly: true
   },
   {
     id: "Kim_Possible_CellPhone", // 🟢 Kim Possible
     nom: "Le Kimmunicateur",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
+    question: "Quel est le nom du génie de l'informatique qui aide Kim via cet appareil ?",
+    options:["Ron Stoppable", "Wade", "Rufus", "Drakken"],
+    reponseCorrecte: 1,
+    anecdoteSucces: "Bip-bip ! Exact, Wade gère tout depuis sa chambre sans jamais sortir.",
+    anecdoteEchec: "Nope ! C'est Wade, le petit génie de 10 ans qui a créé ce gadget.",
     flotte: true, y: 0, x: 0, z: 0, vitesse: 1.0, amplitude: 0.1, 
     scale: 10,
     hasLowPoly: true
@@ -74,49 +77,59 @@ export const disneyData = [
   {
     id: "badge", // 🟢 Là-Haut
     nom: "Le Badge d'Explorateur",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: false, y: 0, x: -2, z: 2, 
+    question: "À l'origine, quel objet servait de badge de 'L'assistant de l'explorateur' ?",
+    options:["Une capsule de soda", "Une pièce d'or", "Un bouton de chemise", "Une épingle à nourrice"],
+    reponseCorrecte: 0,
+    anecdoteSucces: "L'aventure est au bout du chemin ! La capsule de soda 'Ellie' est le symbole ultime du film.",
+    anecdoteEchec: "C'était une simple capsule de soda de raisin ! Un trésor sentimental.",
+    flotte: false, y: 0, x: -2, z: 2,
     scale: 10,
     hasLowPoly: true
   },
   {
-    id: "bougie", // 🟢 Encanto
-    nom: "Bougie Encanto",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: false, y: 0, x: 2, z: 2, 
+    id: "bougie", // 🟢 La Belle et la Bête
+    nom: "Lumière la Bougie",
+    question: "Quel est le métier de Lumière avant d'être transformé en chandelier ?",
+    options:["Cuisinier", "Maître d'hôtel", "Garde du corps", "Bibliothécaire"],
+    reponseCorrecte: 1,
+    anecdoteSucces: "C'est la fête ! En tant que maître d'hôtel, il sait recevoir ses invités.",
+    anecdoteEchec: "Et non, Lumière était le maître d'hôtel du château.",
+    flotte: false, y: 0, x: 2, z: 2,
     scale: 10,
     hasLowPoly: true
   },
   {
     id: "casque_kusco", // 🟢 Kuzco
     nom: "Le Casque de l'Empereur",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: false, y: 0, x: -4, z: 2, 
+    question: "En quel animal Kuzco est-il transformé par erreur par Yzma ?",
+    options:["Un alpaga", "Un lama", "Une tortue", "Un condor"], 
+    reponseCorrecte: 1,
+    anecdoteSucces: "Booyah ! Un lama ! 'Lama de compet', comme il dit.",
+    anecdoteEchec: "Mauvaise pioche ! Il devient un lama. Pas de chance pour un empereur.",
+    flotte: false, y: 0, x: -4, z: 2,
     scale: 10,
     hasLowPoly: true
   },
   {
     id: "collier_poca", // 🟢 Pocahontas
     nom: "Le Collier de Pocahontas",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: false, y: 0, x: 4, z: 2, 
+    question: "De quelle couleur est la pierre centrale du collier de Pocahontas ?",
+    options:["Rouge", "Vert émeraude", "Bleu turquoise", "Jaune ambre"],
+    reponseCorrecte: 2,
+    anecdoteSucces: "Juste ! Ce bleu turquoise appartient à l'héritage de sa mère.",
+    anecdoteEchec: "C'était le bleu turquoise ! Un bijou iconique de la culture Powhatan.",
+    flotte: false, y: 0, x: 4, z: 2,
     scale: 10,
     hasLowPoly: true
   },
   {
     id: "poele", // 🟢 Raiponce
     nom: "La Poêle à Frire",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
+    question: "Qui apprend à Flynn Rider que la poêle est une arme redoutable ?",
+    options:["Raiponce", "Maximus", "Pascal", "Mère Gothel"],
+    reponseCorrecte: 0,
+    anecdoteSucces: "Exact ! 'On devrait tous en avoir une !' dixit Flynn après l'avoir testée.",
+    anecdoteEchec: "C'est Raiponce ! Elle prouve qu'un ustensile de cuisine bat une épée.",
     flotte: false, y: 0, x: 0, z: 4,
     scale: 10,
     hasLowPoly: true
@@ -124,19 +137,23 @@ export const disneyData = [
   {
     id: "pot_miel", // 🟢 Winnie l'Ourson
     nom: "Le Pot de Miel",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
-    flotte: false, y: 0, x: 0, z: -2, 
+    question: "Comment Winnie écrit-il souvent le mot 'Miel' sur ses pots ?",
+    options:["MIEL", "HUNNY", "HONEY", "MYEL"],
+    reponseCorrecte: 1,
+    anecdoteSucces: "Miam ! Winnie l'écrit 'HUNNY' avec sa petite touche personnelle.",
+    anecdoteEchec: "Hé non ! Winnie fait souvent la faute et écrit 'HUNNY'.",
+    flotte: false, y: 0, x: 0, z: -2,
     scale: 10,
     hasLowPoly: true
   },
   { 
     id: "cj_gta_sa2014", // 🟢 GTA Easter Egg
     nom: "CJ",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
+    question: "Quelle est la phrase culte de CJ au début du jeu quand il arrive dans l'allée ?",
+    options:["Here we go again", "All you had to do was follow the train", "Grove Street 4 Life", "Busta !"],
+    reponseCorrecte: 0,
+    anecdoteSucces: "Ah shit, here we go again ! Tu es un vrai fan de San Andreas.",
+    anecdoteEchec: "C'est malheureux... C'était la phrase la plus memeable du jeu.",
     flotte: false, y: 0, x: 51, z: -223.61,
     scale: 2.7,
     hasLowPoly: true
@@ -144,12 +161,13 @@ export const disneyData = [
   {
     id: "Carpet_aladdin", // 🟢 Carpet Aladdin
     nom: "Tapis Aladdin",
-    question: "",
-    options: ["", "", "", ""],
-    reponseCorrecte: 0, anecdoteSucces: "", anecdoteEchec: "",
+    question: "Comment s'appelle le singe d'Aladdin ?",
+    options:["Abu", "Iago", "Rajal", "Meeko"],
+    reponseCorrecte: 0,
+    anecdoteSucces: "Slay ! Abu est effectivement le meilleur complice de tapis.",
+    anecdoteEchec: "C'est Abu ! Iago c'est le perroquet, ne mélange pas tout !",
     flotte: false, y: 1, x: 10, z: 10,
     scale: 0.3,
     hasLowPoly: true
   }
 ];
-

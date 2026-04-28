@@ -23,7 +23,7 @@ window.easterEggDebloque = false; // La clé du mode GTA secret
 
 // 1. LA SCÈNE
 const scene = new THREE.Scene();
-const objetsCliquables = [];
+const objetsCliquables =[];
 // On détecte le mobile TOUT DE SUITE
 const isMobile = window.innerWidth < 768;
 
@@ -81,34 +81,29 @@ window.addEventListener("keyup", (e) => {
 
 // --- LE PONT AVEC L'INTERFACE ---
 window.lancerJeu3D = () => {
-  console.log("🎬 Jeu lancé !");
-  if (isMobile || 'ontouchstart' in window) {
-   const zoneJoystick = document.getElementById("zone-joystick") || document.body;
-    // Isolation topologique du DOM
-    zoneJoystick.style.position = "absolute"; 
-    zoneJoystick.style.zIndex = "9999";
-    zoneJoystick.style.touchAction = "none";
-    zoneJoystick.addEventListener("pointerdown", (e) => e.stopPropagation(), { passive: true });
-    const joystick = nipplejs.create({
-      zone: zoneJoystick,
-      mode: "dynamic",
-      color: "white",
-      restOpacity: 0.75,
-    });
+ console.log("🎬 Jeu lancé !");
+if (isMobile || 'ontouchstart' in window) {
+  const zoneJoystick = document.getElementById("zone-joystick");
+  // Bouclier : Empêche OrbitControls de voler le tactile au joystick
+  zoneJoystick.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: false });
+  
+  const joystick = nipplejs.create({
+    zone: zoneJoystick, mode: "dynamic", color: "white", restOpacity: 0.75
+  });
 
-    joystick.on("move", (evt, data) => {
-      if (!data || typeof data.vector === 'undefined') return;
-      padMobile.x = data.vector.x;
-      padMobile.y = data.vector.y;
-      padMobile.actif = true;
-    });
+ joystick.on("move", (evt) => {
+    if (!evt.data || !evt.data.vector) return;
+    padMobile.x = evt.data.vector.x;
+    padMobile.y = evt.data.vector.y;
+    padMobile.actif = true;
+  });
 
- joystick.on("start", () => bloquerControles3D(true));
-    joystick.on("end", () => {
-      padMobile.x = 0; padMobile.y = 0; padMobile.actif = false;
-      bloquerControles3D(false);
-    });
-  }
+  joystick.on("start", () => bloquerControles3D(true));
+  joystick.on("end", () => {
+    padMobile.x = 0; padMobile.y = 0; padMobile.actif = false;
+    bloquerControles3D(false);
+  });
+ }
 };
 // --- LE BRIDGE DE SÉCURITÉ ---
 window.bloquerControles3D = (etat) => {
@@ -163,7 +158,7 @@ dossierDebug
 
 // 6. CHARGEMENT DES OBJETS
 const manager = new THREE.LoadingManager();
-const mursCollision = [];
+const mursCollision =[];
 const raycasterColl = new THREE.Raycaster();
 
 // 🆘 SÉCURITÉ SAFARI : Si le chargement bloque plus de 10s, on force l'ouverture !
@@ -187,12 +182,13 @@ manager.onLoad = () => {
   scene.traverse((obj) => { if (obj.isMesh) renderer.compile(obj, camera); });
 
   if (MODE_DEV) {
-    // On attend 1 petite seconde que le compile finisse avant de cacher l'écran
-    setTimeout(() => {
-      document.getElementById("ecran-chargement").style.display = "none";
-      document.getElementById("ecran-tutoriel").style.display = "none";
-      if (window.lancerJeu3D) window.lancerJeu3D();
-    }, 1000);
+  // On attend 1 petite seconde que le compile finisse avant de cacher l'écran
+   setTimeout(() => {
+     document.getElementById("ecran-chargement").style.display = "none";
+     const tuto = document.getElementById("ecran-tutoriel");
+     if (tuto) tuto.style.cssText = "display:none !important; opacity:0 !important; pointer-events:none !important; z-index:-1 !important;";
+     if (window.lancerJeu3D) window.lancerJeu3D();
+   }, 1000);
     return;
   }
   const btnDecouvrir = document.getElementById("btn-decouvrir");
@@ -525,6 +521,8 @@ const clock = new THREE.Clock();
 
 const dirCamera = new THREE.Vector3();
 const dirLaterale = new THREE.Vector3();
+const offsetCam = new THREE.Vector3();
+const axeY = new THREE.Vector3(0, 1, 0);
 const vitesseZQSD = 0.6;
 let deltaAccumule = 0;
 const intervalleFPS = 1 / 90; // La limite stricte à 90 FPS
@@ -622,22 +620,22 @@ const animate = () => {
       touches.ArrowDown ||
       touches.ArrowLeft ||
       touches.ArrowRight;
-    if (estEnMouvement) {
+   if (estEnMouvement) {
       // 1. On calcule de combien l'objet vient de se déplacer
-      const delta = new THREE.Vector3().subVectors(
-        objetActif.position,
-        controls.target,
-      );
+      offsetCam.subVectors(objetActif.position, controls.target);
       // 2. On déplace la caméra exactement de la même distance
-      camera.position.add(delta);
+      camera.position.add(offsetCam);
       // 3. On met à jour la cible
       controls.target.copy(objetActif.position);
     }
   }
-  // ✅ RADAR COLLISION — doit être avant le ZQSD
-  const peutBouger = (direction) => {
+// ✅ RADAR COLLISION — doit être avant le ZQSD
+  const dirRaycast = new THREE.Vector3();
+  const peutBouger = (direction, inverse = false) => {
     if (mursCollision.length === 0) return true; // Sécurité si la maison n'est pas chargée
-    raycasterColl.set(camera.position, direction.clone().normalize());
+    dirRaycast.copy(direction);
+    if (inverse) dirRaycast.negate();
+    raycasterColl.set(camera.position, dirRaycast.normalize());
     const intersect = raycasterColl.intersectObjects(mursCollision);
     return intersect.length === 0 || intersect[0].distance > 1.5;
   };
@@ -649,15 +647,15 @@ const animate = () => {
     dirCamera.normalize();
     dirLaterale.crossVectors(camera.up, dirCamera).normalize();
 
-   // 🎮 MOUVEMENT & ROTATION MANETTE
+  // 🎮 MOUVEMENT & ROTATION MANETTE
     if (padY < -0.15 && peutBouger(dirCamera)) { camera.position.addScaledVector(dirCamera, -padY * vitesseZQSD); controls.target.addScaledVector(dirCamera, -padY * vitesseZQSD); }
-    if (padY > 0.15 && peutBouger(dirCamera.clone().negate())) { camera.position.addScaledVector(dirCamera, -padY * vitesseZQSD); controls.target.addScaledVector(dirCamera, -padY * vitesseZQSD); }
+    if (padY > 0.15 && peutBouger(dirCamera, true)) { camera.position.addScaledVector(dirCamera, -padY * vitesseZQSD); controls.target.addScaledVector(dirCamera, -padY * vitesseZQSD); }
     if (padX < -0.15 && peutBouger(dirLaterale)) { camera.position.addScaledVector(dirLaterale, -padX * vitesseZQSD); controls.target.addScaledVector(dirLaterale, -padX * vitesseZQSD); }
-    if (padX > 0.15 && peutBouger(dirLaterale.clone().negate())) { camera.position.addScaledVector(dirLaterale, -padX * vitesseZQSD); controls.target.addScaledVector(dirLaterale, -padX * vitesseZQSD); }
+    if (padX > 0.15 && peutBouger(dirLaterale, true)) { camera.position.addScaledVector(dirLaterale, -padX * vitesseZQSD); controls.target.addScaledVector(dirLaterale, -padX * vitesseZQSD); }
    if (padRotX !== 0) {
-      const offset = new THREE.Vector3().subVectors(controls.target, camera.position);
-      offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), -padRotX * 0.05);
-      controls.target.copy(camera.position).add(offset);
+      offsetCam.subVectors(controls.target, camera.position);
+      offsetCam.applyAxisAngle(axeY, -padRotX * 0.05);
+      controls.target.copy(camera.position).add(offsetCam);
     }
     
     // 🎮 INCLINAISON DE LA TÊTE (Joystick Droit Y)
@@ -668,7 +666,7 @@ const animate = () => {
     if (typeof padRT !== 'undefined' && padRT > 0.1) { camera.position.y -= padRT * 0.4; controls.target.y -= padRT * 0.4; }
 
 // 📱 MOUVEMENT JOYSTICK MOBILE (Calcul Déterministe)
-    const fM = vitesseZQSD * 15.0 * delta; 
+    const fM = vitesseZQSD; 
     const mY = padMobile.y;
     const mX = padMobile.x;
 
@@ -676,24 +674,21 @@ const animate = () => {
       camera.position.addScaledVector(dirCamera, mY * fM);
       controls.target.addScaledVector(dirCamera, mY * fM);
     }
-    if (mY < -0.05 && peutBouger(dirCamera.clone().negate())) {
+    if (mY < -0.05 && peutBouger(dirCamera, true)) {
       camera.position.addScaledVector(dirCamera, mY * fM);
       controls.target.addScaledVector(dirCamera, mY * fM);
     }
-    if (Math.abs(mX) > 0.05 && peutBouger(mX > 0 ? dirLaterale.clone().negate() : dirLaterale)) {
+    if (Math.abs(mX) > 0.05 && peutBouger(dirLaterale, mX > 0)) {
       camera.position.addScaledVector(dirLaterale, -mX * fM);
       controls.target.addScaledVector(dirLaterale, -mX * fM);
     }
     
-    // ⌨️ MOUVEMENT CLAVIER (Touche Z réparée)
+   // ⌨️ MOUVEMENT CLAVIER (Touche Z réparée)
     if ((touches.z || touches.ArrowUp) && peutBouger(dirCamera)) {
       camera.position.addScaledVector(dirCamera, vitesseZQSD);
       controls.target.addScaledVector(dirCamera, vitesseZQSD);
     }
-    if (
-      (touches.s || touches.ArrowDown) &&
-      peutBouger(dirCamera.clone().negate())
-    ) {
+    if ((touches.s || touches.ArrowDown) && peutBouger(dirCamera, true)) {
       camera.position.addScaledVector(dirCamera, -vitesseZQSD);
       controls.target.addScaledVector(dirCamera, -vitesseZQSD);
     }
@@ -701,10 +696,7 @@ const animate = () => {
       camera.position.addScaledVector(dirLaterale, vitesseZQSD);
       controls.target.addScaledVector(dirLaterale, vitesseZQSD);
     }
-    if (
-      (touches.d || touches.ArrowRight) &&
-      peutBouger(dirLaterale.clone().negate())
-    ) {
+    if ((touches.d || touches.ArrowRight) && peutBouger(dirLaterale, true)) {
       camera.position.addScaledVector(dirLaterale, -vitesseZQSD);
       controls.target.addScaledVector(dirLaterale, -vitesseZQSD);
     }
