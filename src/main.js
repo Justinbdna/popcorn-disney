@@ -82,33 +82,28 @@ window.addEventListener("keyup", (e) => {
 // --- LE PONT AVEC L'INTERFACE ---
 window.lancerJeu3D = () => {
  console.log("🎬 Jeu lancé !");
- if (isMobile || 'ontouchstart' in window) {
-  document.querySelectorAll("#zone-joystick").forEach(el => el.style.display = "none");
-  let zoneJoystick = document.getElementById("zone-joystick-v2") || document.createElement("div");
-  zoneJoystick.id = "zone-joystick-v2"; document.body.appendChild(zoneJoystick);
-  zoneJoystick.style.cssText = "position:fixed;bottom:0;left:0;width:50vw;height:50vh;z-index:99999;touch-action:none;";
+if (isMobile || 'ontouchstart' in window) {
+  const zoneJoystick = document.getElementById("zone-joystick");
+  // Bouclier : Empêche OrbitControls de voler le tactile au joystick
+  zoneJoystick.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: false });
   
-   const joystick = nipplejs.create({
-     zone: zoneJoystick,
-     mode: "dynamic",
-     color: "white",
-     restOpacity: 0.75,
-   });
+  const joystick = nipplejs.create({
+    zone: zoneJoystick, mode: "dynamic", color: "white", restOpacity: 0.75
+  });
 
-   joystick.on("move", (evt, data) => {
-     if (!data || !data.angle) return;
-     // Remplacement de data.vector (buggé) par la trigonométrie absolue
-     const force = Math.min(data.force || 1, 1);
-     padMobile.x = Math.cos(data.angle.radian) * force;
-     padMobile.y = Math.sin(data.angle.radian) * force;
-     padMobile.actif = true;
-   });
+  joystick.on("move", (evt, data) => {
+    if (!data || !data.angle) return;
+    const force = Math.min(data.force || 1, 1);
+    padMobile.x = Math.cos(data.angle.radian) * force;
+    padMobile.y = Math.sin(data.angle.radian) * force;
+    padMobile.actif = true;
+  });
 
-   joystick.on("start", () => bloquerControles3D(true));
-   joystick.on("end", () => {
-     padMobile.x = 0; padMobile.y = 0; padMobile.actif = false;
-     bloquerControles3D(false);
-   });
+  joystick.on("start", () => bloquerControles3D(true));
+  joystick.on("end", () => {
+    padMobile.x = 0; padMobile.y = 0; padMobile.actif = false;
+    bloquerControles3D(false);
+  });
  }
 };
 // --- LE BRIDGE DE SÉCURITÉ ---
@@ -188,12 +183,13 @@ manager.onLoad = () => {
   scene.traverse((obj) => { if (obj.isMesh) renderer.compile(obj, camera); });
 
   if (MODE_DEV) {
-    // On attend 1 petite seconde que le compile finisse avant de cacher l'écran
-    setTimeout(() => {
-      document.getElementById("ecran-chargement").style.display = "none";
-      document.getElementById("ecran-tutoriel").style.display = "none";
-      if (window.lancerJeu3D) window.lancerJeu3D();
-    }, 1000);
+  // On attend 1 petite seconde que le compile finisse avant de cacher l'écran
+   setTimeout(() => {
+     document.getElementById("ecran-chargement").style.display = "none";
+     const tuto = document.getElementById("ecran-tutoriel");
+     if (tuto) tuto.style.cssText = "display:none !important; opacity:0 !important; pointer-events:none !important; z-index:-1 !important;";
+     if (window.lancerJeu3D) window.lancerJeu3D();
+   }, 1000);
     return;
   }
   const btnDecouvrir = document.getElementById("btn-decouvrir");
