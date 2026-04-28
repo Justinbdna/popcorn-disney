@@ -91,11 +91,10 @@ if (isMobile || 'ontouchstart' in window) {
     zone: zoneJoystick, mode: "dynamic", color: "white", restOpacity: 0.75
   });
 
-  joystick.on("move", (evt, data) => {
-    if (!data || !data.angle) return;
-    const force = Math.min(data.force || 1, 1);
-    padMobile.x = Math.cos(data.angle.radian) * force;
-    padMobile.y = Math.sin(data.angle.radian) * force;
+ joystick.on("move", (evt) => {
+    if (!evt.data || !evt.data.vector) return;
+    padMobile.x = evt.data.vector.x;
+    padMobile.y = evt.data.vector.y;
     padMobile.actif = true;
   });
 
