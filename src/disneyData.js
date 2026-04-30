@@ -10,8 +10,8 @@ export const disneyData =[
     reponseCorrecte: 0,
     anecdoteSucces: "Bravo ! Le sabre était bleu. Il devient vert dans 'Le Retour du Jedi'.",
     anecdoteEchec: "Faux ! C'était Bleu dans le premier film.",
-    flotte: true, y: 0, x: -10, z: 0, vitesse: 1.5, amplitude: 0.05,
-    scale: 0.1,
+    flotte: true, vitesse: 1.5, amplitude: 0.05,
+    x: -32.00, y: -0.01, z: -242.37, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 0.10,
     hasLowPoly: true
   },
   {
@@ -22,8 +22,8 @@ export const disneyData =[
     reponseCorrecte: 1,
     anecdoteSucces: "Exact ! Prof, Joyeux, Atchoum, Grincheux, Dormeur, Timide et Simplet.",
     anecdoteEchec: "Faux ! Ils sont 7.",
-    flotte: false, y: 0, x: 14, z: 0,
-    scale: 1,
+    flotte: false,
+    x: 36.00, y: 0.00, z: -39.00, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 1.00,
     hasLowPoly: true
   },
   {
@@ -34,8 +34,8 @@ export const disneyData =[
     reponseCorrecte: 2,
     anecdoteSucces: "C'est ça ! Robin Williams a tellement improvisé qu'il a changé le film.",
     anecdoteEchec: "Perdu ! C'était Robin Williams.",
-    flotte: true, y: 2, x: -52.4419806717569, z: 0, vitesse: 0.5, amplitude: 0.15,
-    scale: 1,
+    flotte: true, vitesse: 0.5, amplitude: 0.15,
+    x: -104.44, y: 13.55, z: -157.08, rotX: 0.000, rotY: 5.000, rotZ: 0.000, scale: 1.00,
     hasLowPoly: true
   },
   {
@@ -46,8 +46,8 @@ export const disneyData =[
     reponseCorrecte: 1,
     anecdoteSucces: "Slay ! C'est bien Andy. Un détail iconique qui définit la loyauté de Woody.",
     anecdoteEchec: "Dommage ! C'est Andy (ou Bonnie dans les derniers films) qui marque son territoire.",
-    flotte: false, y: 0, x: -5, z: 0,
-    scale: 50,
+    flotte: false,
+    x: 51.13, y: 24.48, z: -223.25, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 15.00,
     hasLowPoly: true
   },
   {
@@ -58,8 +58,8 @@ export const disneyData =[
     reponseCorrecte: 0,
     anecdoteSucces: "Vroom ! Radiator Springs, le plus beau petit village du comté de Carburateur !",
     anecdoteEchec: "Raté ! C'était Radiator Springs, sur la célèbre Route 66.",
-    flotte: true, y: 0, x: 0, z: -5, vitesse: 0.8, amplitude: 0.08,
-    scale: 3,
+    flotte: true, vitesse: 0.8, amplitude: 0.08,
+    x: -161.00, y: 19.06, z: -90.00, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 3.00,
     hasLowPoly: true
   },
   {
@@ -70,8 +70,8 @@ export const disneyData =[
     reponseCorrecte: 1,
     anecdoteSucces: "Bip-bip ! Exact, Wade gère tout depuis sa chambre sans jamais sortir.",
     anecdoteEchec: "Nope ! C'est Wade, le petit génie de 10 ans qui a créé ce gadget.",
-    flotte: true, y: 0, x: 0, z: 0, vitesse: 1.0, amplitude: 0.1, 
-    scale: 10,
+    flotte: true, vitesse: 1.0, amplitude: 0.1, 
+    x: -18.91, y: 13.06, z: -34.56, rotX: 5.000, rotY: 0.000, rotZ: 0.000, scale: 5.00,
     hasLowPoly: true
   },
   {
@@ -82,8 +82,8 @@ export const disneyData =[
     reponseCorrecte: 0,
     anecdoteSucces: "L'aventure est au bout du chemin ! La capsule de soda 'Ellie' est le symbole ultime du film.",
     anecdoteEchec: "C'était une simple capsule de soda de raisin ! Un trésor sentimental.",
-    flotte: false, y: 0, x: -2, z: 2,
-    scale: 10,
+    flotte: false,
+    x: -47.00, y: 32.25, z: -82.81, rotX: 0.000, rotY: 4.700, rotZ: 0.000, scale: 5.00,
     hasLowPoly: true
   },
   {
@@ -94,8 +94,8 @@ export const disneyData =[
     reponseCorrecte: 1,
     anecdoteSucces: "C'est la fête ! En tant que maître d'hôtel, il sait recevoir ses invités.",
     anecdoteEchec: "Et non, Lumière était le maître d'hôtel du château.",
-    flotte: false, y: 0, x: 2, z: 2,
-    scale: 10,
+    flotte: false,
+    x: 19.00, y: 23.37, z: -143.79, rotX: 0.000, rotY: 3.000, rotZ: 0.000, scale: 5.00,
     hasLowPoly: true
   },
   {
@@ -106,8 +106,8 @@ export const disneyData =[
     reponseCorrecte: 1,
     anecdoteSucces: "Booyah ! Un lama ! 'Lama de compet', comme il dit.",
     anecdoteEchec: "Mauvaise pioche ! Il devient un lama. Pas de chance pour un empereur.",
-    flotte: false, y: 0, x: -4, z: 2,
-    scale: 10,
+    flotte: false,
+    x: -55.00, y: 13.79, z: -149.00, rotX: 0.000, rotY: 4.700, rotZ: 0.000, scale: 10.00,
     hasLowPoly: true
   },
   {
@@ -118,8 +118,8 @@ export const disneyData =[
     reponseCorrecte: 2,
     anecdoteSucces: "Juste ! Ce bleu turquoise appartient à l'héritage de sa mère.",
     anecdoteEchec: "C'était le bleu turquoise ! Un bijou iconique de la culture Powhatan.",
-    flotte: false, y: 0, x: 4, z: 2,
-    scale: 10,
+    flotte: false,
+    x: -54.34, y: 13.93, z: -163.84, rotX: 0.000, rotY: 4.700, rotZ: 0.000, scale: 10.00,
     hasLowPoly: true
   },
   {
@@ -130,8 +130,8 @@ export const disneyData =[
     reponseCorrecte: 0,
     anecdoteSucces: "Exact ! 'On devrait tous en avoir une !' dixit Flynn après l'avoir testée.",
     anecdoteEchec: "C'est Raiponce ! Elle prouve qu'un ustensile de cuisine bat une épée.",
-    flotte: false, y: 0, x: 0, z: 4,
-    scale: 10,
+    flotte: false,
+    x: -140.41, y: 14.76, z: -235.78, rotX: 0.000, rotY: 9.500, rotZ: 0.000, scale: 10.00,
     hasLowPoly: true
   },
   {
@@ -142,8 +142,8 @@ export const disneyData =[
     reponseCorrecte: 1,
     anecdoteSucces: "Miam ! Winnie l'écrit 'HUNNY' avec sa petite touche personnelle.",
     anecdoteEchec: "Hé non ! Winnie fait souvent la faute et écrit 'HUNNY'.",
-    flotte: false, y: 0, x: 0, z: -2,
-    scale: 10,
+    flotte: false,
+    x: -157.15, y: 14.35, z: -236.84, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 10.00,
     hasLowPoly: true
   },
   { 
@@ -154,8 +154,8 @@ export const disneyData =[
     reponseCorrecte: 0,
     anecdoteSucces: "Ah shit, here we go again ! Tu es un vrai fan de San Andreas.",
     anecdoteEchec: "C'est malheureux... C'était la phrase la plus memeable du jeu.",
-    flotte: false, y: 0, x: 51, z: -223.61,
-    scale: 2.7,
+    flotte: false,
+    x: 51.00, y: 0.00, z: -223.61, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 2.70,
     hasLowPoly: true
   },
   {
@@ -166,8 +166,8 @@ export const disneyData =[
     reponseCorrecte: 0,
     anecdoteSucces: "Slay ! Abu est effectivement le meilleur complice de tapis.",
     anecdoteEchec: "C'est Abu ! Iago c'est le perroquet, ne mélange pas tout !",
-    flotte: false, y: 1, x: 10, z: 10,
-    scale: 0.3,
+    flotte: false,
+    x: -105.00, y: 1.00, z: -159.02, rotX: 0.000, rotY: 4.700, rotZ: 0.000, scale: 0.30,
     hasLowPoly: true
   }
 ];
