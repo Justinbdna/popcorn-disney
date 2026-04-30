@@ -39,7 +39,7 @@ export const disneyData =[
     hasLowPoly: true
   },
   {
-    id: "lowpoly_cowboy_hat", // 🟢 Toy Story (Woody)
+    id: "lowpoly_cowboy_hat_V2", // 🟢 Toy Story (Woody)
     nom: "Le Chapeau de Cowboy",
     question: "Quel nom est écrit sous la botte du propriétaire de ce chapeau ?",
     options: ["Sid", "Andy", "Buzz", "Bonnie"],
