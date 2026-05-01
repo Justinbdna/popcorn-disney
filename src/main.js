@@ -18,7 +18,7 @@ import nipplejs from "nipplejs";
 // ==========================================
 // 🛠️ MODE DÉVELOPPEUR
 // ==========================================
-const MODE_DEV = false; // Mets sur 'false' pour le rendu final !
+const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
 window.easterEggDebloque = false; // La clé du mode GTA secret
 
 // 1. LA SCÈNE
@@ -46,7 +46,9 @@ renderer.setPixelRatio(pixelRatio);
 // Ombre dynamiques (rendu AAA)
 renderer.shadowMap.enabled = false;
 renderer.shadowMap.type = THREE.PCFShadowMap;
-
+renderer.outputColorSpace = THREE.SRGBColorSpace; // 👈 FIX LUMIÈRE NOIRE
+renderer.toneMapping = THREE.ACESFilmicToneMapping; // 👈 RENDU RÉALISTE
+renderer.toneMappingExposure = 1.0;
 // 4. ORBIT CONTROLS
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -219,49 +221,60 @@ dracoLoader.setDecoderPath(
 );
 loader.setDRACOLoader(dracoLoader);
 
-// 🟢 CHARGEMENT AUTOMATISÉ AVEC LOD
-disneyData.forEach((item) => {
-  const lod = new THREE.LOD();
-  lod.name = item.id;
-  lod.userData = { ...item };
-  if (item.flotte)
-    Object.assign(lod.userData, {
-      flotteActive: true,
-      baseY: item.y || 0,
-      vitesse: item.vitesse || 0.8,
-      amplitude: item.amplitude || 0.08,
-    });
-  lod.position.set(item.x || 0, item.y || 0, item.z || 0);
-  lod.rotation.set(item.rotX || 0, item.rotY || 0, item.rotZ || 0);
-  if (item.scale) lod.scale.setScalar(item.scale);
+// 🟢 CHARGEMENT SÉQUENTIEL (ANTI-CRASH SAFARI)
+const chargerObjetsSequentiels = async () => {
+  for (const item of disneyData) {
+    const lod = new THREE.LOD();
+    lod.name = item.id;
+    lod.userData = { ...item };
+    if (item.flotte)
+      Object.assign(lod.userData, {
+        flotteActive: true,
+        baseY: item.y || 0,
+        vitesse: item.vitesse || 0.8,
+        amplitude: item.amplitude || 0.08,
+      });
+    lod.position.set(item.x || 0, item.y || 0, item.z || 0);
+    lod.rotation.set(item.rotX || 0, item.rotY || 0, item.rotZ || 0);
+    if (item.scale) lod.scale.setScalar(item.scale);
 
-  loader.load(`/assets/${item.id}.glb`, (gltf) => {
-    const boite = new THREE.Box3().setFromObject(gltf.scene);
-    const taille = new THREE.Vector3();
-    boite.getSize(taille);
-    const hitX = Math.max(taille.x * 1.5, 2.5);
-    const hitY = Math.max(taille.y * 1.5, 2.5);
-    const hitZ = Math.max(taille.z * 1.5, 2.5);
-    lod.addLevel(gltf.scene, 0);
+    try {
+      const gltf = await loader.loadAsync(`/assets/${item.id}.glb`);
+      const boite = new THREE.Box3().setFromObject(gltf.scene);
+      const taille = new THREE.Vector3();
+      boite.getSize(taille);
+      const hitX = Math.max(taille.x * 1.5, 2.5);
+      const hitY = Math.max(taille.y * 1.5, 2.5);
+      const hitZ = Math.max(taille.z * 1.5, 2.5);
+      lod.addLevel(gltf.scene, 0);
 
-    const hitbox = new THREE.Mesh(
-      new THREE.BoxGeometry(hitX, hitY, hitZ),
-      new THREE.MeshBasicMaterial({
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-      }),
-    );
-    const center = new THREE.Vector3();
-    boite.getCenter(center);
-    hitbox.position.copy(center);
-    hitbox.name = lod.name;
-    hitbox.userData = lod.userData;
-    lod.add(hitbox);
-    objetsCliquables.push(hitbox);
-  }); // LOD de secours (vide) pour éviter les bugs d'apparition
-  lod.addLevel(new THREE.Object3D(), 200);
-  scene.add(lod);
+      const hitbox = new THREE.Mesh(
+        new THREE.BoxGeometry(hitX, hitY, hitZ),
+        new THREE.MeshBasicMaterial({
+          transparent: true,
+          opacity: 0,
+          depthWrite: false,
+        }),
+      );
+      const center = new THREE.Vector3();
+      boite.getCenter(center);
+      hitbox.position.copy(center);
+      hitbox.name = lod.name;
+      hitbox.userData = lod.userData;
+      lod.add(hitbox);
+      objetsCliquables.push(hitbox);
+    } catch (error) {
+      console.error("❌ Erreur VRAM sur :", item.id, error);
+    }
+    // LOD de secours (vide) pour éviter les bugs d'apparition
+    lod.addLevel(new THREE.Object3D(), 200);
+    scene.add(lod);
+  }
+};
+// On verrouille le manager pour qu'il attende la fin absolue de la boucle
+manager.itemStart("chargement_sequentiel");
+chargerObjetsSequentiels().then(() => {
+  manager.itemEnd("chargement_sequentiel");
 });
 
 // Asset: Maison
