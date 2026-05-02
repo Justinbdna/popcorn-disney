@@ -23,7 +23,9 @@ window.easterEggDebloque = false; // La clé du mode GTA secret
 
 // 1. LA SCÈNE
 const scene = new THREE.Scene();
-const objetsCliquables =[];
+const objetsCliquables = [];
+const lodsScene = []; // 👈 On déclare le tableau ici pour que tout le code le voie
+
 // On détecte le mobile TOUT DE SUITE
 const isMobile = window.innerWidth < 768;
 
@@ -49,7 +51,7 @@ renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace; // 👈 FIX LUMIÈRE NOIRE
 if (isMobile) {
   renderer.setPixelRatio(1);
-  THREE.Cache.enabled = true;
+  THREE.Cache.clear(); // 🚫 SURTOUT PAS DE CACHE SUR IOS
 }
 
 // 4. ORBIT CONTROLS
@@ -70,6 +72,7 @@ const targetPosition = new THREE.Vector3();
 // ✅ AJOUT : Variables manquantes du moteur GTA
 const padMobile = { x: 0, y: 0, actif: false };
 let objetActif = null;
+let renduAutorise = false; // 👈 Le garde-barrière du GPU
 const touches = {
   z: false,
   q: false,
@@ -185,18 +188,21 @@ manager.onLoad = () => {
   console.log("✅ 3D téléchargée et compilée !");
 
   if (MODE_DEV) {
-  // On attend 1 petite seconde que le compile finisse avant de cacher l'écran
-   setTimeout(() => {
-     document.getElementById("ecran-chargement").style.display = "none";
-     const tuto = document.getElementById("ecran-tutoriel");
-     if (tuto) tuto.style.cssText = "display:none !important; opacity:0 !important; pointer-events:none !important; z-index:-1 !important;";
-     if (window.lancerJeu3D) window.lancerJeu3D();
-   }, 1000);
+    // Cache l'écran de chargement et le tutoriel immédiatement en mode dev
+    const ecranChargement = document.getElementById("ecran-chargement");
+    if (ecranChargement) ecranChargement.remove(); 
+    
+    const tuto = document.getElementById("ecran-tutoriel");
+    if (tuto) tuto.remove();
+
+    // Lance le jeu tout de suite
+    if (window.lancerJeu3D) window.lancerJeu3D();
     return;
   }
   const btnDecouvrir = document.getElementById("btn-decouvrir");
   const texteChargement = document.querySelector(".texte-chargement");
   if (btnDecouvrir && texteChargement) {
+  
     texteChargement.style.transition = "opacity 0.5s ease";
     texteChargement.style.opacity = "0";
     setTimeout(() => (texteChargement.style.display = "none"), 500);
@@ -240,6 +246,7 @@ const chargerTout = async () => {
     const solHitbox = new THREE.Mesh(new THREE.BoxGeometry(300, 1, 300), new THREE.MeshBasicMaterial({ color: 0x0000ff, transparent: true, opacity: 0, depthWrite: false }));
     solHitbox.name = "Maison"; solHitbox.position.y = -0.5;
     scene.add(solHitbox); objetsCliquables.push(solHitbox);
+    
 } catch (e) { console.error("❌ Erreur Maison", e); }
 
 // 🫁 PAUSE VITALE : Forcer Safari à vider ses buffers WebGL
@@ -277,14 +284,13 @@ await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(r
    lod.addLevel(new THREE.Object3D(), 200);
    scene.add(lod);
   lodsScene.push(lod);
-
-   // 🫁 RESPIRATION : Placé DANS la boucle pour libérer la VRAM à chaque objet
+  // 🫁 RESPIRATION : Placé DANS la boucle pour libérer la VRAM à chaque objet
 await new Promise(resolve => setTimeout(resolve, 100));
   }
   dracoLoader.dispose();
   manager.itemEnd("chargement_sequentiel");
+  renduAutorise = true; // 👈 Fin du chargement, on libère les FPS
 };
-const lodsScene = [];
 chargerTout();
 
 // 5. LA LUMIÈRE
@@ -713,9 +719,9 @@ const animate = () => {
     }
   });
 
-  lodsScene.forEach(lod => lod.update(camera));
+ lodsScene.forEach(lod => lod.update(camera));
 
-  renderer.render(scene, camera);
+  if (renduAutorise) renderer.render(scene, camera); // 👈 GPU protégé !
   if (stats) stats.update();
 };
 
