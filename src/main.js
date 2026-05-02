@@ -69,10 +69,12 @@ controls.maxDistance = 250;
 let moveControls = false;
 const targetTarget = new THREE.Vector3();
 const targetPosition = new THREE.Vector3();
+
 // ✅ AJOUT : Variables manquantes du moteur GTA
 const padMobile = { x: 0, y: 0, actif: false };
 let objetActif = null;
 let renduAutorise = false; // 👈 Le garde-barrière du GPU
+
 const touches = {
   z: false,
   q: false,
@@ -90,29 +92,36 @@ window.addEventListener("keyup", (e) => {
 // --- LE PONT AVEC L'INTERFACE ---
 window.lancerJeu3D = () => {
  console.log("🎬 Jeu lancé !");
-if (isMobile || 'ontouchstart' in window) {
+ if (isMobile || 'ontouchstart' in window) {
   const zoneJoystick = document.getElementById("zone-joystick");
-  // Bouclier : Empêche OrbitControls de voler le tactile au joystick
-  zoneJoystick.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: false });
   
-  const joystick = nipplejs.create({
-    zone: zoneJoystick, mode: "dynamic", color: "white", restOpacity: 0.75
-  });
+  if (zoneJoystick) { // 🛡️ SÉCURITÉ : On s'assure que la div existe avant d'attacher des events
+    zoneJoystick.style.touchAction = "none";
+    zoneJoystick.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: false });
+    
+    const joystick = nipplejs.create({
+      zone: zoneJoystick, mode: "dynamic", color: "white", restOpacity: 0.75
+    });
 
- joystick.on("move", (evt) => {
-    if (!evt.data || !evt.data.vector) return;
-    padMobile.x = evt.data.vector.x;
-    padMobile.y = evt.data.vector.y;
-    padMobile.actif = true;
-  });
+    joystick.on("move", (evt, data) => {
+      const v = data ? data.vector : (evt.data ? evt.data.vector : null);
+      if (!v) return;
+      padMobile.x = v.x;
+      padMobile.y = v.y;
+      padMobile.actif = true;
+    });
 
-  joystick.on("start", () => bloquerControles3D(true));
-  joystick.on("end", () => {
-    padMobile.x = 0; padMobile.y = 0; padMobile.actif = false;
-    bloquerControles3D(false);
-  });
+    joystick.on("start", () => bloquerControles3D(true));
+    joystick.on("end", () => {
+      padMobile.x = 0; padMobile.y = 0; padMobile.actif = false;
+      bloquerControles3D(false);
+    });
+  } else {
+    console.error("❌ Impossible de lancer le joystick : div #zone-joystick introuvable.");
+  }
  }
 };
+
 // --- LE BRIDGE DE SÉCURITÉ ---
 window.bloquerControles3D = (etat) => {
   if (controls) controls.enabled = !etat;
@@ -144,7 +153,7 @@ window.addEventListener("keydown", (e) => {
     transformControls.detach();
     objetActif = null;
     dossierSelection.destroy();
-    dossierSelection = gui.addFolder("Aucun objet sélectionné");
+    dossierSelection = gui?.addFolder("Aucun objet sélectionné");
   }
 });
 
@@ -152,8 +161,7 @@ window.addEventListener("keydown", (e) => {
 const gui = !isMobile ? new GUI() : null;
 const debugConfig = { afficherHitboxes: false };
 const dossierDebug = gui?.addFolder("🛠️ Mode Debug");
-dossierDebug
-  .add(debugConfig, "afficherHitboxes")
+dossierDebug?.add(debugConfig, "afficherHitboxes")
   .name("Voir Collisions")
   .onChange((val) => {
     objetsCliquables.forEach((h) => {
@@ -166,17 +174,17 @@ dossierDebug
 
 // 6. CHARGEMENT DES OBJETS
 const manager = new THREE.LoadingManager();
-const mursCollision =[];
+const mursCollision = [];
 const raycasterColl = new THREE.Raycaster();
 
-// 🆘 SÉCURITÉ SAFARI : Si le chargement bloque plus de 10s, on force l'ouverture !
+// 🆘 SÉCURITÉ SAFARI : Fallback
 setTimeout(() => {
   const btn = document.getElementById("btn-decouvrir");
   if (btn && btn.classList.contains("cache")) {
     console.warn("⏳ Safari rame trop, on débloque le bouton de force !");
     btn.classList.remove("cache");
   }
-}, 10000); // 10000 millisecondes = 10 secondes
+}, 10000); 
 
 manager.onProgress = (url, loaded, total) => {
   const percent = Math.round((loaded / total) * 100);
@@ -185,33 +193,11 @@ manager.onProgress = (url, loaded, total) => {
 };
 
 manager.onLoad = () => {
-  console.log("✅ 3D téléchargée et compilée !");
-
-  if (MODE_DEV) {
-    // Cache l'écran de chargement et le tutoriel immédiatement en mode dev
-    const ecranChargement = document.getElementById("ecran-chargement");
-    if (ecranChargement) ecranChargement.remove(); 
-    
-    const tuto = document.getElementById("ecran-tutoriel");
-    if (tuto) tuto.remove();
-
-    // Lance le jeu tout de suite
-    if (window.lancerJeu3D) window.lancerJeu3D();
-    return;
-  }
-  const btnDecouvrir = document.getElementById("btn-decouvrir");
-  const texteChargement = document.querySelector(".texte-chargement");
-  if (btnDecouvrir && texteChargement) {
-  
-    texteChargement.style.transition = "opacity 0.5s ease";
-    texteChargement.style.opacity = "0";
-    setTimeout(() => (texteChargement.style.display = "none"), 500);
-    setTimeout(() => {
-      btnDecouvrir.classList.remove("cache");
-    }, 400);
-  }
+  // On ne gère plus l'UI ici pour éviter les bugs asynchrones. 
+  // Ce log confirme juste que les fichiers sont téléchargés en mémoire.
+  console.log("✅ Fichiers 3D téléchargés en mémoire locale.");
 };
-//Teste pour identifier erreur
+
 manager.onError = (url) => {
   console.error("❌ Erreur critique de chargement sur : " + url);
   if (!isMobile) alert("Le fichier " + url + " refuse de charger.");
@@ -219,10 +205,10 @@ manager.onError = (url) => {
 
 const loader = new GLTFLoader(manager);
 
-//DracoLoader
+// DracoLoader
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
-dracoLoader.setWorkerLimit(1); // 👈 FIX CRASH iOS : 1 seul worker pour sauver la RAM
+dracoLoader.setWorkerLimit(1); 
 loader.setDRACOLoader(dracoLoader);
 
 // 🟢 CHARGEMENT SÉQUENTIEL TOTAL (MAISON + OBJETS)
@@ -230,7 +216,7 @@ const chargerTout = async () => {
   manager.itemStart("chargement_sequentiel");
 
   try {
-    // 1. On charge la maison en premier (le plus lourd)
+    // 1. On charge la maison en premier
     const gltfMaison = await loader.loadAsync("/assets/MaisonV2.glb");
     const maison = gltfMaison.scene;
     maison.scale.set(15, 15, 15);
@@ -241,19 +227,18 @@ const chargerTout = async () => {
         mursCollision.push(obj);
       }
     });
-    // On crée un sol mathématique ultra-léger pour le clic, au lieu de la vraie maison
+    
     scene.add(maison);
     const solHitbox = new THREE.Mesh(new THREE.BoxGeometry(300, 1, 300), new THREE.MeshBasicMaterial({ color: 0x0000ff, transparent: true, opacity: 0, depthWrite: false }));
     solHitbox.name = "Maison"; solHitbox.position.y = -0.5;
     scene.add(solHitbox); objetsCliquables.push(solHitbox);
-    
-} catch (e) { console.error("❌ Erreur Maison", e); }
 
-// 🫁 PAUSE VITALE : Forcer Safari à vider ses buffers WebGL
-await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    // 👈 Compilation protégée (renduAutorise est encore false)
+    renderer.compile(maison, camera); 
+  } catch (e) { console.error("❌ Erreur Maison", e); }
 
- // 🫁 PAUSE VITALE : 1 seconde complète pour vider la RAM après la lourde Maison
- await new Promise(resolve => setTimeout(resolve, 1000));
+  // 🫁 PAUSE VITALE : 500ms complète pour vider la RAM après la lourde Maison
+  await new Promise(resolve => setTimeout(resolve, 500));
 
   // 2. On charge les objets Disney un par un
   for (const item of disneyData) {
@@ -278,19 +263,52 @@ await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(r
       boite.getCenter(center);
       hitbox.position.copy(center);
       hitbox.name = lod.name; hitbox.userData = lod.userData;
-     lod.add(hitbox); objetsCliquables.push(hitbox);
-   } catch (error) { console.error("❌ Erreur VRAM sur :", item.id, error); }
-  
-   lod.addLevel(new THREE.Object3D(), 200);
-   scene.add(lod);
-  lodsScene.push(lod);
-  // 🫁 RESPIRATION : Placé DANS la boucle pour libérer la VRAM à chaque objet
-await new Promise(resolve => setTimeout(resolve, 100));
+      lod.add(hitbox); objetsCliquables.push(hitbox);
+
+      // 👈 Compilation protégée objet par objet
+      renderer.compile(gltf.scene, camera); 
+    } catch (error) { console.error("❌ Erreur VRAM sur :", item.id, error); }
+  
+    lod.addLevel(new THREE.Object3D(), 200);
+    scene.add(lod);
+    lodsScene.push(lod);
+    
+    // 🫁 RESPIRATION : Placé DANS la boucle pour libérer la VRAM
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
+
   dracoLoader.dispose();
   manager.itemEnd("chargement_sequentiel");
-  renduAutorise = true; // 👈 Fin du chargement, on libère les FPS
+
+  // ==================================================
+  // 👈 DÉPLOIEMENT DE L'INTERFACE À LA FIN ABSOLUE
+  // ==================================================
+  console.log("✅ Moteur 3D et Shaders compilés à 100%");
+
+  if (MODE_DEV) {
+    const ecranChargement = document.getElementById("ecran-chargement");
+    if (ecranChargement) ecranChargement.remove(); 
+    
+    const tuto = document.getElementById("ecran-tutoriel");
+    if (tuto) tuto.remove(); // Destruction totale du DOM
+
+    if (window.lancerJeu3D) window.lancerJeu3D();
+  } else {
+    const btnDecouvrir = document.getElementById("btn-decouvrir");
+    const texteChargement = document.querySelector(".texte-chargement");
+    if (btnDecouvrir && texteChargement) {
+      texteChargement.style.transition = "opacity 0.5s ease";
+      texteChargement.style.opacity = "0";
+      setTimeout(() => (texteChargement.style.display = "none"), 500);
+      setTimeout(() => {
+        btnDecouvrir.classList.remove("cache");
+      }, 400);
+    }
+  }
+
+  renduAutorise = true; // 👈 Fin absolue, la boucle animate() prend le relais
 };
+
 chargerTout();
 
 // 5. LA LUMIÈRE
@@ -303,8 +321,7 @@ scene.add(dirLight);
 
 // GUI - Éclairage
 const lumiereDossier = gui?.addFolder("Éclairage");
-lumiereDossier
-  .add(dirLight, "intensity")
+lumiereDossier?.add(dirLight, "intensity")
   .min(0)
   .max(10)
   .step(0.1)
@@ -317,7 +334,7 @@ const outils = {
   exporter: () => {
     const data = objetsCliquables
       .map((o) => {
-        const lod = o.parent || o; // ✅ On remonte au LOD parent, pas la hitbox
+        const lod = o.parent || o; 
         const y = lod.userData.flotte ? lod.userData.baseY : lod.position.y;
         return `${lod.name} | x: ${lod.position.x.toFixed(2)}, y: ${y.toFixed(2)}, z: ${lod.position.z.toFixed(2)} | rotX: ${lod.rotation.x.toFixed(3)}, rotY: ${lod.rotation.y.toFixed(3)}, rotZ: ${lod.rotation.z.toFixed(3)} | scale: ${lod.scale.x.toFixed(2)}`;
       })
@@ -332,15 +349,17 @@ gui?.add(outils, "exporter").name("💾 Exporter Coordonnées");
 const stats = !isMobile ? new Stats() : null;
 if (stats) document.body.appendChild(stats.dom);
 const perfData = { polygones: 0, drawCalls: 0, geometries: 0 };
-const perfFolder = gui.addFolder("Moniteur d'Activité");
-perfFolder.add(perfData, "polygones").name("Triangles").listen();
-perfFolder.add(perfData, "drawCalls").name("Draw Calls").listen();
-perfFolder.add(perfData, "geometries").name("Géométries (RAM)").listen();
+const perfFolder = gui?.addFolder("Moniteur d'Activité");
+if (perfFolder) {
+  perfFolder.add(perfData, "polygones").name("Triangles").listen();
+  perfFolder.add(perfData, "drawCalls").name("Draw Calls").listen();
+  perfFolder.add(perfData, "geometries").name("Géométries (RAM)").listen();
+}
 
 // 🔒 MODE PROD : Cache le GUI et les stats
 if (!MODE_DEV) {
-  gui.hide();
-  stats.dom.style.display = "none";
+  gui?.hide();
+  if (stats) stats.dom.style.display = "none";
 }
 
 // Resize
@@ -354,15 +373,14 @@ window.addEventListener("pointermove", (event) => {
   souris.x = (event.clientX / window.innerWidth) * 2 - 1;
   souris.y = -(event.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(souris, camera);
-  // Curseur pointer sur les objets
+  
   const hits = raycaster.intersectObjects(objetsCliquables, true);
   const cibleHover = hits[0]?.object;
-  const estMaison =
-    cibleHover?.name === "Maison" || cibleHover?.parent?.name === "Maison";
+  const estMaison = cibleHover?.name === "Maison" || cibleHover?.parent?.name === "Maison";
+  
   if (hits.length > 0 && !estMaison) {
     document.body.style.cursor = "pointer";
-    if (!MODE_DEV && window.afficherInfobulle)
-      window.afficherInfobulle(cibleHover.name, "");
+    if (!MODE_DEV && window.afficherInfobulle) window.afficherInfobulle(cibleHover.name, "");
   } else {
     document.body.style.cursor = "default";
     if (!MODE_DEV && window.cacherInfobulle) window.cacherInfobulle();
@@ -384,14 +402,11 @@ window.addEventListener("click", (event) => {
       cible = cible.parent;
     }
 
-    // Sécurité Maison
     if (cible.name === "Maison") return;
 
-    // 👉 On désigne cet objet comme celui qu'on conduit
     objetActif = cible;
     controls.target.copy(cible.position);
 
-    // 🟢 Déclenchement du Quiz en mode joueur
     if (!MODE_DEV && window.ouvrirQuiz) {
       window.ouvrirQuiz(
         cible.userData.id || cible.name,
@@ -399,93 +414,63 @@ window.addEventListener("click", (event) => {
       );
     }
 
-    // Flèches 3D uniquement pour les développeurs
     if (MODE_DEV && transformControls) {
       transformControls.attach(cible);
     }
-    // GUI dynamique
-    dossierSelection.destroy();
-    dossierSelection = gui.addFolder("Objet : " + cible.name);
+    
+    if (dossierSelection) {
+      dossierSelection.destroy();
+      dossierSelection = gui?.addFolder("Objet : " + cible.name);
 
-    // Audit des polygones
-    let polyObj = 0;
-    cible.traverse((c) => {
-      if (c.isMesh)
-        polyObj += c.geometry.index
-          ? c.geometry.index.count / 3
-          : c.geometry.attributes.position.count / 3;
-    });
-    dossierSelection
-      .add({ p: Math.round(polyObj) }, "p")
-      .name("⚖️ Poids (Triangles)")
-      .disable();
+      let polyObj = 0;
+      cible.traverse((c) => {
+        if (c.isMesh)
+          polyObj += c.geometry.index ? c.geometry.index.count / 3 : c.geometry.attributes.position.count / 3;
+      });
+      dossierSelection?.add({ p: Math.round(polyObj) }, "p").name("⚖️ Poids (Triangles)").disable();
 
-    const actionsOutils = {
-      deplacer: () => transformControls.setMode("translate"),
-      tourner: () => transformControls.setMode("rotate"),
-      agrandir: () => transformControls.setMode("scale"),
-    };
+      const actionsOutils = {
+        deplacer: () => transformControls?.setMode("translate"),
+        tourner: () => transformControls?.setMode("rotate"),
+        agrandir: () => transformControls?.setMode("scale"),
+      };
 
-    // ✅ On affiche la position du LOD parent, pas de la hitbox
-    const lodParent = cible; // 🛡️ Fix : On verrouille l'objet, pas la Scène !
-    dossierSelection.add(lodParent.position, "x").name("Pos X").listen();
-    if (cible.userData.flotte) {
-      dossierSelection
-        .add(cible.userData, "baseY")
-        .name("Pos Y (Base)")
-        .listen();
-    } else {
-      dossierSelection.add(lodParent.position, "y").name("Pos Y").listen();
+      const lodParent = cible; 
+      dossierSelection?.add(lodParent.position, "x").name("Pos X").listen();
+      if (cible.userData.flotte) {
+        dossierSelection?.add(cible.userData, "baseY").name("Pos Y (Base)").listen();
+      } else {
+        dossierSelection?.add(lodParent.position, "y").name("Pos Y").listen();
+      }
+      dossierSelection?.add(lodParent.position, "z").name("Pos Z").listen();
+      dossierSelection?.add(lodParent.rotation, "x").name("Rot X").listen(); 
+      dossierSelection?.add(lodParent.rotation, "y").name("Rot Y").listen(); 
+      dossierSelection?.add(lodParent.rotation, "z").name("Rot Z").listen(); 
+
+      const configScale = {
+        Sabre: { min: 0.001, max: 1, step: 0.001 }, Lampe: { min: 0.001, max: 5, step: 0.01 },
+        Robe: { min: 0.1, max: 10, step: 0.1 }, Chapeau: { min: 0.1, max: 10, step: 0.1 },
+        Drapeau: { min: 0.1, max: 10, step: 0.1 }, CellPhone: { min: 0.001, max: 5, step: 0.01 },
+      };
+      const cfg = configScale[cible.name] || { min: 0.001, max: 20, step: 0.01 };
+
+      dossierSelection?.add(lodParent.scale, "x").min(cfg.min).max(cfg.max).step(cfg.step).name("Largeur").listen();
+      dossierSelection?.add(lodParent.scale, "y").min(cfg.min).max(cfg.max).step(cfg.step).name("Profondeur").listen();
+      dossierSelection?.add(lodParent.scale, "z").min(cfg.min).max(cfg.max).step(cfg.step).name("Hauteur").listen();
+
+      dossierSelection?.add(actionsOutils, "deplacer").name("Activer Déplacement");
+      dossierSelection?.add(actionsOutils, "tourner").name("Activer Rotation");
+      dossierSelection?.add(actionsOutils, "agrandir").name("Activer Taille");
+
+      dossierSelection?.open();
     }
-    dossierSelection.add(lodParent.position, "z").name("Pos Z").listen();
-    dossierSelection.add(lodParent.rotation, "x").name("Rot X").listen(); // ✅ lodParent
-    dossierSelection.add(lodParent.rotation, "y").name("Rot Y").listen(); // ✅ lodParent
-    dossierSelection.add(lodParent.rotation, "z").name("Rot Z").listen(); // ✅ lodParent
-
-    const configScale = {
-      Sabre: { min: 0.001, max: 1, step: 0.001 },
-      Lampe: { min: 0.001, max: 5, step: 0.01 },
-      Robe: { min: 0.1, max: 10, step: 0.1 },
-      Chapeau: { min: 0.1, max: 10, step: 0.1 },
-      Drapeau: { min: 0.1, max: 10, step: 0.1 },
-      CellPhone: { min: 0.001, max: 5, step: 0.01 },
-    };
-    const cfg = configScale[cible.name] || { min: 0.001, max: 20, step: 0.01 };
-
-    dossierSelection
-      .add(lodParent.scale, "x")
-      .min(cfg.min)
-      .max(cfg.max)
-      .step(cfg.step)
-      .name("Largeur")
-      .listen();
-    dossierSelection
-      .add(lodParent.scale, "y")
-      .min(cfg.min)
-      .max(cfg.max)
-      .step(cfg.step)
-      .name("Profondeur")
-      .listen();
-    dossierSelection
-      .add(lodParent.scale, "z")
-      .min(cfg.min)
-      .max(cfg.max)
-      .step(cfg.step)
-      .name("Hauteur")
-      .listen();
-
-    dossierSelection.add(actionsOutils, "deplacer").name("Activer Déplacement");
-    dossierSelection.add(actionsOutils, "tourner").name("Activer Rotation");
-    dossierSelection.add(actionsOutils, "agrandir").name("Activer Taille");
-
-    dossierSelection.open();
   } else {
-    // Clic dans le vide
-    transformControls.detach();
-    // 👉 On arrête de conduire
+    transformControls?.detach();
     objetActif = null;
-    dossierSelection.destroy();
-    dossierSelection = gui.addFolder("Aucun objet sélectionné");
+    if (dossierSelection) {
+      dossierSelection.destroy();
+      dossierSelection = gui?.addFolder("Aucun objet sélectionné");
+    }
   }
 });
 
@@ -493,7 +478,6 @@ window.addEventListener("click", (event) => {
 window.objetTrouve = (idObjet) => {
   const objetASupprimer = scene.getObjectByName(idObjet);
   if (objetASupprimer) {
-    // 1. On purge la mémoire (RAM)
     objetASupprimer.traverse((child) => {
       if (child.isMesh) {
         if (child.geometry) child.geometry.dispose();
@@ -506,13 +490,12 @@ window.objetTrouve = (idObjet) => {
         }
       }
     });
-    // 2. On le retire visuellement
     scene.remove(objetASupprimer);
-    // 3. On coupe l'interactivité
     const index = objetsCliquables.findIndex((obj) => obj.name === idObjet);
     if (index > -1) objetsCliquables.splice(index, 1);
   }
 };
+
 // ==========================================
 // 7. LA BOUCLE D'ANIMATION
 // ==========================================
@@ -535,16 +518,16 @@ document.body.appendChild(crosshair);
 window.addEventListener("gamepadconnected", (e) => {
   console.log("🎮 MANETTE DÉTECTÉE ! Port:", e.gamepad.index, "Nom:", e.gamepad.id);
 });
+
 const animate = () => {
-  window.requestAnimationFrame(animate); // On déplace l'appel ici
+  window.requestAnimationFrame(animate); 
   const delta = clock.getDelta();
   deltaAccumule += delta;
 
-  if (deltaAccumule < intervalleFPS) return; // Frein activé : on passe cette frame
-  deltaAccumule = deltaAccumule % intervalleFPS; // On reset le compteur
+  if (deltaAccumule < intervalleFPS) return; 
+  deltaAccumule = deltaAccumule % intervalleFPS; 
   controls.update();
 
-  
   // --- 🎮 LECTURE MANETTE INTELLIGENTE ---
   let gamepadActif = null;
   let padX = 0, padY = 0, padRotX = 0, padRotY = 0;
@@ -561,80 +544,62 @@ const animate = () => {
 
   if (gamepadActif) {
     crosshair.style.display = "block";
-    if (Math.abs(gamepadActif.axes[0]) > 0.15) padX = gamepadActif.axes[0]; // Stick gauche X
-    if (Math.abs(gamepadActif.axes[1]) > 0.15) padY = gamepadActif.axes[1]; // Stick gauche Y
-    if (Math.abs(gamepadActif.axes[2]) > 0.15) padRotX = gamepadActif.axes[2]; // Stick droit X
-    if (Math.abs(gamepadActif.axes[3]) > 0.15) padRotY = gamepadActif.axes[3]; // Stick droit Y (Haut/Bas)
-    padA = gamepadActif.buttons[0].pressed; // Bouton A (Sélectionner)
-    padB = gamepadActif.buttons[1].pressed; // Bouton B (Quitter)
-    padYBtn = gamepadActif.buttons[3].pressed; // Bouton Y (Menu)
+    if (Math.abs(gamepadActif.axes[0]) > 0.15) padX = gamepadActif.axes[0]; 
+    if (Math.abs(gamepadActif.axes[1]) > 0.15) padY = gamepadActif.axes[1]; 
+    if (Math.abs(gamepadActif.axes[2]) > 0.15) padRotX = gamepadActif.axes[2]; 
+    if (Math.abs(gamepadActif.axes[3]) > 0.15) padRotY = gamepadActif.axes[3]; 
+    padA = gamepadActif.buttons[0].pressed; 
+    padB = gamepadActif.buttons[1].pressed; 
+    padYBtn = gamepadActif.buttons[3].pressed; 
     padLT = gamepadActif.buttons[6].value;
     padRT = gamepadActif.buttons[7].value;
   } else {
     crosshair.style.display = "none";
   }
 
-  // --- 🎮 ACTIONS DES BOUTONS ---
-  // BOUTON A : Clic intelligent (Interface ou 3D)
   if (padA && !padAPrevious) {
     const uiAuCentre = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
-    // Si on vise un bouton du menu HTML, on clique physiquement dessus
     if (uiAuCentre && (uiAuCentre.tagName === 'BUTTON' || uiAuCentre.closest('button'))) {
       uiAuCentre.click();
     } else {
-      // Sinon, on clique dans le monde 3D
      canvas.dispatchEvent(new MouseEvent("click", { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2, bubbles: true }));
     }
   }
 
-  // BOUTON B : Quitter l'objet (Comme Echap)
   if (padB && !padBPrevious) {
     if (objetActif) {
-      transformControls.detach();
+      transformControls?.detach();
       objetActif = null;
-      dossierSelection.destroy();
-      dossierSelection = gui.addFolder("Aucun objet sélectionné");
+      if (dossierSelection) {
+        dossierSelection.destroy();
+        dossierSelection = gui?.addFolder("Aucun objet sélectionné");
+      }
     }
-    // (Ajout futur : Fermer la fenêtre du Quiz avec B)
   }
 
-  // BOUTON Y : Menu
   if (padYBtn && !padYPrevious) {
     console.log("Bouton Y pressé - Ouverture du menu à coder !");
   }
 
   padAPrevious = padA; padBPrevious = padB; padYPrevious = padYBtn;
-  // --- 🎮 MOTEUR GTA : Déplace l'objet sélectionné ---
+  
   if (objetActif && MODE_DEV) {
     const vitesse = 1;
-
     if (touches.q || touches.ArrowLeft) objetActif.translateX(-vitesse);
     if (touches.d || touches.ArrowRight) objetActif.translateX(vitesse);
     if (touches.z || touches.ArrowUp) objetActif.translateZ(-vitesse);
     if (touches.s || touches.ArrowDown) objetActif.translateZ(vitesse);
 
-    // La caméra suit l'objet quand il bouge (vraie caméra GTA)
-    const estEnMouvement =
-      touches.z ||
-      touches.s ||
-      touches.q ||
-      touches.d ||
-      touches.ArrowUp ||
-      touches.ArrowDown ||
-      touches.ArrowLeft ||
-      touches.ArrowRight;
-   if (estEnMouvement) {
-      // 1. On calcule de combien l'objet vient de se déplacer
+    const estEnMouvement = touches.z || touches.s || touches.q || touches.d || touches.ArrowUp || touches.ArrowDown || touches.ArrowLeft || touches.ArrowRight;
+    if (estEnMouvement) {
       offsetCam.subVectors(objetActif.position, controls.target);
-      // 2. On déplace la caméra exactement de la même distance
       camera.position.add(offsetCam);
-      // 3. On met à jour la cible
       controls.target.copy(objetActif.position);
     }
   }
-// ✅ RADAR COLLISION — doit être avant le ZQSD
+
   const peutBouger = (direction, inverse = false) => {
-    if (mursCollision.length === 0) return true; // Sécurité si la maison n'est pas chargée
+    if (mursCollision.length === 0) return true; 
     dirRaycast.copy(direction);
     if (inverse) dirRaycast.negate();
     raycasterColl.set(camera.position, dirRaycast.normalize());
@@ -642,41 +607,32 @@ const animate = () => {
     return intersect.length === 0 || intersect[0].distance > 1.5;
   };
 
-  // --- MOTEUR GTA : Déplace la caméra avec ZQSD (quand on ne conduit pas un objet) ---
   if (!objetActif) {
     camera.getWorldDirection(dirCamera);
     dirCamera.y = 0;
     dirCamera.normalize();
     dirLaterale.crossVectors(camera.up, dirCamera).normalize();
 
-  // 🎮 MOUVEMENT & ROTATION MANETTE
     if (padY < -0.15 && peutBouger(dirCamera)) { camera.position.addScaledVector(dirCamera, -padY * vitesseZQSD); controls.target.addScaledVector(dirCamera, -padY * vitesseZQSD); }
     if (padY > 0.15 && peutBouger(dirCamera, true)) { camera.position.addScaledVector(dirCamera, -padY * vitesseZQSD); controls.target.addScaledVector(dirCamera, -padY * vitesseZQSD); }
     if (padX < -0.15 && peutBouger(dirLaterale)) { camera.position.addScaledVector(dirLaterale, -padX * vitesseZQSD); controls.target.addScaledVector(dirLaterale, -padX * vitesseZQSD); }
     if (padX > 0.15 && peutBouger(dirLaterale, true)) { camera.position.addScaledVector(dirLaterale, -padX * vitesseZQSD); controls.target.addScaledVector(dirLaterale, -padX * vitesseZQSD); }
-   if (padRotX !== 0) {
+    
+    if (padRotX !== 0) {
       offsetCam.subVectors(controls.target, camera.position);
       offsetCam.applyAxisAngle(axeY, -padRotX * 0.05);
       controls.target.copy(camera.position).add(offsetCam);
     }
     
-    // 🎮 INCLINAISON DE LA TÊTE (Joystick Droit Y)
     if (padRotY !== 0) controls.target.y -= padRotY * 0.4; 
-
-    // 🎮 ÉLÉVATION / DRONE MODE (Gâchettes LT / RT)
     if (typeof padLT !== 'undefined' && padLT > 0.1) { camera.position.y += padLT * 0.4; controls.target.y += padLT * 0.4; }
     if (typeof padRT !== 'undefined' && padRT > 0.1) { camera.position.y -= padRT * 0.4; controls.target.y -= padRT * 0.4; }
 
-// 📱 MOUVEMENT JOYSTICK MOBILE (Calcul Déterministe)
     const fM = vitesseZQSD; 
     const mY = padMobile.y;
     const mX = padMobile.x;
 
-  if (mY > 0.05 && peutBouger(dirCamera)) {
-      camera.position.addScaledVector(dirCamera, mY * fM);
-      controls.target.addScaledVector(dirCamera, mY * fM);
-    }
-    if (mY < -0.05 && peutBouger(dirCamera, true)) {
+    if (Math.abs(mY) > 0.05 && peutBouger(dirCamera, mY < 0)) {
       camera.position.addScaledVector(dirCamera, mY * fM);
       controls.target.addScaledVector(dirCamera, mY * fM);
     }
@@ -685,7 +641,6 @@ const animate = () => {
       controls.target.addScaledVector(dirLaterale, -mX * fM);
     }
     
-   // ⌨️ MOUVEMENT CLAVIER (Touche Z réparée)
     if ((touches.z || touches.ArrowUp) && peutBouger(dirCamera)) {
       camera.position.addScaledVector(dirCamera, vitesseZQSD);
       controls.target.addScaledVector(dirCamera, vitesseZQSD);
@@ -706,7 +661,6 @@ const animate = () => {
  
   const elapsedTime = clock.getElapsedTime();
 
-  // --- ANIMATION FLOTTANTE ---
   objetsCliquables.forEach((objet, i) => {
     if (objet.userData.flotte && objet.userData.flotteActive !== false) {
       const vitesse = objet.userData.vitesse || 0.8;
@@ -719,9 +673,9 @@ const animate = () => {
     }
   });
 
- lodsScene.forEach(lod => lod.update(camera));
+  lodsScene.forEach(lod => lod.update(camera));
 
-  if (renduAutorise) renderer.render(scene, camera); // 👈 GPU protégé !
+  if (renduAutorise) renderer.render(scene, camera); 
   if (stats) stats.update();
 };
 
