@@ -222,6 +222,7 @@ const chargerTout = async () => {
   renderer.compile(scene, camera); // Compilation silencieuse
   
   if (MODE_DEV) {
+    if (isMobile) { const s = document.createElement('script'); s.src="//cdn.jsdelivr.net/npm/eruda"; document.head.appendChild(s); s.onload=()=>eruda.init(); }
     const ecranChargement = document.getElementById("ecran-chargement");
     const tuto = document.getElementById("ecran-tutoriel");
     if (ecranChargement) ecranChargement.remove();
