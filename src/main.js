@@ -215,6 +215,8 @@ const chargerTout = async () => {
 
   dracoLoader.dispose();
   manager.itemEnd("chargement_sequentiel");
+  // 💾 CHARGEMENT SAUVEGARDE
+  const saves = JSON.parse(localStorage.getItem("popcorn_save")) ||
 
   // --- GESTION DE L'INTERFACE À LA FIN ABSOLUE DU CHARGEMENT ---
   console.log("✅ Tous les modèles sont chargés. Compilation GPU...");
@@ -362,17 +364,12 @@ window.ouvrirQuiz = (idObjet, nomObjet) => {
   console.log(`🧠 QUIZ : ${data.question}`);
   console.log(`Choix : ${data.options.join(" | ")}`);
 
-  // --- SIMULATION TEMPORAIRE POUR TES TESTS ---
-  setTimeout(() => {
-    const repJoueur = 0; // On simule un clic sur le choix 0
-    if (repJoueur === data.reponseCorrecte) {
-      console.log(`✅ BONNE RÉPONSE ! ${data.anecdoteSucces}`);
-      window.objetTrouve(idObjet); // Détruit l'objet
-    } else {
-      console.log(`❌ MAUVAISE RÉPONSE ! ${data.anecdoteEchec}`);
-    }
-    if (window.bloquerControles3D) window.bloquerControles3D(false);
-  }, 2000);
+ if (window.ui_afficherQuiz) {
+    window.ui_afficherQuiz(data, (succes) => {
+      if (succes) window.objetTrouve(idObjet);
+      if (window.bloquerControles3D) window.bloquerControles3D(false);
+    });
+  }
 };
 
 window.objetTrouve = (idObjet) => {
@@ -387,6 +384,11 @@ window.objetTrouve = (idObjet) => {
     scene.remove(obj);
     const index = objetsCliquables.findIndex((o) => o.name === idObjet);
     if (index > -1) objetsCliquables.splice(index, 1);
+    // 💾 SAUVEGARDE & VICTOIRE
+    const saves = JSON.parse(localStorage.getItem("popcorn_save")) ||[];
+    if (!saves.includes(idObjet)) localStorage.setItem("popcorn_save", JSON.stringify([...saves, idObjet]));
+    const idxLod = lodsScene.findIndex(l => l.name === idObjet);
+    if (idxLod > -1) { lodsScene.splice(idxLod, 1); if (lodsScene.length === 0) console.log("👑 VICTOIRE !"); }
   }
 };
 

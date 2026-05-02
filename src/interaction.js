@@ -233,58 +233,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Le Quiz ---
     let objetActuelEnCoursDeQuiz = null;
 
-    window.ouvrirQuiz = function(idObjet, nomAttendu) {
+    window.ui_afficherQuiz = function(data, callback) {
+
         if (!modalQuiz) return;
-        objetActuelEnCoursDeQuiz = nomAttendu;
-        const quizInput = document.getElementById('quiz-input');
-        const quizFeedback = document.getElementById('quiz-feedback');
-        
-        if (quizInput) quizInput.value = "";
-        if (quizFeedback) quizFeedback.textContent = "";
-        
+        document.getElementById('quiz-titre').textContent = data.question;
+        const conteneur = document.getElementById('quiz-options');
+        conteneur.innerHTML = data.options.map((opt, i) => `<button class="bouton-secondaire btn-rep" data-index="${i}">${opt}</button>`).join("");
+        document.getElementById('quiz-feedback').textContent = "";
+        document.getElementById('quiz-feedback').className = "message-feedback";
+
         modalQuiz.classList.remove('cache');
         if(window.bloquerControles3D) window.bloquerControles3D(true);
+        modalQuiz.classList.remove('cache');
+        document.querySelectorAll('.btn-rep').forEach(btn => btn.addEventListener('click', (e) => {
+            const estBonne = parseInt(e.target.dataset.index) === data.reponseCorrecte;
+            document.getElementById('quiz-feedback').textContent = estBonne ? data.anecdoteSucces : data.anecdoteEchec;
+            document.getElementById('quiz-feedback').className = `message-feedback ${estBonne ? 'succes' : 'erreur'}`;
+            setTimeout(() => { modalQuiz.classList.add('cache'); callback(estBonne); if(!estBonne) window.perdreVie(); else window.ajouterScore(100); }, 2500);
+        }));
+    
     };
-
-    const btnAnnulerQuiz = document.getElementById('btn-annuler-quiz');
-    if (btnAnnulerQuiz) {
-        btnAnnulerQuiz.addEventListener('click', () => {
-            modalQuiz.classList.add('cache');
-            if(window.bloquerControles3D) window.bloquerControles3D(false);
-        });
-    }
-
-    const btnValiderQuiz = document.getElementById('btn-valider-quiz');
-    if (btnValiderQuiz) {
-        btnValiderQuiz.addEventListener('click', () => {
-            const quizInput = document.getElementById('quiz-input');
-            const feedback = document.getElementById('quiz-feedback');
-            if (!quizInput || !feedback) return;
-
-            const reponseJoueur = quizInput.value.trim().toLowerCase();
-            
-            if (reponseJoueur === objetActuelEnCoursDeQuiz.toLowerCase()) {
-                feedback.textContent = "✨ Bonne réponse !";
-                feedback.className = "message-feedback succes";
-                window.ajouterScore(100);
-                
-                setTimeout(() => {
-                    modalQuiz.classList.add('cache');
-                    if(window.bloquerControles3D) window.bloquerControles3D(false);
-                    if(window.objetTrouve) window.objetTrouve(objetActuelEnCoursDeQuiz);
-                }, 1500);
-            } else {
-                feedback.textContent = "❌ Mauvaise réponse, essayez encore !";
-                feedback.className = "message-feedback erreur";
-                window.perdreVie();
-                
-                const modalContenu = modalQuiz.querySelector('.modal-contenu');
-                if (modalContenu) {
-                    modalContenu.style.transform = "translateX(10px)";
-                    setTimeout(() => modalContenu.style.transform = "translateX(-10px)", 50);
-                    setTimeout(() => modalContenu.style.transform = "translateX(0)", 100);
-                }
-            }
-        });
-    }
+    
 });
