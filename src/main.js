@@ -47,8 +47,11 @@ renderer.setPixelRatio(pixelRatio);
 renderer.shadowMap.enabled = false;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace; // 👈 FIX LUMIÈRE NOIRE
-renderer.toneMapping = THREE.ACESFilmicToneMapping; // 👈 RENDU RÉALISTE
-renderer.toneMappingExposure = 1.0;
+if (isMobile) {
+  renderer.setPixelRatio(1);
+  THREE.Cache.enabled = true;
+}
+
 // 4. ORBIT CONTROLS
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -113,10 +116,10 @@ window.bloquerControles3D = (etat) => {
 };
 
 // 5. TRANSFORM CONTROLS
-const transformControls = new TransformControls(camera, renderer.domElement);
-scene.add(transformControls.getHelper());
+const transformControls = !isMobile ? new TransformControls(camera, renderer.domElement) : null;
+if (transformControls) scene.add(transformControls.getHelper());
 
-transformControls.addEventListener("dragging-changed", (event) => {
+transformControls?.addEventListener("dragging-changed", (event) => {
   if (controls) controls.enabled = !event.value;
   const cible = transformControls.object;
   if (cible && cible.userData.flotte) {
@@ -127,13 +130,13 @@ transformControls.addEventListener("dragging-changed", (event) => {
   }
 });
 
-transformControls.setMode("translate");
+transformControls?.setMode("translate");
 
 /// 🎮 Contrôles clavier TransformControls
 window.addEventListener("keydown", (e) => {
   if (touches.hasOwnProperty(e.key)) touches[e.key] = true;
-  if (e.key === "g") transformControls.setMode("translate");
-  if (e.key === "r") transformControls.setMode("rotate");
+  if (e.key === "g") transformControls?.setMode("translate");
+  if (e.key === "r") transformControls?.setMode("rotate");
   if (e.key === "Escape" && objetActif) {
     transformControls.detach();
     objetActif = null;
@@ -143,9 +146,9 @@ window.addEventListener("keydown", (e) => {
 });
 
 // --- INITIALISATION DU MENU (GUI) ---
-const gui = new GUI();
+const gui = !isMobile ? new GUI() : null;
 const debugConfig = { afficherHitboxes: false };
-const dossierDebug = gui.addFolder("🛠️ Mode Debug");
+const dossierDebug = gui?.addFolder("🛠️ Mode Debug");
 dossierDebug
   .add(debugConfig, "afficherHitboxes")
   .name("Voir Collisions")
@@ -179,9 +182,7 @@ manager.onProgress = (url, loaded, total) => {
 };
 
 manager.onLoad = () => {
-  console.log("✅ 3D téléchargée ! Pré-compilation GPU en cours...");
-  // On force le GPU à tout calculer avant de lever le rideau
-  scene.traverse((obj) => { if (obj.isMesh) renderer.compile(obj, camera); });
+  console.log("✅ 3D téléchargée et compilée !");
 
   if (MODE_DEV) {
   // On attend 1 petite seconde que le compile finisse avant de cacher l'écran
@@ -207,33 +208,52 @@ manager.onLoad = () => {
 //Teste pour identifier erreur
 manager.onError = (url) => {
   console.error("❌ Erreur critique de chargement sur : " + url);
-  alert(
-    "Le fichier " + url + " refuse de charger. Vérifie le poids ou le chemin !",
-  );
+  if (!isMobile) alert("Le fichier " + url + " refuse de charger.");
 };
 
 const loader = new GLTFLoader(manager);
 
 //DracoLoader
 const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath(
-  "https://www.gstatic.com/draco/versioned/decoders/1.5.6/",
-);
+dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
+dracoLoader.setWorkerLimit(1); // 👈 FIX CRASH iOS : 1 seul worker pour sauver la RAM
 loader.setDRACOLoader(dracoLoader);
 
-// 🟢 CHARGEMENT SÉQUENTIEL (ANTI-CRASH SAFARI)
-const chargerObjetsSequentiels = async () => {
+// 🟢 CHARGEMENT SÉQUENTIEL TOTAL (MAISON + OBJETS)
+const chargerTout = async () => {
+  manager.itemStart("chargement_sequentiel");
+
+  try {
+    // 1. On charge la maison en premier (le plus lourd)
+    const gltfMaison = await loader.loadAsync("/assets/MaisonV2.glb");
+    const maison = gltfMaison.scene;
+    maison.scale.set(15, 15, 15);
+    maison.name = "Maison";
+    maison.traverse((obj) => {
+      if (obj.isMesh && obj.name.includes("MurFictif")) {
+        obj.visible = false;
+        mursCollision.push(obj);
+      }
+    });
+    // On crée un sol mathématique ultra-léger pour le clic, au lieu de la vraie maison
+    scene.add(maison);
+    const solHitbox = new THREE.Mesh(new THREE.BoxGeometry(300, 1, 300), new THREE.MeshBasicMaterial({ color: 0x0000ff, transparent: true, opacity: 0, depthWrite: false }));
+    solHitbox.name = "Maison"; solHitbox.position.y = -0.5;
+    scene.add(solHitbox); objetsCliquables.push(solHitbox);
+} catch (e) { console.error("❌ Erreur Maison", e); }
+
+// 🫁 PAUSE VITALE : Forcer Safari à vider ses buffers WebGL
+await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+ // 🫁 PAUSE VITALE : 1 seconde complète pour vider la RAM après la lourde Maison
+ await new Promise(resolve => setTimeout(resolve, 1000));
+
+  // 2. On charge les objets Disney un par un
   for (const item of disneyData) {
     const lod = new THREE.LOD();
     lod.name = item.id;
     lod.userData = { ...item };
-    if (item.flotte)
-      Object.assign(lod.userData, {
-        flotteActive: true,
-        baseY: item.y || 0,
-        vitesse: item.vitesse || 0.8,
-        amplitude: item.amplitude || 0.08,
-      });
+    if (item.flotte) Object.assign(lod.userData, { flotteActive: true, baseY: item.y || 0, vitesse: item.vitesse || 0.8, amplitude: item.amplitude || 0.08 });
     lod.position.set(item.x || 0, item.y || 0, item.z || 0);
     lod.rotation.set(item.rotX || 0, item.rotY || 0, item.rotZ || 0);
     if (item.scale) lod.scale.setScalar(item.scale);
@@ -243,69 +263,29 @@ const chargerObjetsSequentiels = async () => {
       const boite = new THREE.Box3().setFromObject(gltf.scene);
       const taille = new THREE.Vector3();
       boite.getSize(taille);
-      const hitX = Math.max(taille.x * 1.5, 2.5);
-      const hitY = Math.max(taille.y * 1.5, 2.5);
-      const hitZ = Math.max(taille.z * 1.5, 2.5);
+      const hitX = Math.max(taille.x * 1.5, 2.5), hitY = Math.max(taille.y * 1.5, 2.5), hitZ = Math.max(taille.z * 1.5, 2.5);
       lod.addLevel(gltf.scene, 0);
 
-      const hitbox = new THREE.Mesh(
-        new THREE.BoxGeometry(hitX, hitY, hitZ),
-        new THREE.MeshBasicMaterial({
-          transparent: true,
-          opacity: 0,
-          depthWrite: false,
-        }),
-      );
+      const hitbox = new THREE.Mesh(new THREE.BoxGeometry(hitX, hitY, hitZ), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
       const center = new THREE.Vector3();
       boite.getCenter(center);
       hitbox.position.copy(center);
-      hitbox.name = lod.name;
-      hitbox.userData = lod.userData;
-      lod.add(hitbox);
-      objetsCliquables.push(hitbox);
-    } catch (error) {
-      console.error("❌ Erreur VRAM sur :", item.id, error);
-    }
-    // LOD de secours (vide) pour éviter les bugs d'apparition
-    lod.addLevel(new THREE.Object3D(), 200);
-    scene.add(lod);
+      hitbox.name = lod.name; hitbox.userData = lod.userData;
+     lod.add(hitbox); objetsCliquables.push(hitbox);
+   } catch (error) { console.error("❌ Erreur VRAM sur :", item.id, error); }
+  
+   lod.addLevel(new THREE.Object3D(), 200);
+   scene.add(lod);
+  lodsScene.push(lod);
+
+   // 🫁 RESPIRATION : Placé DANS la boucle pour libérer la VRAM à chaque objet
+await new Promise(resolve => setTimeout(resolve, 100));
   }
-};
-// On verrouille le manager pour qu'il attende la fin absolue de la boucle
-manager.itemStart("chargement_sequentiel");
-chargerObjetsSequentiels().then(() => {
+  dracoLoader.dispose();
   manager.itemEnd("chargement_sequentiel");
-});
-
-// Asset: Maison
-loader.load("/assets/MaisonV2.glb", (gltf) => {
-  const maison = gltf.scene;
-  maison.scale.set(15, 15, 15);
-  maison.name = "Maison";
-
-  maison.traverse((obj) => {
-    if (obj.isMesh && obj.name.includes("MurFictif")) {
-      obj.visible = false; // Magie : les planches grises disparaissent
-      mursCollision.push(obj); // Elles deviennent des obstacles physiques
-    }
-  });
-  scene.add(maison);
-
-  // On crée un sol mathématique ultra-léger pour le clic, au lieu de la vraie maison
-  const solHitbox = new THREE.Mesh(
-    new THREE.BoxGeometry(300, 1, 300),
-    new THREE.MeshBasicMaterial({
-      color: 0x0000ff,
-      transparent: true,
-      opacity: 0,
-      wireframe: false,
-    }),
-  );
-  solHitbox.name = "Maison";
-  solHitbox.position.y = -0.5;
-  scene.add(solHitbox);
-  objetsCliquables.push(solHitbox);
-});
+};
+const lodsScene = [];
+chargerTout();
 
 // 5. LA LUMIÈRE
 const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3);
@@ -316,7 +296,7 @@ dirLight.castShadow = false;
 scene.add(dirLight);
 
 // GUI - Éclairage
-const lumiereDossier = gui.addFolder("Éclairage");
+const lumiereDossier = gui?.addFolder("Éclairage");
 lumiereDossier
   .add(dirLight, "intensity")
   .min(0)
@@ -325,7 +305,7 @@ lumiereDossier
   .name("Soleil");
 
 // GUI - Sélection dynamique
-let dossierSelection = gui.addFolder("Aucun objet sélectionné");
+let dossierSelection = gui?.addFolder("Aucun objet sélectionné");
 
 const outils = {
   exporter: () => {
@@ -340,11 +320,11 @@ const outils = {
     alert("Coordonnées ET Tailles copiées ! 📋");
   },
 };
-gui.add(outils, "exporter").name("💾 Exporter Coordonnées");
+gui?.add(outils, "exporter").name("💾 Exporter Coordonnées");
 
 // --- PERFORMANCES ---
-const stats = new Stats();
-document.body.appendChild(stats.dom);
+const stats = !isMobile ? new Stats() : null;
+if (stats) document.body.appendChild(stats.dom);
 const perfData = { polygones: 0, drawCalls: 0, geometries: 0 };
 const perfFolder = gui.addFolder("Moniteur d'Activité");
 perfFolder.add(perfData, "polygones").name("Triangles").listen();
@@ -414,7 +394,7 @@ window.addEventListener("click", (event) => {
     }
 
     // Flèches 3D uniquement pour les développeurs
-    if (MODE_DEV) {
+    if (MODE_DEV && transformControls) {
       transformControls.attach(cible);
     }
     // GUI dynamique
@@ -531,7 +511,7 @@ window.objetTrouve = (idObjet) => {
 // 7. LA BOUCLE D'ANIMATION
 // ==========================================
 const clock = new THREE.Clock();
-
+const dirRaycast = new THREE.Vector3();
 const dirCamera = new THREE.Vector3();
 const dirLaterale = new THREE.Vector3();
 const offsetCam = new THREE.Vector3();
@@ -558,15 +538,19 @@ const animate = () => {
   deltaAccumule = deltaAccumule % intervalleFPS; // On reset le compteur
   controls.update();
 
+  
   // --- 🎮 LECTURE MANETTE INTELLIGENTE ---
+  let gamepadActif = null;
   let padX = 0, padY = 0, padRotX = 0, padRotY = 0;
   let padA = false, padB = false, padYBtn = false;
-  let gamepadActif = null;
   let padLT = 0, padRT = 0;
+  padAPrevious = padA; padBPrevious = padB; padYPrevious = padYBtn;
   
-  const gamepads = navigator.getGamepads();
-  for (let i = 0; i < gamepads.length; i++) {
-    if (gamepads[i] && gamepads[i].connected) { gamepadActif = gamepads[i]; break; }
+  if (!isMobile) {
+    const gamepads = navigator.getGamepads();
+    for (let i = 0; i < gamepads.length; i++) {
+      if (gamepads[i] && gamepads[i].connected) { gamepadActif = gamepads[i]; break; }
+    }
   }
 
   if (gamepadActif) {
@@ -643,7 +627,6 @@ const animate = () => {
     }
   }
 // ✅ RADAR COLLISION — doit être avant le ZQSD
-  const dirRaycast = new THREE.Vector3();
   const peutBouger = (direction, inverse = false) => {
     if (mursCollision.length === 0) return true; // Sécurité si la maison n'est pas chargée
     dirRaycast.copy(direction);
@@ -730,16 +713,10 @@ const animate = () => {
     }
   });
 
-  // --- LOD ---
-  scene.traverse((objet) => {
-    if (objet instanceof THREE.LOD) objet.update(camera);
-  });
+  lodsScene.forEach(lod => lod.update(camera));
 
   renderer.render(scene, camera);
-  stats.update();
-  perfData.polygones = renderer.info.render.triangles;
-  perfData.drawCalls = renderer.info.render.calls;
-  perfData.geometries = renderer.info.memory.geometries;
+  if (stats) stats.update();
 };
 
 animate();
