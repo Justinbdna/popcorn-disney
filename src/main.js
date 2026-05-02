@@ -206,12 +206,11 @@ const chargerTout = async () => {
       
       lod.addLevel(gltf.scene, 0);
       lod.add(hitbox); objetsCliquables.push(hitbox);
+    lod.addLevel(new THREE.Object3D(), 200); // LOD de secours
+      scene.add(lod);
+      lodsScene.push(lod);
     } catch (error) { console.error("❌ Erreur sur :", item.id, error); }
-  
-    lod.addLevel(new THREE.Object3D(), 200);
-    scene.add(lod);
-    lodsScene.push(lod);
-    await new Promise(resolve => setTimeout(resolve, 100)); // Pause GC
+    await new Promise(resolve => setTimeout(resolve, 150)); // 🫁 Respiration VRAM Safari
   }
 
   dracoLoader.dispose();
