@@ -353,6 +353,27 @@ window.addEventListener("click", (event) => {
     }
   }
 });
+// 🟢 LOGIQUE DU QUIZ (Le Cerveau connecté à disneyData)
+window.ouvrirQuiz = (idObjet, nomObjet) => {
+  const data = disneyData.find(item => item.id === idObjet); // On cherche l'objet cliqué dans ta data
+  if (!data || !data.question) return window.objetTrouve(idObjet); // Sécurité si pas de question
+
+  if (window.bloquerControles3D) window.bloquerControles3D(true);
+  console.log(`🧠 QUIZ : ${data.question}`);
+  console.log(`Choix : ${data.options.join(" | ")}`);
+
+  // --- SIMULATION TEMPORAIRE POUR TES TESTS ---
+  setTimeout(() => {
+    const repJoueur = 0; // On simule un clic sur le choix 0
+    if (repJoueur === data.reponseCorrecte) {
+      console.log(`✅ BONNE RÉPONSE ! ${data.anecdoteSucces}`);
+      window.objetTrouve(idObjet); // Détruit l'objet
+    } else {
+      console.log(`❌ MAUVAISE RÉPONSE ! ${data.anecdoteEchec}`);
+    }
+    if (window.bloquerControles3D) window.bloquerControles3D(false);
+  }, 2000);
+};
 
 window.objetTrouve = (idObjet) => {
   const obj = scene.getObjectByName(idObjet);
