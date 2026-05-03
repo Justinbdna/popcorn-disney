@@ -203,7 +203,7 @@ export const disneyData =[
     anecdoteSucces: "Wobbé ! Expérience 626 ! C'est aussi le nom de son vaisseau dans la franchise.",
     anecdoteEchec: "Loup ! Stitch est l'Expérience 626, créé par Jumba pour être une arme de destruction.",
     flotte: false, y: 0, x: 0, z: 0,
-    scale: 5,
+    scale: 13,
     hasLowPoly: true
   },
   {
@@ -215,7 +215,7 @@ export const disneyData =[
     anecdoteSucces: "Ouais ! Tui dit que le tuer serait une honte, alors il l'embarque... même s'il est d'une stupidité légendaire.",
     anecdoteEchec: "Non ! La vraie raison c'est que le manger serait une honte, donc il part en mer.",
     flotte: false, y: 0, x: 0, z: 0,
-    scale: 5,
+    scale: 10,
     hasLowPoly: true
   },
   {
@@ -239,7 +239,7 @@ export const disneyData =[
     anecdoteSucces: "Bravo ! Victor est le plus sensible des trois, toujours en admiration devant Esméralda.",
     anecdoteEchec: "Faux ! C'est Victor, le plus romantique. Hugo c'est le glouton, Laverne c'est la sage.",
     flotte: false, y: 0, x: 0, z: 0,
-    scale: 5,
+    scale: 12,
     hasLowPoly: true
   },
   {
@@ -251,7 +251,7 @@ export const disneyData =[
     anecdoteSucces: "Perfecto ! Shenzi est la cheffe. Banzai est le râleur, Ed est le fou riant.",
     anecdoteEchec: "Non ! La leader c'est Shenzi. Elle commande Banzai et Ed sous les ordres de Scar.",
     flotte: false, y: 0, x: 0, z: 0,
-    scale: 5,
+    scale: 12,
     hasLowPoly: true
   },
   {
@@ -287,7 +287,7 @@ export const disneyData =[
     anecdoteSucces: "Dans le mille ! Dusty Crophopper, un épandeur agricole qui rêve de gagner la course mondiale.",
     anecdoteEchec: "Non ! C'est Dusty Crophopper, le petit avion agricole qui ne devait pas voler si haut.",
     flotte: true, y: 0, x: 0, z: 0, vitesse: 1.2, amplitude: 0.12,
-    scale: 5,
+    scale: 10,
     hasLowPoly: true
   },
   {
