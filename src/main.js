@@ -14,7 +14,7 @@ import nipplejs from "nipplejs";
 // =========================================================================
 // 🛠️ 1. CONFIGURATION GLOBALE ET DÉVELOPPEMENT
 // =========================================================================
-const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
+const MODE_DEV = false; // Mets sur 'false' pour le rendu final !
 window.easterEggDebloque = false;
 
 // Détection mobile immédiate
@@ -45,6 +45,7 @@ if (isMobile) {
 // 🎥 3. CONTRÔLES DE LA CAMÉRA (OrbitControls)
 // =========================================================================
 const controls = new OrbitControls(camera, renderer.domElement);
+controls.listenToKeyEvents(window); // Le canevas écoute enfin la fenêtre entière
 controls.enableDamping = true;
 controls.target.y = 23;
 controls.maxPolarAngle = Math.PI / 2 - 0.05;
@@ -69,11 +70,13 @@ window.addEventListener("keydown", (e) => {
   if (touches.hasOwnProperty(e.key)) touches[e.key] = true;
   if (e.key === "g") transformControls?.setMode("translate");
   if (e.key === "r") transformControls?.setMode("rotate");
-  if (e.key === "Escape" && objetActif) {
-    transformControls.detach();
+  if (e.key === "Escape") {
+    if (transformControls) transformControls.detach();
     objetActif = null;
+    if (window.bloquerControles3D) window.bloquerControles3D(false);
+    const modal = document.getElementById('modal-quiz');
+    if (modal) { modal.classList.add('cache'); modal.style.display = 'none'; }
     dossierSelection?.destroy();
-    if (gui) dossierSelection = gui.addFolder("Aucun objet sélectionné");
   }
 });
 
@@ -215,9 +218,8 @@ const chargerTout = async () => {
 
   dracoLoader.dispose();
   manager.itemEnd("chargement_sequentiel");
-  // 💾 CHARGEMENT SAUVEGARDE
-  const saves = JSON.parse(localStorage.getItem("popcorn_save")) ||
-
+// 💾 CHARGEMENT SAUVEGARDE
+  const saves = JSON.parse(localStorage.getItem("popcorn_save")) || [];
   // --- GESTION DE L'INTERFACE À LA FIN ABSOLUE DU CHARGEMENT ---
   console.log("✅ Tous les modèles sont chargés. Compilation GPU...");
   renderer.compile(scene, camera); // Compilation silencieuse
@@ -368,6 +370,7 @@ window.ouvrirQuiz = (idObjet, nomObjet) => {
     window.ui_afficherQuiz(data, (succes) => {
       if (succes) window.objetTrouve(idObjet);
       if (window.bloquerControles3D) window.bloquerControles3D(false);
+      objetActif = null;
     });
   }
 };

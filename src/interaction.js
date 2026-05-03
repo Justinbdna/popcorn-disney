@@ -1,24 +1,19 @@
 /**
- * ui.js - Orchestration du SAS, du Tutoriel, du Feedback et du HUD en jeu
+ * interaction.js - Gestionnaire d'Interface Utilisateur
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM fully loaded and parsed');
+(function initUIManager() {
+    'use strict';
 
-    // --- 1. GESTION DU SAS DE CHARGEMENT ---
+    // === GESTION DU SAS DE CHARGEMENT ===
     const ecranChargement = document.getElementById('ecran-chargement');
     const btnDecouvrir = document.getElementById('btn-decouvrir');
     const ecranTutoriel = document.getElementById('ecran-tutoriel');
     const texteChargement = document.querySelector('.texte-chargement');
 
-    if (!ecranChargement) console.error('Loading screen not found');
-    if (!btnDecouvrir) console.error('Discover button not found');
-    if (!ecranTutoriel) console.error('Tutorial screen not found');
-
-    // 🆘 SÉCURITÉ SAFARI : Apparition du bouton "Découvrir" de force après 10s
     setTimeout(() => {
         if (btnDecouvrir && btnDecouvrir.classList.contains('cache')) {
-            console.warn("⏳ Safari rame trop, on débloque le bouton de force !");
+            console.warn("⏳ Sécurité Safari : Déblocage bouton");
             btnDecouvrir.classList.remove('cache');
             if (texteChargement) {
                 texteChargement.style.transition = "opacity 0.5s ease";
@@ -28,27 +23,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 10000);
 
-    // Clic sur "Découvrir" -> On passe au Tutoriel (Avec tes transitions fluides)
-    btnDecouvrir.addEventListener('click', () => {
-        console.log('Discover button clicked');
-        btnDecouvrir.style.display = "none";
-        
-        // Tuto 100% opaque en dessous
-        ecranTutoriel.style.transition = "none";
-        ecranTutoriel.style.opacity = "1";
-        ecranTutoriel.classList.remove('cache');
-        
-        // Fondu du sas
-        ecranChargement.style.transition = "opacity 1.5s ease-in-out";
-        setTimeout(() => ecranChargement.style.opacity = "0", 50);
-        
-        // On nettoie tout après le fondu
-        setTimeout(() => {
-            ecranChargement.remove();
-        }, 1600);
-    });
+    if (btnDecouvrir) {
+        btnDecouvrir.addEventListener('click', () => {
+            btnDecouvrir.style.display = "none";
+            if (ecranTutoriel) {
+                ecranTutoriel.style.transition = "none";
+                ecranTutoriel.style.opacity = "1";
+                ecranTutoriel.classList.remove('cache');
+            }
+            if (ecranChargement) {
+                ecranChargement.style.transition = "opacity 1.5s ease-in-out";
+                setTimeout(() => ecranChargement.style.opacity = "0", 50);
+                setTimeout(() => ecranChargement.remove(), 1600);
+            }
+        });
+    }
 
-    // --- 2. GESTION DU TUTORIEL FLUIDE ---
+    // === GESTION DU TUTORIEL FLUIDE ===
     let etapeActuelle = 0;
     const etapes = document.querySelectorAll('.etape-tuto');
     const btnSuivant = document.getElementById('btn-suivant');
@@ -56,96 +47,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnSuivant) {
         btnSuivant.addEventListener('click', () => {
-            etapes[etapeActuelle].classList.remove('active');
+            if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.remove('active');
             etapeActuelle++;
-            etapes[etapeActuelle].classList.add('active');
+            if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.add('active');
 
             if (etapeActuelle === etapes.length - 1) {
                 btnSuivant.classList.add('cache');
-                setTimeout(() => {
-                    btnRentrer.classList.remove('cache');
-                }, 300);
+                setTimeout(() => btnRentrer.classList.remove('cache'), 300);
             }
         });
     }
 
-    // Clic sur "Rentrer dans l'univers" -> Lancement du JEU
     if (btnRentrer) {
         btnRentrer.addEventListener('click', () => {
-            // 1. On coupe la vidéo et on met un fond noir absolu pour éviter le glitch
-            ecranTutoriel.style.backgroundColor = "#050510"; 
-            const video = document.getElementById("bg-video");
-            if(video) video.style.opacity = "0"; 
-
-            // 2. Fondu vers la 3D
-            ecranTutoriel.style.transition = "opacity 1.5s ease-in-out";
-            ecranTutoriel.style.opacity = "0";
-            
-            // 3. On affiche le HUD de Lévine
+            if (ecranTutoriel) {
+                ecranTutoriel.style.backgroundColor = "#050510"; 
+                const video = document.getElementById("bg-video");
+                if(video) video.style.opacity = "0"; 
+                ecranTutoriel.style.transition = "opacity 1.5s ease-in-out";
+                ecranTutoriel.style.opacity = "0";
+                setTimeout(() => ecranTutoriel.remove(), 1500);
+            }
             initialiserHUD();
-
             if (typeof window.lancerJeu3D === 'function') window.lancerJeu3D();
-            
-            setTimeout(() => ecranTutoriel.remove(), 1500);
         });
     }
 
-    // --- 3. GESTION DE L'INFOBULLE FLUIDE (EFFET LERP) ---
-    const infobulle = document.getElementById('infobulle');
-    let sourisX = 0, sourisY = 0;
-    let infobulleX = 0, infobulleY = 0;
-    let estVisible = false;
-    const vitesseLerp = 0.15; 
-
-    window.addEventListener('mousemove', (e) => {
-        sourisX = e.clientX;
-        sourisY = e.clientY;
-    });
-
-    function animerUI() {
-        if (estVisible && infobulle) {
-            infobulleX += (sourisX - infobulleX) * vitesseLerp;
-            infobulleY += (sourisY - infobulleY) * vitesseLerp;
-            infobulle.style.left = `${infobulleX}px`;
-            infobulle.style.top = `${infobulleY}px`;
-        }
-        requestAnimationFrame(animerUI);
-    }
-    animerUI();
-
-    window.afficherInfobulle = function(titre, film, urlImage = null) {
-        if (!infobulle) return;
-        document.getElementById('infobulle-titre').textContent = titre;
-        document.getElementById('infobulle-film').textContent = `Film : ${film}`;
-        
-        const imgEl = document.getElementById('infobulle-img');
-        if (urlImage) {
-            imgEl.src = urlImage;
-            imgEl.style.display = 'block';
-        } else {
-            imgEl.style.display = 'none';
-        }
-
-        infobulle.classList.add('visible');
-        document.body.classList.add('survol-objet');
-        
-        if (!estVisible) {
-            infobulleX = sourisX;
-            infobulleY = sourisY;
-        }
-        estVisible = true;
-    };
-
-    window.cacherInfobulle = function() {
-        if (!infobulle) return;
-        infobulle.classList.remove('visible');
-        document.body.classList.remove('survol-objet');
-        estVisible = false;
-    };
-
-    // ==============================================================
-    // 5. GESTION DU HUD (Vies, Score, Chrono) - Code de Lévine
-    // ==============================================================
+    // === GESTION DU HUD ===
     const hud = document.getElementById('hud');
     const affichageScore = document.getElementById('score-affichage');
     const affichageVies = document.getElementById('vies-affichage');
@@ -153,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let score = 0;
     let vies = 3;
-    let tempsRestant = 180; // 3 minutes en secondes
+    let tempsRestant = 600; 
     let intervalChrono;
 
     function initialiserHUD() {
@@ -171,13 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.perdreVie = function() {
         if (vies > 0) vies--;
-        
-        let texteVies = "";
-        for(let i=0; i<3; i++) {
-            texteVies += (i < vies) ? "❤️" : "🖤";
+        if (affichageVies) {
+            affichageVies.textContent = "❤️".repeat(vies) + "🖤".repeat(3 - vies);
         }
-        if (affichageVies) affichageVies.textContent = texteVies;
-
         if (vies === 0) {
             console.log("GAME OVER !");
             window.afficherInfobulle("GAME OVER", "Plus de vies...", null);
@@ -189,12 +113,11 @@ document.addEventListener('DOMContentLoaded', () => {
         intervalChrono = setInterval(() => {
             if (tempsRestant > 0) {
                 tempsRestant--;
-                let minutes = Math.floor(tempsRestant / 60);
-                let secondes = tempsRestant % 60;
-                if (affichageChrono) affichageChrono.textContent = `${minutes.toString().padStart(2, '0')}:${secondes.toString().padStart(2, '0')}`;
-                
-                if(tempsRestant <= 30 && affichageChrono) {
-                    affichageChrono.style.color = "#ff4757";
+                let m = Math.floor(tempsRestant / 60).toString().padStart(2, '0');
+                let s = (tempsRestant % 60).toString().padStart(2, '0');
+                if (affichageChrono) {
+                    affichageChrono.textContent = `${m}:${s}`;
+                    if(tempsRestant <= 30) affichageChrono.style.color = "#ff4757";
                 }
             } else {
                 clearInterval(intervalChrono);
@@ -203,55 +126,97 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
 
-    // ==============================================================
-    // 6. GESTION DES MODALES (Quiz & Paramètres) - Code de Lévine
-    // ==============================================================
-    const modalQuiz = document.getElementById('modal-quiz');
-    const modalParametres = document.getElementById('modal-parametres');
-    
-    const btnOuvrirParam = document.getElementById('btn-ouvrir-parametres');
-    if (btnOuvrirParam) {
-        btnOuvrirParam.addEventListener('click', () => {
-            modalParametres.classList.remove('cache');
-        });
-    }
-    
-    const btnFermerParam = document.getElementById('btn-fermer-parametres');
-    if (btnFermerParam) {
-        btnFermerParam.addEventListener('click', () => {
-            modalParametres.classList.add('cache');
-        });
-    }
+    // === GESTION DE L'INFOBULLE FLUIDE (LERP) ===
+    const infobulle = document.getElementById('infobulle');
+    let sourisX = 0, sourisY = 0, infobulleX = 0, infobulleY = 0, estVisible = false;
+    const vitesseLerp = 0.15; 
 
-    const toggleMusique = document.getElementById('toggle-musique');
-    if (toggleMusique) {
-        toggleMusique.addEventListener('change', (e) => {
-            console.log("Musique: ", e.target.checked ? "ON" : "OFF");
-        });
-    }
+    window.addEventListener('mousemove', (e) => { sourisX = e.clientX; sourisY = e.clientY; });
 
-    // --- Le Quiz ---
-    let objetActuelEnCoursDeQuiz = null;
+    function animerUI() {
+        if (estVisible && infobulle) {
+            infobulleX += (sourisX - infobulleX) * vitesseLerp;
+            infobulleY += (sourisY - infobulleY) * vitesseLerp;
+            infobulle.style.left = `${infobulleX}px`;
+            infobulle.style.top = `${infobulleY}px`;
+        }
+        requestAnimationFrame(animerUI);
+    }
+    animerUI();
+
+    window.afficherInfobulle = function(titre, film, urlImage = null) {
+        if (!infobulle) return;
+        document.getElementById('infobulle-titre').textContent = titre;
+        document.getElementById('infobulle-film').textContent = `Film : ${film}`;
+        const imgEl = document.getElementById('infobulle-img');
+        if (urlImage) { imgEl.src = urlImage; imgEl.style.display = 'block'; } 
+        else { imgEl.style.display = 'none'; }
+        infobulle.classList.add('visible');
+        document.body.classList.add('survol-objet');
+        if (!estVisible) { infobulleX = sourisX; infobulleY = sourisY; }
+        estVisible = true;
+    };
+
+    window.cacherInfobulle = function() {
+        if (!infobulle) return;
+        infobulle.classList.remove('visible');
+        document.body.classList.remove('survol-objet');
+        estVisible = false;
+    };
+
+    // === GESTION DU QUIZ ===
+    const DOM = {
+        modal: document.getElementById('modal-quiz'),
+        question: document.getElementById('quiz-titre'),
+        optionsContainer: document.getElementById('quiz-options'),
+        feedback: document.getElementById('quiz-feedback')
+    };
 
     window.ui_afficherQuiz = function(data, callback) {
+        if (!DOM.modal) { console.error("❌ ERREUR : Modale introuvable."); return; }
 
-        if (!modalQuiz) return;
-        document.getElementById('quiz-titre').textContent = data.question;
-        const conteneur = document.getElementById('quiz-options');
-        conteneur.innerHTML = data.options.map((opt, i) => `<button class="bouton-secondaire btn-rep" data-index="${i}">${opt}</button>`).join("");
-        document.getElementById('quiz-feedback').textContent = "";
-        document.getElementById('quiz-feedback').className = "message-feedback";
+        DOM.optionsContainer.innerHTML = '';
+        DOM.feedback.textContent = '';
+        DOM.feedback.className = 'message-feedback';
+        DOM.question.textContent = data.question;
 
-        modalQuiz.classList.remove('cache');
+        if (Array.isArray(data.options)) {
+            data.options.forEach((texteOption, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-option';
+                btn.textContent = texteOption;
+
+                btn.addEventListener('click', function onClick() {
+                    const boutons = DOM.optionsContainer.querySelectorAll('.btn-option');
+                    boutons.forEach(b => b.disabled = true);
+
+                    const estBonne = (index === data.reponseCorrecte);
+
+                    if (estBonne) {
+                        btn.classList.add('correct');
+                        DOM.feedback.textContent = data.anecdoteSucces || "Bonne réponse !";
+                        DOM.feedback.classList.add('succes');
+                    } else {
+                        btn.classList.add('incorrect');
+                        DOM.feedback.textContent = data.anecdoteEchec || "Mauvaise réponse !";
+                        DOM.feedback.classList.add('erreur');
+                        boutons[data.reponseCorrecte].classList.add('correct');
+                    }
+
+                    setTimeout(() => {
+                        DOM.modal.classList.add('cache');
+                        if (typeof callback === 'function') callback(estBonne);
+                        if (!estBonne) window.perdreVie(); else window.ajouterScore(100);
+                    }, 1800);
+
+                }, { once: true });
+
+                DOM.optionsContainer.appendChild(btn);
+            });
+        }
+
         if(window.bloquerControles3D) window.bloquerControles3D(true);
-        modalQuiz.classList.remove('cache');
-        document.querySelectorAll('.btn-rep').forEach(btn => btn.addEventListener('click', (e) => {
-            const estBonne = parseInt(e.target.dataset.index) === data.reponseCorrecte;
-            document.getElementById('quiz-feedback').textContent = estBonne ? data.anecdoteSucces : data.anecdoteEchec;
-            document.getElementById('quiz-feedback').className = `message-feedback ${estBonne ? 'succes' : 'erreur'}`;
-            setTimeout(() => { modalQuiz.classList.add('cache'); callback(estBonne); if(!estBonne) window.perdreVie(); else window.ajouterScore(100); }, 2500);
-        }));
-    
+        DOM.modal.classList.remove('cache');
     };
-    
-});
+
+})();
