@@ -74,8 +74,7 @@ window.addEventListener("keydown", (e) => {
     if (transformControls) transformControls.detach();
     objetActif = null;
     if (window.bloquerControles3D) window.bloquerControles3D(false);
-    const modal = document.getElementById('modal-quiz');
-    if (modal) { modal.classList.add('cache'); modal.style.display = 'none'; }
+    document.getElementById('modal-quiz')?.classList.remove('is-active');
     dossierSelection?.destroy();
   }
 });
@@ -315,6 +314,10 @@ window.addEventListener("pointermove", (event) => {
 });
 
 window.addEventListener("click", (event) => {
+  // 🛑 FIX : On bloque le clic 3D si le Tuto, le Chargement, ou le QUIZ sont affichés
+  if (document.getElementById("ecran-tutoriel") || document.getElementById("ecran-chargement")) return;
+  const modalQuiz = document.getElementById("modal-quiz");
+  if (modalQuiz && !modalQuiz.classList.contains("cache")) return;
   if (event.target !== canvas) return;
 
   souris.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -331,6 +334,9 @@ window.addEventListener("click", (event) => {
 
     objetActif = cible;
     controls.target.copy(cible.position);
+
+    // 🛑 FIX : On force le masquage de l'infobulle fantôme
+    if (window.cacherInfobulle) window.cacherInfobulle();
 
     if (!MODE_DEV && window.ouvrirQuiz) window.ouvrirQuiz(cible.userData.id || cible.name, cible.userData.nom || cible.name);
     if (MODE_DEV && transformControls) transformControls.attach(cible);
@@ -405,15 +411,23 @@ const dirCamera = new THREE.Vector3();
 const dirLaterale = new THREE.Vector3();
 const offsetCam = new THREE.Vector3();
 const axeY = new THREE.Vector3(0, 1, 0);
-const vitesseZQSD = 0.6;
+const vitesseZQSD = 0.5;
 let deltaAccumule = 0;
 const intervalleFPS = 1 / 90; // Bride à 90 FPS max
 
 // --- VISEUR MANETTE ---
 let padAPrevious = false, padBPrevious = false, padYPrevious = false;
+let indexBoutonFocus = -1, padDirPrevious = false; // Navigation UI
 const crosshair = document.createElement("div");
 crosshair.style.cssText = "display:none; position:fixed;top:50%;left:50%;width:6px;height:6px;background:white;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:9999;box-shadow: 0 0 4px black;";
 document.body.appendChild(crosshair);
+
+// --- DEBUG MANETTE ---
+const debugManette = document.createElement("div");
+if (MODE_DEV) {
+  debugManette.style.cssText = "position:fixed;top:10px;left:10px;background:rgba(0,0,0,0.8);color:lime;padding:10px;font-family:monospace;z-index:99999;pointer-events:none;";
+  document.body.appendChild(debugManette);
+}
 
 const animate = () => {
   window.requestAnimationFrame(animate); 
@@ -453,19 +467,68 @@ const animate = () => {
   } else {
     crosshair.style.display = "none";
   }
+  
+  if (MODE_DEV && gamepadActif) {
+    debugManette.innerHTML = `🕹️ L-Joy (X,Y): ${padX.toFixed(2)}, ${padY.toFixed(2)} <br> 👁️ R-Joy (RotX,RotY): ${padRotX.toFixed(2)}, ${padRotY.toFixed(2)} <br> 🔫 Gâchettes: LT:${padLT.toFixed(2)} RT:${padRT.toFixed(2)} <br> 🔘 Boutons: A(${padA}) B(${padB})`;
+  } else if (MODE_DEV) { debugManette.innerHTML = "❌ Pas de manette détectée"; }
+
+  // --- NAVIGATION UI (QCM) ---
+  const modalQuiz = document.getElementById('modal-quiz');
+  // On vérifie que la modale n'a pas la classe 'cache' (ce qui signifie qu'elle est affichée)
+  if (modalQuiz && !modalQuiz.classList.contains('cache')) {
+    const boutons = document.querySelectorAll('.btn-option:not([disabled])');
+    const padUp = padY < -0.5 || (gamepadActif && gamepadActif.buttons[12]?.pressed);
+    const padDown = padY > 0.5 || (gamepadActif && gamepadActif.buttons[13]?.pressed);
+    
+    if (padUp && !padDirPrevious) indexBoutonFocus = (indexBoutonFocus > 0) ? indexBoutonFocus - 1 : boutons.length - 1;
+    if (padDown && !padDirPrevious) indexBoutonFocus = (indexBoutonFocus < boutons.length - 1) ? indexBoutonFocus + 1 : 0;
+    
+    // On applique un style visuel clair (bordure dorée)
+    boutons.forEach((b, i) => {
+        b.style.border = (i === indexBoutonFocus) ? "3px solid #f9ca24" : "none";
+        b.style.transform = (i === indexBoutonFocus) ? "scale(1.05)" : "scale(1)";
+    });
+    
+    // Si on appuie sur A et qu'un bouton est sélectionné
+    if (padA && !padAPrevious && indexBoutonFocus >= 0) boutons[indexBoutonFocus].click();
+    
+    padDirPrevious = padUp || padDown; 
+    padX = 0; padY = 0; padRotX = 0; padRotY = 0; // Bloque la caméra 3D
+  } else { 
+    indexBoutonFocus = -1; 
+  }
 
   // --------------------------------------------------------
   // B. ACTIONS DES BOUTONS (A, B, Y)
   // --------------------------------------------------------
   if (padA && !padAPrevious) {
-    const uiAuCentre = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
-    if (uiAuCentre && (uiAuCentre.tagName === 'BUTTON' || uiAuCentre.closest('button'))) uiAuCentre.click();
-    else canvas.dispatchEvent(new MouseEvent("click", { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2, bubbles: true }));
+    const btnDecvrir = document.getElementById("btn-decouvrir");
+    const btnSuivant = document.getElementById("btn-suivant");
+    const btnRentrer = document.getElementById("btn-rentrer");
+
+    // 1. Navigation fluide dans le tutoriel avec la manette
+    if (btnDecvrir && !btnDecvrir.classList.contains("cache") && btnDecvrir.style.display !== "none") btnDecvrir.click();
+    else if (btnSuivant && !btnSuivant.classList.contains("cache")) btnSuivant.click();
+    else if (btnRentrer && !btnRentrer.classList.contains("cache")) btnRentrer.click();
+    
+    // 2. Ou bien validation d'un bouton de QCM (Bordure dorée)
+    else if (document.getElementById('modal-quiz') && !document.getElementById('modal-quiz').classList.contains('cache')) {
+      const boutons = document.querySelectorAll('.btn-option:not([disabled])');
+      // Si aucun bouton n'est surligné, on force le premier par défaut
+      if (indexBoutonFocus === -1 && boutons.length > 0) indexBoutonFocus = 0; 
+      if (boutons[indexBoutonFocus]) boutons[indexBoutonFocus].click();
+    }
+    // 3. Ou bien tir du Raycaster 3D classique
+    else {
+      canvas.dispatchEvent(new MouseEvent("click", { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2, bubbles: true }));
+    }
   }
 
-  if (padB && !padBPrevious && objetActif) {
-    transformControls?.detach();
+  if (padB && !padBPrevious) {
+    if (transformControls) transformControls.detach();
     objetActif = null;
+    if (window.bloquerControles3D) window.bloquerControles3D(false);
+    document.getElementById('modal-quiz')?.classList.remove('is-active');
     if (dossierSelection) { dossierSelection.destroy(); dossierSelection = gui?.addFolder("Aucun objet sélectionné"); }
   }
 
@@ -510,10 +573,14 @@ const animate = () => {
     if (padX < -0.15 && peutBouger(dirLaterale)) { camera.position.addScaledVector(dirLaterale, -padX * vitesseZQSD); controls.target.addScaledVector(dirLaterale, -padX * vitesseZQSD); }
     if (padX > 0.15 && peutBouger(dirLaterale, true)) { camera.position.addScaledVector(dirLaterale, -padX * vitesseZQSD); controls.target.addScaledVector(dirLaterale, -padX * vitesseZQSD); }
     
-    if (padRotX !== 0) { offsetCam.subVectors(controls.target, camera.position); offsetCam.applyAxisAngle(axeY, -padRotX * 0.05); controls.target.copy(camera.position).add(offsetCam); }
-    if (padRotY !== 0) controls.target.y -= padRotY * 0.4; 
-    if (padLT > 0.1) { camera.position.y += padLT * 0.4; controls.target.y += padLT * 0.4; }
-    if (padRT > 0.1) { camera.position.y -= padRT * 0.4; controls.target.y -= padRT * 0.4; }
+    if (Math.abs(padRotX) > 0.15) { offsetCam.subVectors(controls.target, camera.position); offsetCam.applyAxisAngle(axeY, -padRotX * 0.05); controls.target.copy(camera.position).add(offsetCam); }
+    if (MODE_DEV && Math.abs(padRotY) > 0.15) { 
+      let nouvelleHauteur = controls.target.y - (padRotY * 0.8); 
+      controls.target.y = Math.max(camera.position.y - 12, Math.min(camera.position.y + 12, nouvelleHauteur));
+    }
+
+    if (MODE_DEV && padLT > 0.1) { camera.position.y += padLT * 0.4; controls.target.y += padLT * 0.4; }
+    if (MODE_DEV && padRT > 0.1) { camera.position.y -= padRT * 0.4; controls.target.y -= padRT * 0.4; }
 
     // -- Tactile Mobile --
     if (Math.abs(padMobile.y) > 0.05 && peutBouger(dirCamera, padMobile.y < 0)) {
@@ -542,7 +609,7 @@ const animate = () => {
   });
 
   lodsScene.forEach(lod => lod.update(camera));
-
+  if (!MODE_DEV) controls.target.y = 23; 
   if (renduAutorise) renderer.render(scene, camera); 
   if (stats) {
     stats.update();
@@ -550,6 +617,6 @@ const animate = () => {
     perfData.drawCalls = renderer.info.render.calls;
     perfData.geometries = renderer.info.memory.geometries;
   }
-};
+}; 
 
 animate();
