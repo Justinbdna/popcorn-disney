@@ -169,5 +169,149 @@ export const disneyData =[
     flotte: false, y: 1, x: 10, z: 10,
     scale: 0.3,
     hasLowPoly: true
-  }
+  },
+  {
+    id: "ballon_cirque", // 🔴 Dumbo
+    nom: "Le Ballon de Cirque",
+    question: "Quelle particularité physique permet à Dumbo de voler ?",
+    options:["Ses grandes oreilles", "Sa trompe musclée", "Ses pattes puissantes", "Un vent magique"],
+    reponseCorrecte: 0,
+    anecdoteSucces: "Exactement ! Ses grandes oreilles lui servent d'ailes. Timothée la souris lui fait croire qu'une plume magique est nécessaire.",
+    anecdoteEchec: "Raté ! Ce sont ses immenses oreilles qui lui permettent de voler.",
+    flotte: false, y: 0, x: 0, z: 0,
+    scale: 1,
+    hasLowPoly: true
+  },
+  {
+    id: "carotte", // 🔵 La Reine des Neiges
+    nom: "La Carotte de Olaf",
+    question: "Quel est le rêve le plus cher d'Olaf le bonhomme de neige ?",
+    options:["Nager dans l'océan", "Goûter au chocolat chaud", "Vivre l'été chaud", "Rencontrer des rennes"],
+    reponseCorrecte: 2,
+    anecdoteSucces: "Parfait ! Olaf chante 'L'été' et rêve de sentir la chaleur du soleil... sans réaliser ce que ça lui ferait.",
+    anecdoteEchec: "Non ! Olaf rêve de connaître l'été et la chaleur, sans se douter qu'il fondrait.",
+    flotte: false, y: 0, x: 0, z: 0,
+    scale: 1,
+    hasLowPoly: true
+  },
+  {
+    id: "chemise", // 🟣 Lilo & Stitch
+    nom: "La Chemise à Fleurs d'Elvis",
+    question: "Quel est le numéro d'expérience de Stitch selon la fiche de Jumba ?",
+    options:["Expérience 124", "Expérience 626", "Expérience 000", "Expérience 42"],
+    reponseCorrecte: 1,
+    anecdoteSucces: "Wobbé ! Expérience 626 ! C'est aussi le nom de son vaisseau dans la franchise.",
+    anecdoteEchec: "Loup ! Stitch est l'Expérience 626, créé par Jumba pour être une arme de destruction.",
+    flotte: false, y: 0, x: 0, z: 0,
+    scale: 1,
+    hasLowPoly: true
+  },
+  {
+    id: "coq-vaiana", // 🟠 Vaiana
+    nom: "Hei Hei le Coq",
+    question: "Pourquoi le chef du village laisse-t-il Hei Hei partir sur le bateau ?",
+    options:["Il est sacré", "Pour ne pas le manger", "Il peut naviguer", "Il porte chance"],
+    reponseCorrecte: 1,
+    anecdoteSucces: "Ouais ! Tui dit que le tuer serait une honte, alors il l'embarque... même s'il est d'une stupidité légendaire.",
+    anecdoteEchec: "Non ! La vraie raison c'est que le manger serait une honte, donc il part en mer.",
+    flotte: false, y: 0, x: 0, z: 0,
+    scale: 1,
+    hasLowPoly: true
+  },
+  {
+    id: "gant_mickey", // 🟡 Mickey Mouse
+    nom: "Le Gant Blanc de Mickey",
+    question: "En quelle année Mickey Mouse fait-il sa première apparition officielle ?",
+    options:["1923", "1928", "1932", "1919"],
+    reponseCorrecte: 1,
+    anecdoteSucces: "Hot dog ! 1928, avec 'Steamboat Willie', le premier dessin animé avec son synchronisé.",
+    anecdoteEchec: "Raté ! C'est en 1928 avec 'Steamboat Willie' que Mickey est né officiellement.",
+    flotte: false, y: 0, x: 0, z: 0,
+    scale: 1,
+    hasLowPoly: true
+  },
+  {
+    id: "gargouille", // 🟤 Le Bossu de Notre-Dame
+    nom: "La Gargouille de Notre-Dame",
+    question: "Comment s'appelle la gargouille la plus timide et romantique du film ?",
+    options:["Victor", "Hugo", "Laverne", "Djali"],
+    reponseCorrecte: 0,
+    anecdoteSucces: "Bravo ! Victor est le plus sensible des trois, toujours en admiration devant Esméralda.",
+    anecdoteEchec: "Faux ! C'est Victor, le plus romantique. Hugo c'est le glouton, Laverne c'est la sage.",
+    flotte: false, y: 0, x: 0, z: 0,
+    scale: 1,
+    hasLowPoly: true
+  },
+  {
+    id: "hyene", // 🟢 Le Roi Lion
+    nom: "La Hyène",
+    question: "Quel est le nom de la hyène leader du trio dans Le Roi Lion ?",
+    options:["Banzai", "Ed", "Shenzi", "Nala"],
+    reponseCorrecte: 2,
+    anecdoteSucces: "Perfecto ! Shenzi est la cheffe. Banzai est le râleur, Ed est le fou riant.",
+    anecdoteEchec: "Non ! La leader c'est Shenzi. Elle commande Banzai et Ed sous les ordres de Scar.",
+    flotte: false, y: 0, x: 0, z: 0,
+    scale: 1,
+    hasLowPoly: true
+  },
+  {
+    id: "liane", // 🟢 Tarzan
+    nom: "La Liane de Tarzan",
+    question: "Quel compositeur a signé la bande originale de Tarzan avec 'Trashin' the Camp' ?",
+    options:["Elton John", "Phil Collins", "Hans Zimmer", "Alan Menken"],
+    reponseCorrecte: 1,
+    anecdoteSucces: "Yaaah ! Phil Collins a tout composé et chanté lui-même. Un choix audacieux pour l'époque.",
+    anecdoteEchec: "Raté ! C'est Phil Collins qui a composé et interprété toutes les chansons.",
+    flotte: true, y: 0, x: 0, z: 0, vitesse: 0.8, amplitude: 0.1,
+    scale: 1,
+    hasLowPoly: true
+  },
+  {
+    id: "noeud_rose", // 🟣 Le monde de Ralph
+    nom: "Le Nœud Rose de Vanellope",
+    question: "Dans quel jeu vidéo Vanellope von Schweetz est-elle la présidente ?",
+    options:["Sugar Rush", "Fix-It Felix", "Hero's Duty", "Candy Crush"],
+    reponseCorrecte: 0,
+    anecdoteSucces: "Glitch power ! Sugar Rush, le jeu de course de karts aux bonbons. Elle en est la vraie présidente !",
+    anecdoteEchec: "Non ! C'est Sugar Rush. Ralph lui est dans Fix-It Felix.",
+    flotte: false, y: 0, x: 0, z: 0,
+    scale: 1,
+    hasLowPoly: true
+  },
+  {
+    id: "nuage", // 🔵 Planes
+    nom: "Le Nuage de Course",
+    question: "Quel est le nom de l'avion héros du film Planes ?",
+    options:["Ripslinger", "Dusty Crophopper", "El Chupacabra", "Skipper"],
+    reponseCorrecte: 1,
+    anecdoteSucces: "Dans le mille ! Dusty Crophopper, un épandeur agricole qui rêve de gagner la course mondiale.",
+    anecdoteEchec: "Non ! C'est Dusty Crophopper, le petit avion agricole qui ne devait pas voler si haut.",
+    flotte: true, y: 0, x: 0, z: 0, vitesse: 1.2, amplitude: 0.12,
+    scale: 1,
+    hasLowPoly: true
+  },
+  {
+    id: "pates", // 🟡 La Belle et le Clochard
+    nom: "Le Plat de Spaghettis",
+    question: "Dans quel restaurant se déroule la scène iconique des spaghettis ?",
+    options:["Bella Notte", "Tony's Restaurant", "Ristorante Roma", "Mama Leoni"],
+    reponseCorrecte: 1,
+    anecdoteSucces: "Bella notte ! Tony's Restaurant, où Tony chante 'Bella Notte' aux chandelles pour les deux tourtereaux.",
+    anecdoteEchec: "Faux ! C'est Tony's Restaurant. 'Bella Notte' c'est la chanson, pas le nom du resto.",
+    flotte: false, y: 0, x: 0, z: 0,
+    scale: 1,
+    hasLowPoly: true
+  },
+  {
+    id: "rose", // 🔴 La Belle et la Bête
+    nom: "La Rose Enchantée",
+    question: "Combien de temps le Prince a-t-il pour briser le sortilège avant que la rose se fane ?",
+    options:["Avant ses 20 ans", "Avant ses 21 ans", "Avant la première neige", "Avant la pleine lune"],
+    reponseCorrecte: 1,
+    anecdoteSucces: "Exact ! Il doit apprendre à aimer et être aimé avant son 21e anniversaire.",
+    anecdoteEchec: "Faux ! La malédiction doit être brisée avant le 21e anniversaire du Prince.",
+    flotte: true, y: 0, x: 0, z: 0, vitesse: 0.5, amplitude: 0.08,
+    scale: 1,
+    hasLowPoly: true
+  },  
 ];
