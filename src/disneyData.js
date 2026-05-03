@@ -83,7 +83,7 @@ export const disneyData =[
     anecdoteSucces: "L'aventure est au bout du chemin ! La capsule de soda 'Ellie' est le symbole ultime du film.",
     anecdoteEchec: "C'était une simple capsule de soda de raisin ! Un trésor sentimental.",
     flotte: false,
-    x: -47.00, y: 32.25, z: -82.81, rotX: 0.000, rotY: 4.700, rotZ: 0.000, scale: 5.00,
+    x: -47.00, y:21.75, z:-143.79, rotX: 0.000, rotY: 4.700, rotZ: 0.000, scale: 5.00,
     hasLowPoly: true
   },
   {

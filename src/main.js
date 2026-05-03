@@ -413,6 +413,7 @@ const offsetCam = new THREE.Vector3();
 const axeY = new THREE.Vector3(0, 1, 0);
 const vitesseZQSD = 0.5;
 let deltaAccumule = 0;
+let hauteurJoueur = 26; // 🛑 FIX : L'ancre absolue du joueur
 const intervalleFPS = 1 / 90; // Bride à 90 FPS max
 
 // --- VISEUR MANETTE ---
@@ -574,13 +575,14 @@ const animate = () => {
     if (padX > 0.15 && peutBouger(dirLaterale, true)) { camera.position.addScaledVector(dirLaterale, -padX * vitesseZQSD); controls.target.addScaledVector(dirLaterale, -padX * vitesseZQSD); }
     
     if (Math.abs(padRotX) > 0.15) { offsetCam.subVectors(controls.target, camera.position); offsetCam.applyAxisAngle(axeY, -padRotX * 0.05); controls.target.copy(camera.position).add(offsetCam); }
-    if (MODE_DEV && Math.abs(padRotY) > 0.15) { 
-      let nouvelleHauteur = controls.target.y - (padRotY * 0.8); 
-      controls.target.y = Math.max(camera.position.y - 12, Math.min(camera.position.y + 12, nouvelleHauteur));
+    if (Math.abs(padRotY) > 0.15) { 
+      let nouvelleHauteur = controls.target.y - (padRotY * 0.8);
+      let dist = camera.position.distanceTo(controls.target);
+      controls.target.y = Math.max(camera.position.y - (dist * 0.9), Math.min(camera.position.y + (dist * 0.9), nouvelleHauteur));
     }
 
-    if (MODE_DEV && padLT > 0.1) { camera.position.y += padLT * 0.4; controls.target.y += padLT * 0.4; }
-    if (MODE_DEV && padRT > 0.1) { camera.position.y -= padRT * 0.4; controls.target.y -= padRT * 0.4; }
+    if (MODE_DEV && padLT > 0.1) hauteurJoueur += padLT * 0.4;
+    if (MODE_DEV && padRT > 0.1) hauteurJoueur -= padRT * 0.4;
 
     // -- Tactile Mobile --
     if (Math.abs(padMobile.y) > 0.05 && peutBouger(dirCamera, padMobile.y < 0)) {
@@ -609,7 +611,12 @@ const animate = () => {
   });
 
   lodsScene.forEach(lod => lod.update(camera));
-  if (!MODE_DEV) controls.target.y = 23; 
+  // 🛑 FIX RADICAL : On cloue le joueur. OrbitControls ne peut plus te faire voler.
+  if (!objetActif) {
+    const decalageY = hauteurJoueur - camera.position.y;
+    camera.position.y = hauteurJoueur;
+    controls.target.y += decalageY;
+  }
   if (renduAutorise) renderer.render(scene, camera); 
   if (stats) {
     stats.update();
