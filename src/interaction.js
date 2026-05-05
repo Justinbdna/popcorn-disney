@@ -220,5 +220,37 @@
         if(window.bloquerControles3D) window.bloquerControles3D(true);
         DOM.modal.classList.remove('cache');
     };
+// === GESTION DE LA MODALE DES CONTRÔLES ===
+    const modalControles = document.getElementById('modal-controles');
+    const btnOuvrirControles = document.getElementById('btn-ouvrir-controles');
+    const btnFermerControles = document.getElementById('btn-fermer-controles');
+    const onglets = document.querySelectorAll('.onglet');
+    const schemas = document.querySelectorAll('.schema');
 
+    if (btnOuvrirControles && modalControles) {
+        btnOuvrirControles.addEventListener('click', () => {
+            modalControles.classList.remove('cache');
+            if (window.bloquerControles3D) window.bloquerControles3D(true); // Bloque la caméra
+        });
+    }
+
+    if (btnFermerControles && modalControles) {
+        btnFermerControles.addEventListener('click', () => {
+            modalControles.classList.add('cache');
+            if (window.bloquerControles3D) window.bloquerControles3D(false); // Libère la caméra
+        });
+    }
+
+    // Changement d'onglets
+    onglets.forEach(onglet => {
+        onglet.addEventListener('click', () => {
+            onglets.forEach(o => o.classList.remove('active'));
+            schemas.forEach(s => s.classList.remove('active'));
+
+            onglet.classList.add('active');
+            const cibleId = onglet.getAttribute('data-cible');
+            const cibleElement = document.getElementById(cibleId);
+            if(cibleElement) cibleElement.classList.add('active');
+        });
+    });
 })();
