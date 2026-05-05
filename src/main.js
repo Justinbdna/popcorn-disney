@@ -306,10 +306,8 @@ window.addEventListener("pointermove", (event) => {
   
   if (hits.length > 0 && !estMaison) {
     document.body.style.cursor = "pointer";
-    if (!MODE_DEV && window.afficherInfobulle) window.afficherInfobulle(cibleHover.name, "");
   } else {
     document.body.style.cursor = "default";
-    if (!MODE_DEV && window.cacherInfobulle) window.cacherInfobulle();
   }
 });
 
@@ -338,9 +336,6 @@ window.addEventListener("pointerup", (event) => {
 
     objetActif = cible;
     controls.target.copy(cible.position);
-
-    // 🛑 FIX : On force le masquage de l'infobulle fantôme
-    if (window.cacherInfobulle) window.cacherInfobulle();
 
     if (!MODE_DEV && window.ouvrirQuiz) window.ouvrirQuiz(cible.userData.id || cible.name, cible.userData.nom || cible.name);
     if (MODE_DEV && transformControls) transformControls.attach(cible);

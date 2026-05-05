@@ -75,19 +75,6 @@ body, html {
 .etape-tuto p { color: #cccccc; font-size: 1.2rem; line-height: 1.6; }
 .vies { letter-spacing: 5px; }
 
-/* INFOBULLE */
-#infobulle {
-  position: absolute; top: 0; left: 0; z-index: 1000; opacity: 0; pointer-events: none;
-  background: var(--fond-ui); backdrop-filter: blur(12px); border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 12px; padding: 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-  transition: opacity 0.4s ease; transform: translate(20px, 20px);
-}
-#infobulle.visible { opacity: 1; }
-.infobulle-contenu { display: flex; align-items: center; gap: 12px; }
-.infobulle-image { width: 45px; height: 45px; border-radius: 8px; object-fit: cover; }
-.infobulle-textes h3 { margin: 0 0 5px 0; font-size: 16px; color: var(--or-disney); }
-.infobulle-textes p { margin: 0; font-size: 12px; color: #e0e0e0; }
-
 /* LE HUD */
 #hud { position: absolute; top: 0; left: 0; width: 100vw; padding: 20px 30px; display: flex; justify-content: space-between; align-items: flex-start; z-index: 500; transition: opacity 0.5s ease; pointer-events: none; }
 .hud-section { display: flex; gap: 15px; pointer-events: none; }
