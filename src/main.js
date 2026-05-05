@@ -47,6 +47,8 @@ if (isMobile) {
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.listenToKeyEvents(window); // Le canevas écoute enfin la fenêtre entière
 controls.enableDamping = true;
+controls.enableZoom = MODE_DEV; // 🛑 FIX : Empêche le zoom à deux doigts
+controls.enablePan = MODE_DEV;  // 🛑 FIX : Empêche le glissement latéral passe-muraille
 controls.target.y = 23;
 controls.maxPolarAngle = Math.PI / 2 - 0.05;
 controls.minDistance = 2;
