@@ -69,12 +69,12 @@ const touches = { z: false, q: false, s: false, d: false, ArrowUp: false, ArrowL
 
 window.addEventListener("keyup", (e) => {
   if (touches.hasOwnProperty(e.key)) touches[e.key] = false;
-
 });
-window.seqClavier = ((window.seqClavier || "") + e.key).slice(-6);
-  if (window.seqClavier.toLowerCase() === "mickey") window.activerModeRetro();
 
 window.addEventListener("keydown", (e) => {
+  window.seqClavier = ((window.seqClavier || "") + e.key).slice(-6);
+  if (window.seqClavier.toLowerCase() === "mickey") window.activerModeRetro();
+  
   if (touches.hasOwnProperty(e.key)) touches[e.key] = true;
   if (e.key === "g") transformControls?.setMode("translate");
   if (e.key === "r") transformControls?.setMode("rotate");
