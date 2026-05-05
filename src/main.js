@@ -14,7 +14,7 @@ import nipplejs from "nipplejs";
 // =========================================================================
 // 🛠️ 1. CONFIGURATION GLOBALE ET DÉVELOPPEMENT
 // =========================================================================
-const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
+const MODE_DEV = false; // Mets sur 'false' pour le rendu final !
 window.easterEggDebloque = false;
 
 // Détection mobile immédiate
@@ -61,7 +61,7 @@ let objetActif = null;
 let renduAutorise = false; // Bloque le rendu GPU pendant le chargement
 window.activerModeRetro = () => {
   if (window.easterEggDebloque) return;
-  window.easterEggDebloque = true; renderer.setPixelRatio(0.15); canvas.classList.add('mode-retro');
+  window.easterEggDebloque = true; renderer.setPixelRatio(0.37); canvas.classList.add('mode-retro');
   console.log("🎮 CHEAT CODE ACTIVÉ !"); if (window.ui_AnimationPS2) window.ui_AnimationPS2();
 };
 
