@@ -247,6 +247,34 @@
       ></div>
     </main>
 
+    <!-- ==============================================
+     MENU PAUSE
+=============================================== -->
+<div id="modal-pause" class="modal cache">
+  <div class="modal-contenu effet-magique">
+    <h2 class="modal-titre">Jeu en Pause</h2>
+    <p style="margin-bottom: 30px; color: #aaa;">Prenez une grande inspiration...</p>
+    <div class="modal-actions-colonne">
+      <button id="btn-reprendre" class="bouton-magique">▶️ Reprendre la partie</button>
+      <button class="bouton-secondaire btn-quitter">🚪 Quitter le jeu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==============================================
+     ÉCRAN DE FIN (VICTOIRE / GAME OVER)
+=============================================== -->
+<div id="modal-fin" class="modal cache">
+  <div class="modal-contenu effet-magique">
+    <h2 class="modal-titre" id="titre-fin">Game Over</h2>
+    <p id="texte-fin" style="margin-bottom: 30px; font-size: 1.2rem;">Les ténèbres l'ont emporté...</p>
+    <div class="modal-actions-colonne">
+      <button id="btn-recommencer" class="bouton-magique">🔄 Recommencer</button>
+      <button class="bouton-secondaire btn-quitter">🏠 Retour à l'accueil</button>
+    </div>
+  </div>
+</div>
+
     <script src="/src/disneyData.js" type="module"></script>
     <script src="/src/interaction.js" type="module"></script>
     <script src="/src/main.js" type="module"></script>
