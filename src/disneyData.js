@@ -244,7 +244,7 @@ export const disneyData =[
     reponseCorrecte: 2,
     anecdoteSucces: "Perfecto ! Shenzi est la cheffe. Banzai est le râleur, Ed est le fou riant.",
     anecdoteEchec: "Non ! La leader c'est Shenzi. Elle commande Banzai et Ed sous les ordres de Scar.",
-    flotte: false, x: 47.00, y: 0.33, z: 19.46, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 12.00,
+    flotte: false, x: 41.11, y: 2.79, z: -107.93, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 12.00,
     hasLowPoly: true
   },
   {
@@ -299,7 +299,7 @@ export const disneyData =[
     reponseCorrecte: 1,
     anecdoteSucces: "Exact ! Il doit apprendre à aimer et être aimé avant son 21e anniversaire.",
     anecdoteEchec: "Faux ! La malédiction doit être brisée avant le 21e anniversaire du Prince.",
-    flotte: true, x: -20.00, y: 14.00, z: -110.00, rotX: 0.000, rotY: 0.000, rotZ: 0.000, vitesse: 0.5, amplitude: 0.08, scale: 5.00,
+    flotte: true, x: 3.00, y: 14.00, z: -128.00, rotX: 0.000, rotY: 0.000, rotZ: 0.000, vitesse: 0.5, amplitude: 0.08, scale: 5.00,
     hasLowPoly: true
   }
 ];
