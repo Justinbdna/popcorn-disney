@@ -97,6 +97,7 @@
         setTimeout(() => affichageScore.parentElement.style.transform = "scale(1)", 200);
     };
 
+    // Mise à jour de la fonction perdreVie pour déclencher l'écran de Game Over
     window.perdreVie = function() {
         if (vies > 0) vies--;
         if (affichageVies) {
@@ -104,8 +105,7 @@
         }
         if (vies === 0) {
             console.log("GAME OVER !");
-            if (window.bloquerControles3D) window.bloquerControles3D(true); // 🛑 FIX : On coupe le moteur 3D
-            window.afficherInfobulle("GAME OVER", "La partie est terminée.", null);
+            window.afficherFin(false); // Déclenche l'écran de Game Over
         }
     };
 
@@ -251,6 +251,67 @@
             const cibleId = onglet.getAttribute('data-cible');
             const cibleElement = document.getElementById(cibleId);
             if(cibleElement) cibleElement.classList.add('active');
+        });
+    });
+// === GESTION DE LA PAUSE ===
+    const btnPause = document.getElementById('btn-pause');
+    const modalPause = document.getElementById('modal-pause');
+    const btnReprendre = document.getElementById('btn-reprendre');
+
+    if (btnPause && modalPause) {
+        btnPause.addEventListener('click', () => {
+            if (window.togglePause) window.togglePause(); // Coupe le moteur 3D
+            modalPause.classList.remove('cache');
+        });
+    }
+
+    if (btnReprendre && modalPause) {
+        btnReprendre.addEventListener('click', () => {
+            if (window.togglePause) window.togglePause(); // Relance le moteur 3D
+            modalPause.classList.add('cache');
+        });
+    }
+
+    // === GESTION DES ÉCRANS DE FIN (Victoire / Défaite) ===
+    const modalFin = document.getElementById('modal-fin');
+    const btnRecommencer = document.getElementById('btn-recommencer');
+    const btnsQuitter = document.querySelectorAll('.btn-quitter'); // Sélectionne les 2 boutons quitter
+
+    // Fonction globale pour déclencher la fin (Game Over ou Victoire)
+    window.afficherFin = function(victoire) {
+        if (!modalFin) return;
+        
+        // Coupe les contrôles 3D et arrête le chrono
+        if (window.bloquerControles3D) window.bloquerControles3D(true);
+        if (typeof intervalChrono !== 'undefined') clearInterval(intervalChrono);
+
+        const titre = document.getElementById('titre-fin');
+        const texte = document.getElementById('texte-fin');
+        
+        if (victoire) {
+            titre.textContent = "👑 VICTOIRE !";
+            titre.style.color = "#2ed573";
+            texte.textContent = "Vous avez trouvé tous les objets magiques et prouvé votre expertise Disney !";
+        } else {
+            titre.textContent = "💀 GAME OVER";
+            titre.style.color = "#ff4757";
+            texte.textContent = "Vous n'avez plus de vies ou le temps est écoulé...";
+        }
+
+        modalFin.classList.remove('cache');
+    };
+
+    // Recharger la page pour tout réinitialiser proprement
+    if (btnRecommencer) {
+        btnRecommencer.addEventListener('click', () => {
+            window.location.reload(); 
+        });
+    }
+
+    btnsQuitter.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Relancer la page remet le joueur au SAS de chargement "Éveil de la magie"
+            window.location.reload(); 
         });
     });
 })();
