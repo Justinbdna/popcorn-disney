@@ -221,5 +221,11 @@
         if(window.bloquerControles3D) window.bloquerControles3D(true);
         DOM.modal.classList.remove('cache');
     };
+    window.ui_AnimationPS2 = () => {
+        const vid = document.getElementById("video-ps2");
+        if (!vid) return; 
+        vid.classList.remove("cache"); vid.play();
+        vid.onended = () => vid.classList.add("cache");
+    };
 
 })();

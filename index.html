@@ -38,6 +38,8 @@
 
     <!-- UI LAYER GLOBAL (Couche transparente pour laisser passer les clics vers la 3D) -->
     <main id="ui-layer">
+        <!-- 🛑 FIX : Écran de transition PS2 (Easter Egg) -->
+        <video id="video-ps2" class="cache" src="/pictures/ps2.mp4" style="position:fixed; top:0; left:0; width:100vw; height:100vh; object-fit:cover; z-index:999999; background:black; pointer-events:none;" playsinline></video>
         
         <!-- ÉCRAN TUTORIEL COMPLET -->
         <div id="ecran-tutoriel" class="cache">
