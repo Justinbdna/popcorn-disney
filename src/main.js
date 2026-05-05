@@ -51,7 +51,7 @@ controls.enableZoom = MODE_DEV; // 🛑 FIX : Empêche le zoom à deux doigts
 controls.enablePan = MODE_DEV;  // 🛑 FIX : Empêche le glissement latéral passe-muraille
 controls.target.y = 23;
 controls.maxPolarAngle = Math.PI / 2 - 0.05;
-controls.minDistance = 2;
+controls.minDistance = 0.1;
 controls.maxDistance = 250;
 controls.update();
 
@@ -69,6 +69,21 @@ window.activerModeRetro = () => {
 
 const touches = { z: false, q: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
 
+window.deselectionnerObjet = () => {
+  objetActif = null;
+  const direction = new THREE.Vector3();
+  camera.getWorldDirection(direction);
+  controls.target.copy(camera.position).add(direction.multiplyScalar(0.1)); // 🛑 FIX : Recentre la cible pile devant les yeux (FPS)
+  controls.update();
+
+  if (typeof transformControls !== 'undefined' && transformControls) transformControls.detach();
+  if (window.bloquerControles3D) window.bloquerControles3D(false);
+  document.getElementById('modal-quiz')?.classList.add('cache');
+  if (typeof dossierSelection !== 'undefined' && dossierSelection) {
+    dossierSelection.destroy();
+    dossierSelection = typeof gui !== 'undefined' ? gui?.addFolder("Aucun objet sélectionné") : null;
+  }
+};
 window.addEventListener("keyup", (e) => {
   if (touches.hasOwnProperty(e.key)) touches[e.key] = false;
 });
@@ -81,11 +96,8 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "g") transformControls?.setMode("translate");
   if (e.key === "r") transformControls?.setMode("rotate");
   if (e.key === "Escape") {
-    if (transformControls) transformControls.detach();
-    objetActif = null;
-    if (window.togglePause) window.togglePause(); // 🛑 FIX : Déclenche la pause
-    document.getElementById('modal-quiz')?.classList.add('cache');
-    dossierSelection?.destroy();
+    window.deselectionnerObjet(); // 🛑 FIX : Applique la désélection propre FPS
+    if (window.togglePause) window.togglePause(); 
   }
 });
 // =========================================================================
@@ -373,12 +385,7 @@ window.addEventListener("pointerup", (event) => {
       dossierSelection?.open();
     }
   } else {
-    transformControls?.detach();
-    objetActif = null;
-    if (dossierSelection) {
-      dossierSelection.destroy();
-      dossierSelection = gui?.addFolder("Aucun objet sélectionné");
-    }
+    window.deselectionnerObjet(); // 🛑 FIX : Applique la désélection propre FPS
   }
 });
 // 🟢 LOGIQUE DU QUIZ (Le Cerveau connecté à disneyData)
@@ -393,8 +400,7 @@ window.ouvrirQuiz = (idObjet, nomObjet) => {
  if (window.ui_afficherQuiz) {
     window.ui_afficherQuiz(data, (succes) => {
       if (succes) window.objetTrouve(idObjet);
-      if (window.bloquerControles3D) window.bloquerControles3D(false);
-      objetActif = null;
+      window.deselectionnerObjet(); // 🛑 FIX : Reset la caméra FPS après le quiz
     });
   }
 };
@@ -552,13 +558,8 @@ const animate = () => {
   }
 
   if (padB && !padBPrevious) {
-    if (transformControls) transformControls.detach();
-    objetActif = null;
-    if (window.bloquerControles3D) window.bloquerControles3D(false);
-    document.getElementById('modal-quiz')?.classList.remove('is-active');
-    if (dossierSelection) { dossierSelection.destroy(); dossierSelection = gui?.addFolder("Aucun objet sélectionné"); }
+    window.deselectionnerObjet(); // 🛑 FIX : Désélection FPS propre via manette
   }
-
   padAPrevious = padA; padBPrevious = padB; padYPrevious = padYBtn;
 
   // --------------------------------------------------------
