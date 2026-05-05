@@ -112,6 +112,7 @@
     function demarrerChrono() {
         clearInterval(intervalChrono);
         intervalChrono = setInterval(() => {
+            if (window.enPause) return; // 🛑 FIX : Le minuteur vérifie la pause CHAQUE seconde
             if (tempsRestant > 0) {
                 tempsRestant--;
                 let m = Math.floor(tempsRestant / 60).toString().padStart(2, '0');
