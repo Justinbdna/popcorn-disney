@@ -73,12 +73,21 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     if (transformControls) transformControls.detach();
     objetActif = null;
-    if (window.bloquerControles3D) window.bloquerControles3D(false);
-    document.getElementById('modal-quiz')?.classList.remove('is-active');
+    if (window.togglePause) window.togglePause(); // 🛑 FIX : Déclenche la pause
+    document.getElementById('modal-quiz')?.classList.add('cache');
     dossierSelection?.destroy();
   }
 });
+// =========================================================================
+// Système de pause 
+// =========================================================================
 
+window.enPause = false;
+window.togglePause = () => {
+  window.enPause = !window.enPause;
+  if (window.bloquerControles3D) window.bloquerControles3D(window.enPause);
+  console.log(window.enPause ? "⏸️ JEU EN PAUSE" : "▶️ REPRISE DU JEU");
+};
 // =========================================================================
 // 📱 5. INITIALISATION DU JOYSTICK MOBILE (Nipple.js)
 // =========================================================================
@@ -464,6 +473,10 @@ const animate = () => {
     padYBtn = gamepadActif.buttons[3].pressed; 
     padLT = gamepadActif.buttons[6].value;
     padRT = gamepadActif.buttons[7].value;
+    // 🛑 FIX : Le bouton Start doit être lu MÊME quand le jeu est en pause !
+    let padStart = gamepadActif.buttons[9]?.pressed;
+    if (padStart && !window.padStartPrev) { if (window.togglePause) window.togglePause(); }
+    window.padStartPrev = padStart;
   } else {
     crosshair.style.display = "none";
   }
@@ -562,7 +575,7 @@ const animate = () => {
     return intersect.length === 0 || intersect[0].distance > 1.5;
   };
 
-  if (!objetActif) {
+  if (!objetActif && !window.enPause) { // 🛑 FIX : Gèle les moteurs en pause
     camera.getWorldDirection(dirCamera);
     dirCamera.y = 0; dirCamera.normalize();
     dirLaterale.crossVectors(camera.up, dirCamera).normalize();
@@ -582,6 +595,7 @@ const animate = () => {
 
     if (MODE_DEV && padLT > 0.1) hauteurJoueur += padLT * 0.4;
     if (MODE_DEV && padRT > 0.1) hauteurJoueur -= padRT * 0.4;
+
 
     // -- Tactile Mobile --
     if (Math.abs(padMobile.y) > 0.05 && peutBouger(dirCamera, padMobile.y < 0)) {
