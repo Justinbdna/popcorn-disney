@@ -173,6 +173,51 @@
         </div>
       </div>
 
+      <!-- MODALE DES CONTRÔLES (BLUEPRINT) -->
+      <div id="modal-controles" class="modal cache">
+        <div class="modal-contenu blueprint-magique">
+          <h2 class="modal-titre">Commandes</h2>
+          
+          <div class="onglets-controles">
+            <button class="onglet active" data-cible="schema-manette">Manette</button>
+            <button class="onglet" data-cible="schema-mobile">Tactile</button>
+            <button class="onglet" data-cible="schema-pc">Clavier</button>
+          </div>
+
+          <div class="schemas-container">
+            <!-- 1. SCHÉMA MANETTE -->
+            <div id="schema-manette" class="schema active">
+                <!-- ⚠️ À AJOUTER : Une silhouette blanche de manette -->
+                <img src="/public/pictures/silhouette-manette.png" class="silhouette-image" alt="Manette">
+                <div class="label-touche t-gauche-haut"><span class="touche">Gâchettes</span><span class="desc">Hauteur Caméra</span></div>
+                <div class="label-touche t-gauche-bas"><span class="touche">Sticks</span><span class="desc">Se déplacer / Tourner</span></div>
+                <div class="label-touche t-droite"><span class="touche">Bouton A</span><span class="desc">Interagir</span></div>
+            </div>
+
+            <!-- 2. SCHÉMA MOBILE -->
+            <div id="schema-mobile" class="schema">
+                <!-- ⚠️ À AJOUTER : Une silhouette blanche de mobile paysage -->
+                <img src="/public/pictures/silhouette-mobile.png" class="silhouette-image" alt="Mobile">
+                <div class="label-touche t-gauche-bas"><span class="touche">Joystick Gauche</span><span class="desc">Se déplacer</span></div>
+                <div class="label-touche t-droite"><span class="touche">Écran Droit</span><span class="desc">Interagir / Caméra</span></div>
+            </div>
+
+            <!-- 3. SCHÉMA PC -->
+            <div id="schema-pc" class="schema">
+                <div class="liste-pc">
+                    <p><strong>Z Q S D / Flèches :</strong> Se déplacer</p>
+                    <p><strong>🖱️ Clic Gauche maintenu :</strong> Tourner la caméra</p>
+                    <p><strong>🖱️ Clic Gauche (Court) :</strong> Interagir</p>
+                </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 25px;">
+            <button id="btn-fermer-controles" class="bouton-magique">Compris !</button>
+          </div>
+        </div>
+      </div>
+
       <!-- JOYSTICK MOBILE -->
       <div
         id="zone-joystick"
