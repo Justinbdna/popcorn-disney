@@ -104,8 +104,8 @@
             affichageVies.textContent = "❤️".repeat(vies) + "🖤".repeat(3 - vies);
         }
         if (vies === 0) {
-            console.log("GAME OVER !");
-            window.afficherFin(false); // Déclenche l'écran de Game Over
+            // 🛑 On appelle le bel écran de Game Over au lieu de la petite infobulle
+            window.afficherFin(false);
         }
     };
 
