@@ -227,3 +227,50 @@ body, html {
   .silhouette-image { height: 150px; }
   .liste-pc p { font-size: 1rem; }
 }
+
+/* ==============================================
+   MENUS PAUSE & FIN (Boutons en colonne)
+=============================================== */
+.modal-actions-colonne {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.modal-actions-colonne button {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.1rem;
+}
+
+/* ==============================================
+   INDICATIONS MULTI-PLATEFORMES (HINTS)
+=============================================== */
+.ui-hints {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    font-size: 0.85rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.ui-hints b {
+    color: var(--or-disney);
+}
+
+/* Par défaut, on cache le texte mobile */
+.hint-mobile { display: none; }
+
+/* 🪄 MAGIE CSS : Si l'écran est tactile (doigt), on inverse l'affichage ! */
+@media (hover: none) and (pointer: coarse) {
+    .hint-desktop { display: none; }
+    .hint-mobile { display: inline-block; color: var(--or-disney); }
+}
