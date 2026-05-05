@@ -8,8 +8,8 @@
 
 * { box-sizing: border-box; }
 
-/* 🛑 FIX : Force l'affichage en pixels bruts (Effet PS1) */
-canvas {
+/* 🛑 FIX : Classe dynamique pour l'Effet PS1 */
+canvas.mode-retro {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }

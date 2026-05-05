@@ -31,9 +31,9 @@ const camera = new THREE.PerspectiveCamera(isMobile ? 90 : 75, window.innerWidth
 camera.position.set(0, 23, 5);
 
 const canvas = document.querySelector("#webgl");
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: false }); // 🛑 FIX : Zéro lissage
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, powerPreference: "high-performance", precision: "mediump" });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(0.5); // 🛑 FIX : Rendu à 30% de la résolution (Look Rétro + Boost GPU)
+renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2)); // 🛑 Retour en HD par défaut
 renderer.shadowMap.enabled = false; // Désactivé pour sauver la VRAM
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
@@ -59,12 +59,20 @@ controls.update();
 const padMobile = { x: 0, y: 0, actif: false };
 let objetActif = null;
 let renduAutorise = false; // Bloque le rendu GPU pendant le chargement
+window.activerModeRetro = () => {
+  if (window.easterEggDebloque) return;
+  window.easterEggDebloque = true; renderer.setPixelRatio(0.15); canvas.classList.add('mode-retro');
+  console.log("🎮 CHEAT CODE ACTIVÉ !"); if (window.ui_AnimationPS2) window.ui_AnimationPS2();
+};
 
 const touches = { z: false, q: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
 
 window.addEventListener("keyup", (e) => {
   if (touches.hasOwnProperty(e.key)) touches[e.key] = false;
+
 });
+window.seqClavier = ((window.seqClavier || "") + e.key).slice(-6);
+  if (window.seqClavier.toLowerCase() === "mickey") window.activerModeRetro();
 
 window.addEventListener("keydown", (e) => {
   if (touches.hasOwnProperty(e.key)) touches[e.key] = true;
@@ -514,6 +522,10 @@ const animate = () => {
   // --------------------------------------------------------
   // B. ACTIONS DES BOUTONS (A, B, Y)
   // --------------------------------------------------------
+  let btnPress = (padA && !padAPrevious) ? "A" : (padB && !padBPrevious) ? "B" : (padYBtn && !padYPrevious) ? "Y" : "";
+  if (btnPress) window.seqPad = ((window.seqPad || "") + btnPress).slice(-4);
+  if (window.seqPad === "YYBA") window.activerModeRetro();
+
   if (padA && !padAPrevious) {
     const btnDecvrir = document.getElementById("btn-decouvrir");
     const btnSuivant = document.getElementById("btn-suivant");
