@@ -313,7 +313,11 @@ window.addEventListener("pointermove", (event) => {
   }
 });
 
-window.addEventListener("click", (event) => {
+let ptX = 0, ptY = 0;
+window.addEventListener("pointerdown", (e) => { ptX = e.clientX; ptY = e.clientY; });
+window.addEventListener("pointerup", (event) => {
+  if (Math.abs(event.clientX - ptX) + Math.abs(event.clientY - ptY) > 10) return; 
+  // Le doigt a glissé
   // 🛑 FIX : On bloque le clic 3D si le Tuto, le Chargement, ou le QUIZ sont affichés
   if (document.getElementById("ecran-tutoriel") || document.getElementById("ecran-chargement")) return;
   const modalQuiz = document.getElementById("modal-quiz");
