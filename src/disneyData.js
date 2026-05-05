@@ -83,7 +83,7 @@ export const disneyData =[
     anecdoteSucces: "L'aventure est au bout du chemin ! La capsule de soda 'Ellie' est le symbole ultime du film.",
     anecdoteEchec: "C'était une simple capsule de soda de raisin ! Un trésor sentimental.",
     flotte: false,
-    x: -47.00, y: 21.75, z: -143.79, rotX: 0.000, rotY: 4.700, rotZ: 0.000, scale: 5.00,
+    x: -47.00, y: 27.94, z: -133.15, rotX: 0.000, rotY: 4.700, rotZ: 0.000, scale: 5.00,
     hasLowPoly: true
   },
   {
@@ -95,7 +95,7 @@ export const disneyData =[
     anecdoteSucces: "C'est la fête ! En tant que maître d'hôtel, il sait recevoir ses invités.",
     anecdoteEchec: "Et non, Lumière était le maître d'hôtel du château.",
     flotte: false,
-    x: 19.00, y: 23.37, z: -143.79, rotX: 0.000, rotY: 3.000, rotZ: 0.000, scale: 5.00,
+    x: 19.00, y: 21.85, z: -143.79, rotX: 0.000, rotY: 3.000, rotZ: 0.000, scale: 5.00,
     hasLowPoly: true
   },
   {
@@ -206,7 +206,7 @@ export const disneyData =[
   {
     id: "coq-vaiana", // 🟠 Vaiana
     nom: "Hei Hei le Coq",
-    question: "Pourquoi le chef du village laisse-t-it Hei Hei partir sur le bateau ?",
+    question: "Pourquoi le chef du village laisse-t-il Hei Hei partir sur le bateau ?",
     options:["Il est sacré", "Pour ne pas le manger", "Il peut naviguer", "Il porte chance"],
     reponseCorrecte: 1,
     anecdoteSucces: "Ouais ! Tui dit que le tuer serait une honte, alors il l'embarque... même s'il est d'une stupidité légendaire.",
@@ -288,7 +288,7 @@ export const disneyData =[
     reponseCorrecte: 1,
     anecdoteSucces: "Bella notte ! Tony's Restaurant, où Tony chante 'Bella Notte' aux chandelles pour les deux tourtereaux.",
     anecdoteEchec: "Faux ! C'est Tony's Restaurant. 'Bella Notte' c'est la chanson, pas le nom du resto.",
-    flotte: false, x: -94.68, y: 15.98, z: -208.57, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 5.00,
+    flotte: false, x: -94.68, y: 14.13, z: -208.57, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 5.00,
     hasLowPoly: true
   },
   {
