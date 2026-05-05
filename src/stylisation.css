@@ -112,12 +112,23 @@ body, html {
 .message-feedback.succes { color: #2ed573; }
 
 @media screen and (max-width: 768px) {
+  /* Tuto & Chargement */
   .titre-tuto { font-size: 2rem; margin-bottom: 20px; }
   .contenu-tuto { padding: 20px; max-width: 90%; }
   .etape-tuto h2 { font-size: 1.4rem; }
   .etape-tuto p { font-size: 1rem; }
-  #infobulle { transform: translate(-50%, -100%); margin-top: -30px; }
   .cercle-image { width: 150px; height: 150px; }
   .texte-chargement { font-size: 1rem; }
-  .btn-option { min-height: 60px; font-size: 1.2rem; }
+
+  /* HUD - Protection encoche iPhone (Safe Area) */
+  #hud { padding: env(safe-area-inset-top, 20px) 15px 10px 15px; flex-direction: column; gap: 10px; }
+  .hud-bulle { font-size: 1rem; padding: 8px 15px; }
+  .chrono-container { font-size: 1.2rem; }
+
+  /* Modale & Quiz - Scroll automatique et ajustement tactile */
+  .modal-contenu { width: 92%; padding: 20px; max-height: 85vh; overflow-y: auto; }
+  .modal-titre { font-size: 1.5rem; margin-bottom: 10px; }
+  .quiz-options { gap: 0.8rem; margin: 15px 0; }
+  .btn-option { min-height: 55px; font-size: 1rem; padding: 10px; }
+  .message-feedback { font-size: 1rem; min-height: 15px; }
 }
