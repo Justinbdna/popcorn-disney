@@ -185,10 +185,13 @@
           </div>
 
           <div class="schemas-container">
-            <!-- 1. SCHÉMA MANETTE -->
+           <!-- 1. SCHÉMA MANETTE -->
             <div id="schema-manette" class="schema active">
-                <!-- ⚠️ À AJOUTER : Une silhouette blanche de manette -->
-                <img src="/public/pictures/silhouette-manette.png" class="silhouette-image" alt="Manette">
+                <!-- 🪄 Remplacement de l'image par un SVG ultra-léger -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="silhouette-image">
+                    <path d="M21.93 7.82l-2.02-3.23A3.012 3.012 0 0 0 17.34 3H6.66c-1.09 0-2.09.58-2.65 1.51L2.07 7.82c-.52.83-.82 1.83-.75 2.85l.48 7.42c.11 1.73 1.55 3.09 3.28 3.09h1.16c.92 0 1.8-.4 2.4-1.07l1.76-1.99c.35-.4.86-.62 1.4-.62h1.6c.54 0 1.05.22 1.4.62l1.76 1.99c.6.67 1.48 1.07 2.4 1.07h1.16c1.73 0 3.17-1.36 3.28-3.09l.48-7.42c.07-1.02-.23-2.02-.75-2.85zM7 11H5v2H3v-2H1V9h2V7h2v2h2v2zm10 4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm3-3a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
+                </svg>
+                
                 <div class="label-touche t-gauche-haut"><span class="touche">Gâchettes</span><span class="desc">Hauteur Caméra</span></div>
                 <div class="label-touche t-gauche-bas"><span class="touche">Sticks</span><span class="desc">Se déplacer / Tourner</span></div>
                 <div class="label-touche t-droite"><span class="touche">Bouton A</span><span class="desc">Interagir</span></div>
@@ -196,8 +199,11 @@
 
             <!-- 2. SCHÉMA MOBILE -->
             <div id="schema-mobile" class="schema">
-                <!-- ⚠️ À AJOUTER : Une silhouette blanche de mobile paysage -->
-                <img src="/public/pictures/silhouette-mobile.png" class="silhouette-image" alt="Mobile">
+                <!-- 🪄 Remplacement de l'image par un SVG (Téléphone format paysage) -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="silhouette-image" style="transform: scale(0.8);">
+                    <path d="M22 6H2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2zm-2 10H4V8h16v8zm-2-4a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                </svg>
+
                 <div class="label-touche t-gauche-bas"><span class="touche">Joystick Gauche</span><span class="desc">Se déplacer</span></div>
                 <div class="label-touche t-droite"><span class="touche">Écran Droit</span><span class="desc">Interagir / Caméra</span></div>
             </div>
