@@ -104,7 +104,8 @@
         }
         if (vies === 0) {
             console.log("GAME OVER !");
-            window.afficherInfobulle("GAME OVER", "Plus de vies...", null);
+            if (window.bloquerControles3D) window.bloquerControles3D(true); // 🛑 FIX : On coupe le moteur 3D
+            window.afficherInfobulle("GAME OVER", "La partie est terminée.", null);
         }
     };
 
@@ -121,6 +122,7 @@
                 }
             } else {
                 clearInterval(intervalChrono);
+                if (window.bloquerControles3D) window.bloquerControles3D(true); // 🛑 FIX : On coupe le moteur 3D
                 console.log("TEMPS ÉCOULÉ !");
             }
         }, 1000);
