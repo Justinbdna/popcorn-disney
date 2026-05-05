@@ -8,6 +8,12 @@
 
 * { box-sizing: border-box; }
 
+/* 🛑 FIX : Force l'affichage en pixels bruts (Effet PS1) */
+canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
 body, html {
   margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
   font-family: "Segoe UI", system-ui, sans-serif; background-color: #050510; color: white;

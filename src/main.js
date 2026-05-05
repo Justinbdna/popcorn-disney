@@ -14,7 +14,7 @@ import nipplejs from "nipplejs";
 // =========================================================================
 // 🛠️ 1. CONFIGURATION GLOBALE ET DÉVELOPPEMENT
 // =========================================================================
-const MODE_DEV = false; // Mets sur 'false' pour le rendu final !
+const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
 window.easterEggDebloque = false;
 
 // Détection mobile immédiate
@@ -31,9 +31,9 @@ const camera = new THREE.PerspectiveCamera(isMobile ? 90 : 75, window.innerWidth
 camera.position.set(0, 23, 5);
 
 const canvas = document.querySelector("#webgl");
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false }); // 🛑 FIX : Zéro lissage
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(0.5); // 🛑 FIX : Rendu à 30% de la résolution (Look Rétro + Boost GPU)
 renderer.shadowMap.enabled = false; // Désactivé pour sauver la VRAM
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
