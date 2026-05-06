@@ -5,8 +5,6 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import GUI from "lil-gui";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import Stats from "three/examples/jsm/libs/stats.module.js";
-import { injectSpeedInsights } from "@vercel/speed-insights";
-import { inject } from "@vercel/analytics";
 import { disneyData } from "./disneyData.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import nipplejs from "nipplejs";
@@ -73,14 +71,9 @@ window.deselectionnerObjet = () => {
   objetActif = null;
   const direction = new THREE.Vector3();
   camera.getWorldDirection(direction);
-  controls.target.copy(camera.position).add(direction.multiplyScalar(0.1)); // 🛑 FIX : Recentre la cible pile devant les yeux (FPS)
+  controls.target.copy(camera.position).add(direction.multiplyScalar(0.1));
   controls.update();
-  
-window.resetCamera = () => {
-  camera.position.set(0, 23, 5);
-  controls.target.set(0, 23, 4.9);
-  controls.update();
-};
+
   if (typeof transformControls !== 'undefined' && transformControls) transformControls.detach();
   if (window.bloquerControles3D) window.bloquerControles3D(false);
   document.getElementById('modal-quiz')?.classList.add('cache');
@@ -88,6 +81,12 @@ window.resetCamera = () => {
     dossierSelection.destroy();
     dossierSelection = typeof gui !== 'undefined' ? gui?.addFolder("Aucun objet sélectionné") : null;
   }
+}; // 🛑 LA VRAIE FERMETURE EST ICI
+
+window.resetCamera = () => {
+  camera.position.set(0, 23, 5);
+  controls.target.set(0, 23, 4.9);
+  controls.update();
 };
 window.addEventListener("keyup", (e) => {
   if (touches.hasOwnProperty(e.key)) touches[e.key] = false;
@@ -230,7 +229,7 @@ const chargerTout = async () => {
 
   // --- CHARGEMENT DES OBJETS DISNEY ---
   for (const item of disneyData) {
-    const lod = new THREE.LOD();
+    const lod = new THREE.Group(); // 🛑 FIX : Un Groupe simple, zéro plantage.
     lod.name = item.id;
     lod.userData = { ...item };
     if (item.flotte) Object.assign(lod.userData, { flotteActive: true, baseY: item.y || 0, vitesse: item.vitesse || 0.8, amplitude: item.amplitude || 0.08 });
@@ -250,9 +249,8 @@ const chargerTout = async () => {
       hitbox.position.copy(center);
       hitbox.name = lod.name; hitbox.userData = lod.userData;
       
-      lod.addLevel(gltf.scene, isMobile ? 1 : 0); // 🛑 FIX : Distance mobile injectée proprement
+      lod.add(gltf.scene); // 🛑 FIX : Ajout direct
       lod.add(hitbox); objetsCliquables.push(hitbox);
-      lod.addLevel(new THREE.Object3D(), 200); // LOD de secours
       scene.add(lod);
       lodsScene.push(lod);
     } catch (error) { console.error("❌ Erreur sur :", item.id, error); }
@@ -668,7 +666,6 @@ const animate = () => {
     }
   });
 
-  lodsScene.forEach(lod => lod.update(camera));
   // 🛑 FIX RADICAL : On cloue le joueur. OrbitControls ne peut plus te faire voler.
   if (!objetActif) {
     const decalageY = hauteurJoueur - camera.position.y;
