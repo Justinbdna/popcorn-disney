@@ -4,6 +4,13 @@
 
 (function initUIManager() {
     'use strict';
+    // === AUDIO MANAGER GLOBAL ===
+    window.audioState = { musiqueActive: true, sfxActifs: true };
+    let pisteAmbiance = null;
+
+    window.jouerSFX = (chemin) => {
+        if (window.audioState.sfxActifs) new Audio(chemin).play().catch(e => console.warn("Audio bloqué:", e));
+    };
 
     // === GESTION DU SAS DE CHARGEMENT ===
     const ecranChargement = document.getElementById('ecran-chargement');
@@ -26,7 +33,7 @@
     if (btnDecouvrir) {
         btnDecouvrir.addEventListener('click', () => {
             btnDecouvrir.style.display = "none";
-            new Audio('/sounds/son_lancement.mp3').play();
+            window.jouerSFX('/sounds/son_lancement.mp3');
             if (ecranTutoriel) {
                 ecranTutoriel.style.transition = "none";
                 ecranTutoriel.style.opacity = "1";
@@ -48,7 +55,7 @@
 
     if (btnSuivant) {
         btnSuivant.addEventListener('click', () => {
-            new Audio('/sounds/clic.mp3').play();
+            window.jouerSFX('/sounds/clic.mp3');
             if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.remove('active');
             etapeActuelle++;
             if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.add('active');
@@ -62,12 +69,15 @@
 
     if (btnRentrer) {
         btnRentrer.addEventListener('click', () => {
-             new Audio('/sounds/ambiance.mp3').play();
-            // --- MUSIQUE DE FOND APPARTEMENT ---
-            const ambiance = new Audio('/sounds/ambiance.mp3');
-            ambiance.loop = true; 
-            ambiance.volume = 0.3; // Volume à 30%
-            ambiance.play();
+             // --- MUSIQUE DE FOND APPARTEMENT ---
+            if (!window.ambiance) {
+                window.ambiance = new Audio('/sounds/ambiance.mp3');
+                window.ambiance.loop = true; 
+                window.ambiance.volume = 0.3; // Volume à 30%
+            }
+            if (window.audioState.musiqueActive) {
+                window.ambiance.play().catch(e => console.warn("Musique bloquée:", e));
+            }
 
             if (ecranTutoriel) {
                 ecranTutoriel.style.backgroundColor = "#050510"; 
@@ -90,7 +100,7 @@
     
     let score = 0;
     let vies = 3;
-    let tempsRestant = 10; 
+    let tempsRestant = 600; 
     let intervalChrono;
 
     function initialiserHUD() {
@@ -205,13 +215,13 @@
                     const estBonne = (index === data.reponseCorrecte);
 
                     if (estBonne) {
-                        new Audio('/sounds/succes.mp3').play(); // SON DE BONNE RÉPONSE
+                        window.jouerSFX('/sounds/succes.mp3'); // SON DE BONNE RÉPONSE
                         
                         btn.classList.add('correct');
                         DOM.feedback.textContent = data.anecdoteSucces || "Bonne réponse !";
                         DOM.feedback.classList.add('succes');
                     } else {
-                        new Audio('/sounds/erreur.mp3').play(); // SON DE MAUVAISE RÉPONSE
+                       window.jouerSFX('/sounds/erreur.mp3'); // SON DE MAUVAISE RÉPONSE
                         
                         btn.classList.add('incorrect');
                         DOM.feedback.textContent = data.anecdoteEchec || "Mauvaise réponse !";
