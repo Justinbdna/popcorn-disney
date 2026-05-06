@@ -321,6 +321,18 @@
             }
         }
     };
+    // === GESTION DE L'ÉCRAN DE FIN ===
+    window.afficherFin = (victoire) => {
+        if (window.bloquerControles3D) window.bloquerControles3D(true);
+        if (typeof intervalChrono !== 'undefined') clearInterval(intervalChrono);
+        const titreFin = document.getElementById('titre-fin');
+        const texteFin = document.getElementById('texte-fin');
+        const modalFin = document.getElementById('modal-fin');
+        
+        if (titreFin) titreFin.innerHTML = victoire ? "<span style='color:#2ed573'>👑 VICTOIRE !</span>" : "<span style='color:#ff4757'>💀 GAME OVER</span>";
+        if (texteFin) texteFin.textContent = victoire ? "Vous avez trouvé tous les objets magiques !" : "Vous n'avez plus de vies ou le temps est écoulé...";
+        if (modalFin) modalFin.classList.remove('cache');
+    };
     window.isRetroMode = false;
     window.ui_AnimationPS2 = () => {
         window.isRetroMode = !window.isRetroMode;
