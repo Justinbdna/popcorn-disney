@@ -14,7 +14,7 @@ import nipplejs from "nipplejs";
 // =========================================================================
 // 🛠️ 1. CONFIGURATION GLOBALE ET DÉVELOPPEMENT
 // =========================================================================
-const MODE_DEV = false; // Mets sur 'false' pour le rendu final !
+const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
 window.easterEggDebloque = false;
 
 // Détection mobile immédiate
@@ -100,8 +100,8 @@ window.addEventListener("keydown", (e) => {
   if (touches.hasOwnProperty(e.key)) touches[e.key] = true;
   if (e.key === "g") transformControls?.setMode("translate");
   if (e.key === "r") transformControls?.setMode("rotate");
+  if (e.key === "e" || e.key === "E") window.deselectionnerObjet();
   if (e.key === "Escape") {
-    window.deselectionnerObjet(); // 🛑 FIX : Applique la désélection propre FPS
     if (window.togglePause) window.togglePause(); 
   }
 });
@@ -184,9 +184,14 @@ setTimeout(() => {
   if (btn && btn.classList.contains("cache")) btn.classList.remove("cache");
 }, 10000);
 
+let dernierPourcentage = 0;
 manager.onProgress = (url, loaded, total) => {
   const el = document.getElementById("loading-percent");
-  if (el) el.textContent = `${Math.round((loaded / total) * 100)}%`;
+  let actuel = Math.round((loaded / total) * 100);
+  if (el && actuel > dernierPourcentage) {
+    dernierPourcentage = actuel;
+    el.textContent = `${actuel}%`;
+  }
 };
 
 manager.onLoad = () => console.log("✅ Fichiers 3D téléchargés en mémoire locale.");
@@ -581,6 +586,10 @@ const animate = () => {
   if (padB && !padBPrevious) {
     window.deselectionnerObjet(); // 🛑 FIX : Désélection FPS propre via manette
   }
+  let padXBtn = gamepadActif ? gamepadActif.buttons[2].pressed : false;
+  if (padXBtn && !window.padXPrevious) window.deselectionnerObjet();
+  window.padXPrevious = padXBtn;
+  
   padAPrevious = padA; padBPrevious = padB; padYPrevious = padYBtn;
 
   // --------------------------------------------------------
@@ -624,7 +633,7 @@ const animate = () => {
     
     if (Math.abs(padRotX) > 0.15) { offsetCam.subVectors(controls.target, camera.position); offsetCam.applyAxisAngle(axeY, -padRotX * 0.05); controls.target.copy(camera.position).add(offsetCam); }
     if (Math.abs(padRotY) > 0.15) { 
-      let nouvelleHauteur = controls.target.y - (padRotY * 0.8);
+      let nouvelleHauteur = controls.target.y - (padRotY * 0.2);
       let dist = camera.position.distanceTo(controls.target);
       controls.target.y = Math.max(camera.position.y - (dist * 0.9), Math.min(camera.position.y + (dist * 0.9), nouvelleHauteur));
     }
