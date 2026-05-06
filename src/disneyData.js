@@ -1,5 +1,5 @@
 // Fichier : src/disneyData.js
-// Fusion : Copywriting de Mohamed + Données techniques strictes (ID, Scale, Coordonnées)
+// Fusion : Copywriting de Mohamed + Données techniques strictes
 
 export const disneyData =[
   {
@@ -83,7 +83,7 @@ export const disneyData =[
     anecdoteSucces: "L'aventure est au bout du chemin ! La capsule de soda 'Ellie' est le symbole ultime du film.",
     anecdoteEchec: "C'était une simple capsule de soda de raisin ! Un trésor sentimental.",
     flotte: false,
-    x: -47.00, y:21.75, z:-143.79, rotX: 0.000, rotY: 4.700, rotZ: 0.000, scale: 5.00,
+    x: -47.00, y: 27.94, z: -133.15, rotX: 0.000, rotY: 4.700, rotZ: 0.000, scale: 5.00,
     hasLowPoly: true
   },
   {
@@ -95,7 +95,7 @@ export const disneyData =[
     anecdoteSucces: "C'est la fête ! En tant que maître d'hôtel, il sait recevoir ses invités.",
     anecdoteEchec: "Et non, Lumière était le maître d'hôtel du château.",
     flotte: false,
-    x: 19.00, y: 23.37, z: -143.79, rotX: 0.000, rotY: 3.000, rotZ: 0.000, scale: 5.00,
+    x: 19.00, y: 21.85, z: -143.79, rotX: 0.000, rotY: 3.000, rotZ: 0.000, scale: 5.00,
     hasLowPoly: true
   },
   {
@@ -107,7 +107,7 @@ export const disneyData =[
     anecdoteSucces: "Booyah ! Un lama ! 'Lama de compet', comme il dit.",
     anecdoteEchec: "Mauvaise pioche ! Il devient un lama. Pas de chance pour un empereur.",
     flotte: false,
-    x: -55.00, y: 13.79, z: -149.00, rotX: 0.000, rotY: 4.700, rotZ: 0.000, scale: 10.00,
+    x: -51.98, y: 13.79, z: -150.96, rotX: 0.000, rotY: 4.700, rotZ: 0.000, scale: 10.00,
     hasLowPoly: true
   },
   {
@@ -178,8 +178,7 @@ export const disneyData =[
     reponseCorrecte: 0,
     anecdoteSucces: "Exactement ! Ses grandes oreilles lui servent d'ailes. Timothée la souris lui fait croire qu'une plume magique est nécessaire.",
     anecdoteEchec: "Raté ! Ce sont ses immenses oreilles qui lui permettent de voler.",
-    flotte: false, y: 0, x: 0, z: 0,
-    scale: 5,
+    flotte: false, x: -80.00, y: 25.00, z: -180.00, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 5.00,
     hasLowPoly: true
   },
   {
@@ -190,8 +189,7 @@ export const disneyData =[
     reponseCorrecte: 2,
     anecdoteSucces: "Parfait ! Olaf chante 'L'été' et rêve de sentir la chaleur du soleil... sans réaliser ce que ça lui ferait.",
     anecdoteEchec: "Non ! Olaf rêve de connaître l'été et la chaleur, sans se douter qu'il fondrait.",
-    flotte: false, y: 0, x: 0, z: 0,
-    scale: 5,
+    flotte: false, x: 110.00, y: 10.00, z: -120.00, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 5.00,
     hasLowPoly: true
   },
   {
@@ -202,8 +200,7 @@ export const disneyData =[
     reponseCorrecte: 1,
     anecdoteSucces: "Wobbé ! Expérience 626 ! C'est aussi le nom de son vaisseau dans la franchise.",
     anecdoteEchec: "Loup ! Stitch est l'Expérience 626, créé par Jumba pour être une arme de destruction.",
-    flotte: false, y: 0, x: 0, z: 0,
-    scale: 13,
+    flotte: false, x: 37.00, y: 0.00, z: -233.00, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 13.00,
     hasLowPoly: true
   },
   {
@@ -214,8 +211,7 @@ export const disneyData =[
     reponseCorrecte: 1,
     anecdoteSucces: "Ouais ! Tui dit que le tuer serait une honte, alors il l'embarque... même s'il est d'une stupidité légendaire.",
     anecdoteEchec: "Non ! La vraie raison c'est que le manger serait une honte, donc il part en mer.",
-    flotte: false, y: 0, x: 0, z: 0,
-    scale: 10,
+    flotte: false, x: -29.25, y: 2.17, z: -122.64, rotX: 2.706, rotY: 1.289, rotZ: -2.637, scale: 10.00,
     hasLowPoly: true
   },
   {
@@ -226,8 +222,7 @@ export const disneyData =[
     reponseCorrecte: 1,
     anecdoteSucces: "Hot dog ! 1928, avec 'Steamboat Willie', le premier dessin animé avec son synchronisé.",
     anecdoteEchec: "Raté ! C'est en 1928 avec 'Steamboat Willie' que Mickey est né officiellement.",
-    flotte: false, y: 0, x: 0, z: 0,
-    scale: 5,
+    flotte: false, x: 15.00, y: 18.00, z: -260.00, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 5.00,
     hasLowPoly: true
   },
   {
@@ -238,8 +233,7 @@ export const disneyData =[
     reponseCorrecte: 0,
     anecdoteSucces: "Bravo ! Victor est le plus sensible des trois, toujours en admiration devant Esméralda.",
     anecdoteEchec: "Faux ! C'est Victor, le plus romantique. Hugo c'est le glouton, Laverne c'est la sage.",
-    flotte: false, y: 0, x: 0, z: 0,
-    scale: 12,
+    flotte: false, x: -157.38, y: 13.64, z: -211.52, rotX: 0.346, rotY: 1.373, rotZ: -0.448, scale: 12.00,
     hasLowPoly: true
   },
   {
@@ -250,8 +244,7 @@ export const disneyData =[
     reponseCorrecte: 2,
     anecdoteSucces: "Perfecto ! Shenzi est la cheffe. Banzai est le râleur, Ed est le fou riant.",
     anecdoteEchec: "Non ! La leader c'est Shenzi. Elle commande Banzai et Ed sous les ordres de Scar.",
-    flotte: false, y: 0, x: 0, z: 0,
-    scale: 12,
+    flotte: false, x: 41.11, y: 2.79, z: -107.93, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 12.00,
     hasLowPoly: true
   },
   {
@@ -262,8 +255,7 @@ export const disneyData =[
     reponseCorrecte: 1,
     anecdoteSucces: "Yaaah ! Phil Collins a tout composé et chanté lui-même. Un choix audacieux pour l'époque.",
     anecdoteEchec: "Raté ! C'est Phil Collins qui a composé et interprété toutes les chansons.",
-    flotte: true, y: 0, x: 0, z: 0, vitesse: 0.8, amplitude: 0.1,
-    scale: 5,
+    flotte: true, x: -130.00, y: 30.00, z: -50.00, rotX: 0.000, rotY: 0.000, rotZ: 0.000, vitesse: 0.8, amplitude: 0.1, scale: 5.00,
     hasLowPoly: true
   },
   {
@@ -274,8 +266,7 @@ export const disneyData =[
     reponseCorrecte: 0,
     anecdoteSucces: "Glitch power ! Sugar Rush, le jeu de course de karts aux bonbons. Elle en est la vraie présidente !",
     anecdoteEchec: "Non ! C'est Sugar Rush. Ralph lui est dans Fix-It Felix.",
-    flotte: false, y: 0, x: 0, z: 0,
-    scale: 5,
+    flotte: false, x: 95.00, y: 12.00, z: -210.00, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 5.00,
     hasLowPoly: true
   },
   {
@@ -286,8 +277,7 @@ export const disneyData =[
     reponseCorrecte: 1,
     anecdoteSucces: "Dans le mille ! Dusty Crophopper, un épandeur agricole qui rêve de gagner la course mondiale.",
     anecdoteEchec: "Non ! C'est Dusty Crophopper, le petit avion agricole qui ne devait pas voler si haut.",
-    flotte: true, y: 0, x: 0, z: 0, vitesse: 1.2, amplitude: 0.12,
-    scale: 10,
+    flotte: true, x: -116.31, y: 25.48, z: -239.29, rotX: 0.000, rotY: 0.000, rotZ: 0.000, vitesse: 1.2, amplitude: 0.12, scale: 10.00,
     hasLowPoly: true
   },
   {
@@ -298,8 +288,7 @@ export const disneyData =[
     reponseCorrecte: 1,
     anecdoteSucces: "Bella notte ! Tony's Restaurant, où Tony chante 'Bella Notte' aux chandelles pour les deux tourtereaux.",
     anecdoteEchec: "Faux ! C'est Tony's Restaurant. 'Bella Notte' c'est la chanson, pas le nom du resto.",
-    flotte: false, y: 0, x: 0, z: 0,
-    scale: 5,
+    flotte: false, x: -94.68, y: 14.13, z: -208.57, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 5.00,
     hasLowPoly: true
   },
   {
@@ -310,8 +299,7 @@ export const disneyData =[
     reponseCorrecte: 1,
     anecdoteSucces: "Exact ! Il doit apprendre à aimer et être aimé avant son 21e anniversaire.",
     anecdoteEchec: "Faux ! La malédiction doit être brisée avant le 21e anniversaire du Prince.",
-    flotte: true, y: 0, x: 0, z: 0, vitesse: 0.5, amplitude: 0.08,
-    scale: 5,
+    flotte: true, x: 3.00, y: 14.00, z: -128.00, rotX: 0.000, rotY: 0.000, rotZ: 0.000, vitesse: 0.5, amplitude: 0.08, scale: 5.00,
     hasLowPoly: true
-  },  
+  }
 ];

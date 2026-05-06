@@ -90,71 +90,44 @@
 
     <!-- UI LAYER GLOBAL (Couche transparente pour laisser passer les clics vers la 3D) -->
     <main id="ui-layer">
-      <!-- ÉCRAN TUTORIEL COMPLET -->
-      <div id="ecran-tutoriel" class="cache">
-        <video autoplay loop muted playsinline id="bg-video">
-          <source
-            src="/public/pictures/live_background_disney.mp4"
-            type="video/mp4"
-          />
-        </video>
-        <div class="overlay-sombre"></div>
-        <div class="contenu-tuto">
-          <h1 class="titre-tuto">TUTORIEL</h1>
-          <div class="etapes-container">
-            <div class="etape-tuto active" id="etape-0">
-              <h2>Le But du Jeu</h2>
-              <p>
-                Bienvenue dans la salle aux merveilles ! Votre mission :
-                explorer cet environnement 3D et dénicher les objets
-                emblématiques de l'univers Disney dissimulés un peu partout.
-              </p>
+        
+        <!-- ÉCRAN TUTORIEL COMPLET -->
+        <div id="ecran-tutoriel" class="cache">
+            <video autoplay loop muted playsinline id="bg-video">
+                <source src="/pictures/live_background_disney.mp4" type="video/mp4">
+            </video>
+            <div class="overlay-sombre"></div>
+            <div class="contenu-tuto">
+                <h1 class="titre-tuto">TUTORIEL</h1>
+                <div class="etapes-container">
+                    <div class="etape-tuto active" id="etape-0">
+                        <h2>Le But du Jeu</h2>
+                        <p>Bienvenue dans la salle aux merveilles ! Votre mission : explorer cet environnement 3D et dénicher les objets emblématiques de l'univers Disney dissimulés un peu partout.</p>
+                    </div>
+                    <div class="etape-tuto" id="etape-1">
+                        <h2>Identifier la Magie</h2>
+                        <p>Il ne suffit pas de les trouver... Cliquez sur un objet mystère et prouvez vos connaissances en devinant exactement de quel film d'animation il provient !</p>
+                    </div>
+                    <div class="etape-tuto" id="etape-2">
+                        <h2>Les Règles</h2>
+                        <p>Attention, le temps presse ! Vous disposez d'un chronomètre et de seulement <span class="vies">❤️❤️❤️</span> (3 vies). Chaque mauvaise réponse vous rapproche du Game Over.</p>
+                    </div>
+                    <div class="etape-tuto" id="etape-3">
+                        <h2>Le Score</h2>
+                        <p>Plus l'objet est difficile à trouver ou le film obscur, plus vous gagnez de points. Avez-vous l'œil assez exercé pour devenir le plus grand expert Disney ?</p>
+                    </div>
+                </div>
+                <div class="navigation-tuto">
+                    <button id="btn-suivant" class="bouton-magique">Suivant</button>
+                    <button id="btn-rentrer" class="bouton-magique cache">Rentrer dans l'univers</button>
+                </div>
             </div>
-            <div class="etape-tuto" id="etape-1">
-              <h2>Identifier la Magie</h2>
-              <p>
-                Il ne suffit pas de les trouver... Cliquez sur un objet mystère
-                et prouvez vos connaissances en devinant exactement de quel film
-                d'animation il provient !
-              </p>
-            </div>
-            <div class="etape-tuto" id="etape-2">
-              <h2>Les Règles</h2>
-              <p>
-                Attention, le temps presse ! Vous disposez d'un chronomètre et
-                de seulement <span class="vies">❤️❤️❤️</span> (3 vies). Chaque
-                mauvaise réponse vous rapproche du Game Over.
-              </p>
-            </div>
-            <div class="etape-tuto" id="etape-3">
-              <h2>Le Score</h2>
-              <p>
-                Plus l'objet est difficile à trouver ou le film obscur, plus
-                vous gagnez de points. Avez-vous l'œil assez exercé pour devenir
-                le plus grand expert Disney ?
-              </p>
-            </div>
-          </div>
-          <div class="navigation-tuto">
-            <button id="btn-suivant" class="bouton-magique">Suivant</button>
-            <button id="btn-rentrer" class="bouton-magique cache">
-              Rentrer dans l'univers
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- HUD EN JEU -->
-      <div id="hud" class="cache">
-        <!-- Zone Gauche : Ajout du bouton PAUSE ici -->
-        <div class="hud-section hud-gauche" style="pointer-events: auto;">
-          <button id="btn-pause" class="bouton-icone" title="Pause">⏸️</button>
-          <div class="hud-bulle">Score: <span id="score-affichage">0</span></div>
-          <div class="hud-bulle"><span id="vies-affichage">❤️❤️❤️</span></div>
         </div>
 
-        <div class="hud-section hud-centre">
-          <div class="hud-bulle chrono-container"><span id="chrono-affichage">10:00</span></div>
+        <!-- HUD EN JEU -->
+        <div id="hud" class="cache">
+            <div class="hud-section"><div class="hud-bulle">Score: <span id="score-affichage">0</span></div><div class="hud-bulle"><span id="vies-affichage">❤️❤️❤️</span></div></div>
+            <div class="hud-section"><div class="hud-bulle chrono-container"><span id="chrono-affichage">10:00</span></div></div>
         </div>
 
         <div class="hud-section hud-droite" style="pointer-events: auto;">

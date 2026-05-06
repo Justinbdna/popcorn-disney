@@ -26,6 +26,7 @@
     if (btnDecouvrir) {
         btnDecouvrir.addEventListener('click', () => {
             btnDecouvrir.style.display = "none";
+            new Audio('/sounds/son_lancement.mp3').play();
             if (ecranTutoriel) {
                 ecranTutoriel.style.transition = "none";
                 ecranTutoriel.style.opacity = "1";
@@ -47,6 +48,7 @@
 
     if (btnSuivant) {
         btnSuivant.addEventListener('click', () => {
+            new Audio('/sounds/clic.mp3').play();
             if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.remove('active');
             etapeActuelle++;
             if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.add('active');
@@ -60,6 +62,13 @@
 
     if (btnRentrer) {
         btnRentrer.addEventListener('click', () => {
+             new Audio('/sounds/ambiance.mp3').play();
+            // --- MUSIQUE DE FOND APPARTEMENT ---
+            const ambiance = new Audio('/sounds/ambiance.mp3');
+            ambiance.loop = true; 
+            ambiance.volume = 0.3; // Volume à 30%
+            ambiance.play();
+
             if (ecranTutoriel) {
                 ecranTutoriel.style.backgroundColor = "#050510"; 
                 const video = document.getElementById("bg-video");
@@ -104,14 +113,16 @@
             affichageVies.textContent = "❤️".repeat(vies) + "🖤".repeat(3 - vies);
         }
         if (vies === 0) {
-            // 🛑 On appelle le bel écran de Game Over au lieu de la petite infobulle
-            window.afficherFin(false);
+            console.log("GAME OVER !");
+            if (window.bloquerControles3D) window.bloquerControles3D(true); // 🛑 FIX : On coupe le moteur 3D
+            window.afficherInfobulle("GAME OVER", "La partie est terminée.", null);
         }
     };
 
     function demarrerChrono() {
         clearInterval(intervalChrono);
         intervalChrono = setInterval(() => {
+            if (window.enPause) return; // 🛑 FIX : Le minuteur vérifie la pause CHAQUE seconde
             if (tempsRestant > 0) {
                 tempsRestant--;
                 let m = Math.floor(tempsRestant / 60).toString().padStart(2, '0');
@@ -195,15 +206,20 @@
                     const estBonne = (index === data.reponseCorrecte);
 
                     if (estBonne) {
+                        new Audio('/sounds/succes.mp3').play(); // SON DE BONNE RÉPONSE
+                        
                         btn.classList.add('correct');
                         DOM.feedback.textContent = data.anecdoteSucces || "Bonne réponse !";
                         DOM.feedback.classList.add('succes');
                     } else {
+                        new Audio('/sounds/erreur.mp3').play(); // SON DE MAUVAISE RÉPONSE
+                        
                         btn.classList.add('incorrect');
                         DOM.feedback.textContent = data.anecdoteEchec || "Mauvaise réponse !";
                         DOM.feedback.classList.add('erreur');
                         boutons[data.reponseCorrecte].classList.add('correct');
                     }
+
 
                     setTimeout(() => {
                         DOM.modal.classList.add('cache');
@@ -220,98 +236,5 @@
         if(window.bloquerControles3D) window.bloquerControles3D(true);
         DOM.modal.classList.remove('cache');
     };
-// === GESTION DE LA MODALE DES CONTRÔLES ===
-    const modalControles = document.getElementById('modal-controles');
-    const btnOuvrirControles = document.getElementById('btn-ouvrir-controles');
-    const btnFermerControles = document.getElementById('btn-fermer-controles');
-    const onglets = document.querySelectorAll('.onglet');
-    const schemas = document.querySelectorAll('.schema');
 
-    if (btnOuvrirControles && modalControles) {
-        btnOuvrirControles.addEventListener('click', () => {
-            modalControles.classList.remove('cache');
-            if (window.bloquerControles3D) window.bloquerControles3D(true); // Bloque la caméra
-        });
-    }
-
-    if (btnFermerControles && modalControles) {
-        btnFermerControles.addEventListener('click', () => {
-            modalControles.classList.add('cache');
-            if (window.bloquerControles3D) window.bloquerControles3D(false); // Libère la caméra
-        });
-    }
-
-    // Changement d'onglets
-    onglets.forEach(onglet => {
-        onglet.addEventListener('click', () => {
-            onglets.forEach(o => o.classList.remove('active'));
-            schemas.forEach(s => s.classList.remove('active'));
-
-            onglet.classList.add('active');
-            const cibleId = onglet.getAttribute('data-cible');
-            const cibleElement = document.getElementById(cibleId);
-            if(cibleElement) cibleElement.classList.add('active');
-        });
-    });
-// === GESTION DE LA PAUSE ===
-    const btnPause = document.getElementById('btn-pause');
-    const modalPause = document.getElementById('modal-pause');
-    const btnReprendre = document.getElementById('btn-reprendre');
-
-    if (btnPause && modalPause) {
-        btnPause.addEventListener('click', () => {
-            if (window.togglePause) window.togglePause(); // Coupe le moteur 3D
-            modalPause.classList.remove('cache');
-        });
-    }
-
-    if (btnReprendre && modalPause) {
-        btnReprendre.addEventListener('click', () => {
-            if (window.togglePause) window.togglePause(); // Relance le moteur 3D
-            modalPause.classList.add('cache');
-        });
-    }
-
-    // === GESTION DES ÉCRANS DE FIN (Victoire / Défaite) ===
-    const modalFin = document.getElementById('modal-fin');
-    const btnRecommencer = document.getElementById('btn-recommencer');
-    const btnsQuitter = document.querySelectorAll('.btn-quitter'); // Sélectionne les 2 boutons quitter
-
-    // Fonction globale pour déclencher la fin (Game Over ou Victoire)
-    window.afficherFin = function(victoire) {
-        if (!modalFin) return;
-        
-        // Coupe les contrôles 3D et arrête le chrono
-        if (window.bloquerControles3D) window.bloquerControles3D(true);
-        if (typeof intervalChrono !== 'undefined') clearInterval(intervalChrono);
-
-        const titre = document.getElementById('titre-fin');
-        const texte = document.getElementById('texte-fin');
-        
-        if (victoire) {
-            titre.textContent = "👑 VICTOIRE !";
-            titre.style.color = "#2ed573";
-            texte.textContent = "Vous avez trouvé tous les objets magiques et prouvé votre expertise Disney !";
-        } else {
-            titre.textContent = "💀 GAME OVER";
-            titre.style.color = "#ff4757";
-            texte.textContent = "Vous n'avez plus de vies ou le temps est écoulé...";
-        }
-
-        modalFin.classList.remove('cache');
-    };
-
-    // Recharger la page pour tout réinitialiser proprement
-    if (btnRecommencer) {
-        btnRecommencer.addEventListener('click', () => {
-            window.location.reload(); 
-        });
-    }
-
-    btnsQuitter.forEach(btn => {
-        btn.addEventListener('click', () => {
-            // Relancer la page remet le joueur au SAS de chargement "Éveil de la magie"
-            window.location.reload(); 
-        });
-    });
 })();

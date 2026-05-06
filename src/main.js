@@ -14,7 +14,7 @@ import nipplejs from "nipplejs";
 // =========================================================================
 // 🛠️ 1. CONFIGURATION GLOBALE ET DÉVELOPPEMENT
 // =========================================================================
-const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
+const MODE_DEV = false; // Mets sur 'false' pour le rendu final !
 window.easterEggDebloque = false;
 
 // Détection mobile immédiate
@@ -31,9 +31,9 @@ const camera = new THREE.PerspectiveCamera(isMobile ? 90 : 75, window.innerWidth
 camera.position.set(0, 23, 5);
 
 const canvas = document.querySelector("#webgl");
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: false }); // 🛑 FIX : Zéro lissage
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, powerPreference: "high-performance", precision: "mediump" });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(0.5); // 🛑 FIX : Rendu à 30% de la résolution (Look Rétro + Boost GPU)
+renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2)); // 🛑 Retour en HD par défaut
 renderer.shadowMap.enabled = false; // Désactivé pour sauver la VRAM
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
@@ -47,9 +47,11 @@ if (isMobile) {
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.listenToKeyEvents(window); // Le canevas écoute enfin la fenêtre entière
 controls.enableDamping = true;
+controls.enableZoom = MODE_DEV; // 🛑 FIX : Empêche le zoom à deux doigts
+controls.enablePan = MODE_DEV;  // 🛑 FIX : Empêche le glissement latéral passe-muraille
 controls.target.y = 23;
 controls.maxPolarAngle = Math.PI / 2 - 0.05;
-controls.minDistance = 2;
+controls.minDistance = 0.1;
 controls.maxDistance = 250;
 controls.update();
 
@@ -59,23 +61,43 @@ controls.update();
 const padMobile = { x: 0, y: 0, actif: false };
 let objetActif = null;
 let renduAutorise = false; // Bloque le rendu GPU pendant le chargement
+window.activerModeRetro = () => {
+  if (window.easterEggDebloque) return;
+  window.easterEggDebloque = true; renderer.setPixelRatio(0.37); canvas.classList.add('mode-retro');
+  console.log("🎮 CHEAT CODE ACTIVÉ !"); if (window.ui_AnimationPS2) window.ui_AnimationPS2();
+};
 
 const touches = { z: false, q: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
 
+window.deselectionnerObjet = () => {
+  objetActif = null;
+  const direction = new THREE.Vector3();
+  camera.getWorldDirection(direction);
+  controls.target.copy(camera.position).add(direction.multiplyScalar(0.1)); // 🛑 FIX : Recentre la cible pile devant les yeux (FPS)
+  controls.update();
+
+  if (typeof transformControls !== 'undefined' && transformControls) transformControls.detach();
+  if (window.bloquerControles3D) window.bloquerControles3D(false);
+  document.getElementById('modal-quiz')?.classList.add('cache');
+  if (typeof dossierSelection !== 'undefined' && dossierSelection) {
+    dossierSelection.destroy();
+    dossierSelection = typeof gui !== 'undefined' ? gui?.addFolder("Aucun objet sélectionné") : null;
+  }
+};
 window.addEventListener("keyup", (e) => {
   if (touches.hasOwnProperty(e.key)) touches[e.key] = false;
 });
 
 window.addEventListener("keydown", (e) => {
+  window.seqClavier = ((window.seqClavier || "") + e.key).slice(-6);
+  if (window.seqClavier.toLowerCase() === "mickey") window.activerModeRetro();
+  
   if (touches.hasOwnProperty(e.key)) touches[e.key] = true;
   if (e.key === "g") transformControls?.setMode("translate");
   if (e.key === "r") transformControls?.setMode("rotate");
   if (e.key === "Escape") {
-    if (transformControls) transformControls.detach();
-    objetActif = null;
-    if (window.togglePause) window.togglePause(); // 🛑 FIX : Déclenche la pause
-    document.getElementById('modal-quiz')?.classList.add('cache');
-    dossierSelection?.destroy();
+    window.deselectionnerObjet(); // 🛑 FIX : Applique la désélection propre FPS
+    if (window.togglePause) window.togglePause(); 
   }
 });
 // =========================================================================
@@ -363,12 +385,7 @@ window.addEventListener("pointerup", (event) => {
       dossierSelection?.open();
     }
   } else {
-    transformControls?.detach();
-    objetActif = null;
-    if (dossierSelection) {
-      dossierSelection.destroy();
-      dossierSelection = gui?.addFolder("Aucun objet sélectionné");
-    }
+    window.deselectionnerObjet(); // 🛑 FIX : Applique la désélection propre FPS
   }
 });
 // 🟢 LOGIQUE DU QUIZ (Le Cerveau connecté à disneyData)
@@ -383,8 +400,7 @@ window.ouvrirQuiz = (idObjet, nomObjet) => {
  if (window.ui_afficherQuiz) {
     window.ui_afficherQuiz(data, (succes) => {
       if (succes) window.objetTrouve(idObjet);
-      if (window.bloquerControles3D) window.bloquerControles3D(false);
-      objetActif = null;
+      window.deselectionnerObjet(); // 🛑 FIX : Reset la caméra FPS après le quiz
     });
   }
 };
@@ -514,6 +530,10 @@ const animate = () => {
   // --------------------------------------------------------
   // B. ACTIONS DES BOUTONS (A, B, Y)
   // --------------------------------------------------------
+  let btnPress = (padA && !padAPrevious) ? "A" : (padB && !padBPrevious) ? "B" : (padYBtn && !padYPrevious) ? "Y" : "";
+  if (btnPress) window.seqPad = ((window.seqPad || "") + btnPress).slice(-4);
+  if (window.seqPad === "YYBA") window.activerModeRetro();
+
   if (padA && !padAPrevious) {
     const btnDecvrir = document.getElementById("btn-decouvrir");
     const btnSuivant = document.getElementById("btn-suivant");
@@ -538,13 +558,8 @@ const animate = () => {
   }
 
   if (padB && !padBPrevious) {
-    if (transformControls) transformControls.detach();
-    objetActif = null;
-    if (window.bloquerControles3D) window.bloquerControles3D(false);
-    document.getElementById('modal-quiz')?.classList.remove('is-active');
-    if (dossierSelection) { dossierSelection.destroy(); dossierSelection = gui?.addFolder("Aucun objet sélectionné"); }
+    window.deselectionnerObjet(); // 🛑 FIX : Désélection FPS propre via manette
   }
-
   padAPrevious = padA; padBPrevious = padB; padYPrevious = padYBtn;
 
   // --------------------------------------------------------
