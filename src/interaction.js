@@ -236,5 +236,33 @@
         if(window.bloquerControles3D) window.bloquerControles3D(true);
         DOM.modal.classList.remove('cache');
     };
+    // === GESTION DE LA MODALE DES CONTRÔLES ===
+    const btnOuvrirControles = document.getElementById('btn-ouvrir-controles');
+    const btnFermerControles = document.getElementById('btn-fermer-controles');
+    const modalControles = document.getElementById('modal-controles');
+    const onglets = document.querySelectorAll('.onglet');
+    const schemas = document.querySelectorAll('.schema');
+
+    if (btnOuvrirControles && modalControles) btnOuvrirControles.addEventListener('click', () => modalControles.classList.remove('cache'));
+    if (btnFermerControles && modalControles) btnFermerControles.addEventListener('click', () => modalControles.classList.add('cache'));
+
+    onglets.forEach(onglet => {
+        onglet.addEventListener('click', (e) => {
+            onglets.forEach(o => o.classList.remove('active'));
+            schemas.forEach(s => s.classList.remove('active'));
+            e.target.classList.add('active');
+            const cible = document.getElementById(e.target.getAttribute('data-cible'));
+            if (cible) cible.classList.add('active');
+        });
+    });
+    
+    window.ui_AnimationPS2 = () => {
+        const vid = document.getElementById("video-ps2");
+        if (!vid) return; 
+        vid.classList.remove("cache"); 
+        vid.play().catch(() => vid.classList.add("cache")); // Sécurité anti-crash
+        vid.onended = () => vid.classList.add("cache");
+        vid.onerror = () => vid.classList.add("cache");
+    };
 
 })();
