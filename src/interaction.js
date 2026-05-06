@@ -90,7 +90,7 @@
     
     let score = 0;
     let vies = 3;
-    let tempsRestant = 600; 
+    let tempsRestant = 10; 
     let intervalChrono;
 
     function initialiserHUD() {
@@ -112,10 +112,9 @@
         if (affichageVies) {
             affichageVies.textContent = "❤️".repeat(vies) + "🖤".repeat(3 - vies);
         }
-        if (vies === 0) {
+       if (vies === 0) {
             console.log("GAME OVER !");
-            if (window.bloquerControles3D) window.bloquerControles3D(true); // 🛑 FIX : On coupe le moteur 3D
-            window.afficherInfobulle("GAME OVER", "La partie est terminée.", null);
+            if (window.afficherFin) window.afficherFin(false);
         }
     };
 
@@ -131,10 +130,10 @@
                     affichageChrono.textContent = `${m}:${s}`;
                     if(tempsRestant <= 30) affichageChrono.style.color = "#ff4757";
                 }
-            } else {
+           } else {
                 clearInterval(intervalChrono);
-                if (window.bloquerControles3D) window.bloquerControles3D(true); // 🛑 FIX : On coupe le moteur 3D
                 console.log("TEMPS ÉCOULÉ !");
+                if (window.afficherFin) window.afficherFin(false);
             }
         }, 1000);
     }
@@ -255,7 +254,36 @@
             if (cible) cible.classList.add('active');
         });
     });
-    
+    // === GESTION DES MENUS PAUSE & FIN ===
+    const modalPause = document.getElementById('modal-pause');
+    const btnPause = document.getElementById('btn-pause');
+    const btnReprendre = document.getElementById('btn-reprendre');
+    const btnRecommencer = document.getElementById('btn-recommencer');
+    const btnQuitterList = document.querySelectorAll('.btn-quitter');
+
+    if (btnPause) btnPause.addEventListener('click', () => { if (window.togglePause) window.togglePause(); });
+    if (btnReprendre) btnReprendre.addEventListener('click', () => { if (window.togglePause) window.togglePause(); });
+    if (btnRecommencer) btnRecommencer.addEventListener('click', () => location.reload());
+    btnQuitterList.forEach(btn => btn.addEventListener('click', () => location.reload()));
+
+    // Synchronisation de l'UI avec l'état de pause global
+    const ancienTogglePause = window.togglePause;
+    window.togglePause = () => {
+        if (ancienTogglePause) ancienTogglePause();
+        if (modalPause) {
+            if (window.enPause) modalPause.classList.remove('cache');
+            else modalPause.classList.add('cache');
+        }
+    };
+
+    window.afficherFin = (victoire) => {
+        if (window.bloquerControles3D) window.bloquerControles3D(true);
+        if (typeof intervalChrono !== 'undefined') clearInterval(intervalChrono);
+        document.getElementById('titre-fin').innerHTML = victoire ? "<span style='color:#2ed573'>👑 VICTOIRE !</span>" : "<span style='color:#ff4757'>💀 GAME OVER</span>";
+        document.getElementById('texte-fin').textContent = victoire ? "Vous avez trouvé tous les objets magiques !" : "Vous n'avez plus de vies ou le temps est écoulé...";
+        document.getElementById('modal-fin')?.classList.remove('cache');
+    };
+
     window.ui_AnimationPS2 = () => {
         const vid = document.getElementById("video-ps2");
         if (!vid) return; 
@@ -264,5 +292,6 @@
         vid.onended = () => vid.classList.add("cache");
         vid.onerror = () => vid.classList.add("cache");
     };
+    
 
 })();
