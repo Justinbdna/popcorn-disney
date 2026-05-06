@@ -14,7 +14,7 @@ import nipplejs from "nipplejs";
 // =========================================================================
 // 🛠️ 1. CONFIGURATION GLOBALE ET DÉVELOPPEMENT
 // =========================================================================
-const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
+const MODE_DEV = false; // Mets sur 'false' pour le rendu final !
 window.easterEggDebloque = false;
 
 // Détection mobile immédiate
@@ -230,6 +230,7 @@ const chargerTout = async () => {
 
   // --- CHARGEMENT DES OBJETS DISNEY ---
   for (const item of disneyData) {
+    if (isMobile) lod.levels[0].distance = 1; // Force le passage au niveau simplifié très vite
     const lod = new THREE.LOD();
     lod.name = item.id;
     lod.userData = { ...item };

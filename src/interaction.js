@@ -104,6 +104,13 @@
     let vies = 3;
     let tempsRestant = 600; 
     let intervalChrono;
+    
+    let penaliteVie = 1;
+    document.querySelectorAll('.btn-diff').forEach(b => b.addEventListener('click', e => {
+        let l = e.target.dataset.lvl; tempsRestant = l==='facile'?720:l==='difficile'?480:600;
+        vies = l==='facile'?6:l==='difficile'?2:3; penaliteVie = l==='facile'?0.5:l==='difficile'?1.5:1;
+        if (affichageVies) affichageVies.textContent = "❤️".repeat(vies); document.getElementById('btn-suivant').click();
+    }));
 
     window.initialiserHUD = function() {
         if (hud) hud.classList.remove('cache');
@@ -339,5 +346,8 @@
         if (window.isRetroMode) { vid.classList.remove("cache"); vid.currentTime = 0; vid.play(); vid.onended = () => vid.classList.add("cache"); }
         else { vid.pause(); vid.classList.add("cache"); }
     };
-
+    window.changerMusique = (nomFichier) => {
+        if (!window.ambiance) return;
+        window.ambiance.pause(); window.ambiance.src = `/sounds/${nomFichier}`; window.ambiance.play();
+    };
 })();
