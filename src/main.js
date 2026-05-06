@@ -200,7 +200,7 @@ manager.onError = (url) => { if (!isMobile) alert(`Le fichier ${url} refuse de c
 const loader = new GLTFLoader(manager);
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
-dracoLoader.setWorkerLimit(1);
+dracoLoader.setWorkerLimit(Math.max(1, (navigator.hardwareConcurrency || 4) - 1));
 loader.setDRACOLoader(dracoLoader);
 
 const chargerTout = async () => {
@@ -256,7 +256,7 @@ const chargerTout = async () => {
       scene.add(lod);
       lodsScene.push(lod);
     } catch (error) { console.error("❌ Erreur sur :", item.id, error); }
-    await new Promise(resolve => setTimeout(resolve, 150)); // 🫁 Respiration VRAM Safari
+    await new Promise(resolve => setTimeout(resolve, 10)); // 🫁 Micro-respiration VRAM optimisée
   }
 
   dracoLoader.dispose();
