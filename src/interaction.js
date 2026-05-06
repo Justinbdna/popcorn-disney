@@ -26,6 +26,7 @@
     if (btnDecouvrir) {
         btnDecouvrir.addEventListener('click', () => {
             btnDecouvrir.style.display = "none";
+            new Audio('/sounds/son_lancement.mp3').play();
             if (ecranTutoriel) {
                 ecranTutoriel.style.transition = "none";
                 ecranTutoriel.style.opacity = "1";
@@ -47,6 +48,7 @@
 
     if (btnSuivant) {
         btnSuivant.addEventListener('click', () => {
+            new Audio('/sounds/clic.mp3').play();
             if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.remove('active');
             etapeActuelle++;
             if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.add('active');
@@ -60,6 +62,13 @@
 
     if (btnRentrer) {
         btnRentrer.addEventListener('click', () => {
+             new Audio('/sounds/ambiance.mp3').play();
+            // --- MUSIQUE DE FOND APPARTEMENT ---
+            const ambiance = new Audio('/sounds/ambiance.mp3');
+            ambiance.loop = true; 
+            ambiance.volume = 0.3; // Volume à 30%
+            ambiance.play();
+
             if (ecranTutoriel) {
                 ecranTutoriel.style.backgroundColor = "#050510"; 
                 const video = document.getElementById("bg-video");
@@ -103,6 +112,8 @@
             affichageVies.textContent = "❤️".repeat(vies) + "🖤".repeat(3 - vies);
         }
         if (vies === 0) {
+            // --- SON DE DÉFAITE ---
+            new Audio('/sounds/game_over.mp3').play();
             console.log("GAME OVER !");
             if (window.bloquerControles3D) window.bloquerControles3D(true); // 🛑 FIX : On coupe le moteur 3D
             window.afficherInfobulle("GAME OVER", "La partie est terminée.", null);
@@ -195,15 +206,20 @@
                     const estBonne = (index === data.reponseCorrecte);
 
                     if (estBonne) {
+                        new Audio('/sounds/succes.mp3').play(); // SON DE BONNE RÉPONSE
+                        
                         btn.classList.add('correct');
                         DOM.feedback.textContent = data.anecdoteSucces || "Bonne réponse !";
                         DOM.feedback.classList.add('succes');
                     } else {
+                        new Audio('/sounds/erreur.mp3').play(); // SON DE MAUVAISE RÉPONSE
+                        
                         btn.classList.add('incorrect');
                         DOM.feedback.textContent = data.anecdoteEchec || "Mauvaise réponse !";
                         DOM.feedback.classList.add('erreur');
                         boutons[data.reponseCorrecte].classList.add('correct');
                     }
+
 
                     setTimeout(() => {
                         DOM.modal.classList.add('cache');
