@@ -90,52 +90,100 @@
 
     <!-- UI LAYER GLOBAL (Couche transparente pour laisser passer les clics vers la 3D) -->
     <main id="ui-layer">
-        <!-- 🛑 FIX : Écran de transition PSP (Easter Egg) -->
-        <video id="video-ps2" class="cache" src="/public/pictures/video-ps2.mp4" style="position:fixed; top:0; left:0; width:100vw; height:100vh; object-fit:cover; z-index:999999; background:black; pointer-events:none;" playsinline></video>
-        
-        <!-- ÉCRAN TUTORIEL COMPLET -->
-        <div id="ecran-tutoriel" class="cache">
-            <video autoplay loop muted playsinline id="bg-video">
-                <source src="/pictures/live_background_disney.mp4" type="video/mp4">
-            </video>
-            <div class="overlay-sombre"></div>
-            <div class="contenu-tuto">
-                <h1 class="titre-tuto">TUTORIEL</h1>
-                <div class="etapes-container">
-                    <div class="etape-tuto active" id="etape-0">
-                        <h2>Le But du Jeu</h2>
-                        <p>Bienvenue dans la salle aux merveilles ! Votre mission : explorer cet environnement 3D et dénicher les objets emblématiques de l'univers Disney dissimulés un peu partout.</p>
-                    </div>
-                    <div class="etape-tuto" id="etape-1">
-                        <h2>Identifier la Magie</h2>
-                        <p>Il ne suffit pas de les trouver... Cliquez sur un objet mystère et prouvez vos connaissances en devinant exactement de quel film d'animation il provient !</p>
-                    </div>
-                    <div class="etape-tuto" id="etape-2">
-                        <h2>Les Règles</h2>
-                        <p>Attention, le temps presse ! Vous disposez d'un chronomètre et de seulement <span class="vies">❤️❤️❤️</span> (3 vies). Chaque mauvaise réponse vous rapproche du Game Over.</p>
-                    </div>
-                    <div class="etape-tuto" id="etape-3">
-                        <h2>Le Score</h2>
-                        <p>Plus l'objet est difficile à trouver ou le film obscur, plus vous gagnez de points. Avez-vous l'œil assez exercé pour devenir le plus grand expert Disney ?</p>
-                    </div>
-                </div>
-                <div class="navigation-tuto">
-                    <button id="btn-suivant" class="bouton-magique">Suivant</button>
-                    <button id="btn-rentrer" class="bouton-magique cache">Rentrer dans l'univers</button>
-                </div>
-            </div>
-        </div>
+      <!-- 🛑 FIX : Écran de transition PSP (Easter Egg) -->
+      <video
+        id="video-ps2"
+        class="cache"
+        src="/public/pictures/video-ps2.mp4"
+        style="
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          object-fit: cover;
+          z-index: 999999;
+          background: black;
+          pointer-events: none;
+        "
+        playsinline
+      ></video>
 
-       <!-- HUD EN JEU -->
-        <div id="hud" class="cache">
-            <div class="hud-section hud-gauche" style="pointer-events: auto;">
-              <button id="btn-pause" class="bouton-icone" title="Pause">⏸️</button>
-              <div class="hud-bulle">Score: <span id="score-affichage">0</span></div>
-              <div class="hud-bulle"><span id="vies-affichage">❤️❤️❤️</span></div>
+      <!-- ÉCRAN TUTORIEL COMPLET -->
+      <div id="ecran-tutoriel" class="cache">
+        <video autoplay loop muted playsinline id="bg-video">
+          <source src="/pictures/live_background_disney.mp4" type="video/mp4" />
+        </video>
+        <div class="overlay-sombre"></div>
+        <div class="contenu-tuto">
+          <h1 class="titre-tuto">TUTORIEL</h1>
+          <div class="etapes-container">
+            <div class="etape-tuto active" id="etape-0">
+              <h2>Le But du Jeu</h2>
+              <p>
+                Bienvenue dans la salle aux merveilles ! Votre mission :
+                explorer cet environnement 3D et dénicher les objets
+                emblématiques de l'univers Disney dissimulés un peu partout.
+              </p>
             </div>
-            <div class="hud-section hud-centre"><div class="hud-bulle chrono-container"><span id="chrono-affichage">10:00</span></div></div>
-            <div class="hud-section hud-droite" style="pointer-events: auto;"><button id="btn-ouvrir-controles" class="bouton-icone" title="Contrôles">🎮</button></div>
+            <div class="etape-tuto" id="etape-1">
+              <h2>Identifier la Magie</h2>
+              <p>
+                Il ne suffit pas de les trouver... Cliquez sur un objet mystère
+                et prouvez vos connaissances en devinant exactement de quel film
+                d'animation il provient !
+              </p>
+            </div>
+            <div class="etape-tuto" id="etape-2">
+              <h2>Les Règles</h2>
+              <p>
+                Attention, le temps presse ! Vous disposez d'un chronomètre et
+                de seulement <span class="vies">❤️❤️❤️</span> (3 vies). Chaque
+                mauvaise réponse vous rapproche du Game Over.
+              </p>
+            </div>
+            <div class="etape-tuto" id="etape-3">
+              <h2>Le Score</h2>
+              <p>
+                Plus l'objet est difficile à trouver ou le film obscur, plus
+                vous gagnez de points. Avez-vous l'œil assez exercé pour devenir
+                le plus grand expert Disney ?
+              </p>
+            </div>
+          </div>
+          <div class="navigation-tuto">
+            <button id="btn-suivant" class="bouton-magique">Suivant</button>
+            <button id="btn-rentrer" class="bouton-magique cache">
+              Rentrer dans l'univers
+            </button>
+          </div>
         </div>
+      </div>
+
+      <!-- HUD EN JEU -->
+      <div id="hud" class="cache">
+        <div class="hud-section hud-gauche" style="pointer-events: auto">
+          <button id="btn-pause" class="bouton-icone" title="Pause">⏸️</button>
+          <div class="hud-bulle">
+            Score: <span id="score-affichage">0</span>
+          </div>
+          <div class="hud-bulle"><span id="vies-affichage">❤️❤️❤️</span></div>
+        </div>
+        <div class="hud-section hud-centre">
+          <div class="hud-bulle chrono-container">
+            <span id="chrono-affichage">10:00</span>
+          </div>
+        </div>
+        <div class="hud-section hud-droite" style="pointer-events: auto">
+          <button
+            id="btn-ouvrir-controles"
+            class="bouton-icone"
+            title="Contrôles"
+          >
+            🎮
+          </button>
+        </div>
+      </div>
 
       <!-- MODALE QUIZ FIXÉE (Ajout des hints en bas) -->
       <div id="modal-quiz" class="modal cache">
@@ -144,10 +192,14 @@
           <div id="quiz-options" class="quiz-options"></div>
           <p id="quiz-feedback" class="message-feedback"></p>
 
-         <!-- NOUVEAU : Indications des touches -->
+          <!-- NOUVEAU : Indications des touches -->
           <div class="ui-hints">
-            <span class="hint-desktop">🎮 <b>A</b> / 🖱️ <b>Clic</b> : Valider</span>
-            <span class="hint-desktop">🎮 <b>B</b> / ⌨️ <b>Échap</b> : Fermer</span>
+            <span class="hint-desktop"
+              >🎮 <b>A</b> / 🖱️ <b>Clic</b> : Valider</span
+            >
+            <span class="hint-desktop"
+              >🎮 <b>B</b> / ⌨️ <b>Échap</b> : Fermer</span
+            >
             <span class="hint-mobile">👆 Appuyez sur une réponse</span>
           </div>
         </div>
@@ -157,52 +209,92 @@
       <div id="modal-controles" class="modal cache">
         <div class="modal-contenu blueprint-magique">
           <h2 class="modal-titre">Commandes</h2>
-          
+
           <div class="onglets-controles">
-            <button class="onglet active" data-cible="schema-manette">Manette</button>
+            <button class="onglet active" data-cible="schema-manette">
+              Manette
+            </button>
             <button class="onglet" data-cible="schema-mobile">Tactile</button>
             <button class="onglet" data-cible="schema-pc">Clavier</button>
           </div>
 
           <div class="schemas-container">
-          <!-- 1. SCHÉMA MANETTE -->
+            <!-- 1. SCHÉMA MANETTE -->
             <div id="schema-manette" class="schema active">
-                <!-- 🪄 SVG Manette Console -->
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" fill="white" class="silhouette-image" style="width: auto; height: 160px;">
-                    <path d="M434.7 64h-229.4C140.5 64 84.4 115.1 73.4 179.6L29 437.2c-4.9 28.5 17 54.8 46 54.8 19.3 0 36.4-12.1 43.1-30.5l42-115.5h319.9l42 115.5c6.6 18.3 23.7 30.5 43.1 30.5 29 0 50.9-26.3 46-54.8L566.6 179.6C555.6 115.1 499.5 64 434.7 64zM200 248c-13.3 0-24-10.7-24-24v-24h-24c-13.3 0-24-10.7-24-24s10.7-24 24-24h24v-24c0-13.3 10.7-24 24-24s24 10.7 24 24v24h24c13.3 0 24 10.7 24 24s-10.7 24-24 24h-24v24c0 13.3-10.7 24-24 24zm280-64c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32zm-64 64c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32z"/>
-                </svg>
-                
-                <div class="label-touche t-gauche-haut"><span class="touche">Gâchettes</span><span class="desc">Hauteur Caméra</span></div>
-                <div class="label-touche t-gauche-bas"><span class="touche">Sticks</span><span class="desc">Se déplacer / Tourner</span></div>
-                
-                <!-- Les boutons de droite -->
-                <div class="label-touche t-droite-haut"><span class="touche">Bouton A</span><span class="desc">Interagir / Valider</span></div>
-                <div class="label-touche t-droite-bas"><span class="touche">Bouton B</span><span class="desc">Retour / Annuler</span></div>
+              <!-- 🪄 SVG Manette Console -->
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 640 512"
+                fill="white"
+                class="silhouette-image"
+                style="width: auto; height: 160px"
+              >
+                <path
+                  d="M434.7 64h-229.4C140.5 64 84.4 115.1 73.4 179.6L29 437.2c-4.9 28.5 17 54.8 46 54.8 19.3 0 36.4-12.1 43.1-30.5l42-115.5h319.9l42 115.5c6.6 18.3 23.7 30.5 43.1 30.5 29 0 50.9-26.3 46-54.8L566.6 179.6C555.6 115.1 499.5 64 434.7 64zM200 248c-13.3 0-24-10.7-24-24v-24h-24c-13.3 0-24-10.7-24-24s10.7-24 24-24h24v-24c0-13.3 10.7-24 24-24s24 10.7 24 24v24h24c13.3 0 24 10.7 24 24s-10.7 24-24 24h-24v24c0 13.3-10.7 24-24 24zm280-64c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32zm-64 64c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32z"
+                />
+              </svg>
+
+              <div class="label-touche t-gauche-haut">
+                <span class="touche">Gâchettes</span
+                ><span class="desc">Hauteur Caméra</span>
+              </div>
+              <div class="label-touche t-gauche-bas">
+                <span class="touche">Sticks</span
+                ><span class="desc">Se déplacer / Tourner</span>
+              </div>
+
+              <!-- Les boutons de droite -->
+              <div class="label-touche t-droite-haut">
+                <span class="touche">Bouton A</span
+                ><span class="desc">Interagir / Valider</span>
+              </div>
+              <div class="label-touche t-droite-bas">
+                <span class="touche">Bouton B</span
+                ><span class="desc">Retour / Annuler</span>
+              </div>
             </div>
 
             <!-- 2. SCHÉMA MOBILE -->
             <div id="schema-mobile" class="schema">
-                <!-- 🪄 Remplacement de l'image par un SVG (Téléphone format paysage) -->
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="silhouette-image" style="transform: scale(0.8);">
-                    <path d="M22 6H2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2zm-2 10H4V8h16v8zm-2-4a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
-                </svg>
+              <!-- 🪄 Remplacement de l'image par un SVG (Téléphone format paysage) -->
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="white"
+                class="silhouette-image"
+                style="transform: scale(0.8)"
+              >
+                <path
+                  d="M22 6H2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2zm-2 10H4V8h16v8zm-2-4a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"
+                />
+              </svg>
 
-                <div class="label-touche t-gauche-bas"><span class="touche">Joystick Gauche</span><span class="desc">Se déplacer</span></div>
-                <div class="label-touche t-droite"><span class="touche">Écran Droit</span><span class="desc">Interagir / Caméra</span></div>
+              <div class="label-touche t-gauche-bas">
+                <span class="touche">Joystick Gauche</span
+                ><span class="desc">Se déplacer</span>
+              </div>
+              <div class="label-touche t-droite">
+                <span class="touche">Écran Droit</span
+                ><span class="desc">Interagir / Caméra</span>
+              </div>
             </div>
 
             <!-- 3. SCHÉMA PC -->
             <div id="schema-pc" class="schema">
-                <div class="liste-pc">
-                    <p><strong>Z Q S D / Flèches :</strong> Se déplacer</p>
-                    <p><strong>🖱️ Clic Gauche maintenu :</strong> Tourner la caméra</p>
-                    <p><strong>🖱️ Clic Gauche (Court) :</strong> Interagir</p>
-                </div>
+              <div class="liste-pc">
+                <p><strong>Z Q S D / Flèches :</strong> Se déplacer</p>
+                <p>
+                  <strong>🖱️ Clic Gauche maintenu :</strong> Tourner la caméra
+                </p>
+                <p><strong>🖱️ Clic Gauche (Court) :</strong> Interagir</p>
+              </div>
             </div>
           </div>
 
-          <div style="margin-top: 25px;">
-            <button id="btn-fermer-controles" class="bouton-magique">Compris !</button>
+          <div style="margin-top: 25px">
+            <button id="btn-fermer-controles" class="bouton-magique">
+              Compris !
+            </button>
           </div>
         </div>
       </div>
@@ -226,30 +318,66 @@
     <!-- ==============================================
      MENU PAUSE
 =============================================== -->
-<div id="modal-pause" class="modal cache">
-  <div class="modal-contenu effet-magique">
-    <h2 class="modal-titre">Jeu en Pause</h2>
-    <p style="margin-bottom: 30px; color: #aaa;">Prenez une grande inspiration...</p>
-    <div class="modal-actions-colonne">
-      <button id="btn-reprendre" class="bouton-magique">▶️ Reprendre la partie</button>
-      <button class="bouton-secondaire btn-quitter">🚪 Quitter le jeu</button>
-    </div>
-  </div>
-</div>
+    <div id="modal-pause" class="modal cache">
+      <div class="modal-contenu effet-magique">
+        <h2 class="modal-titre">Jeu en Pause</h2>
 
-<!-- ==============================================
+        <!-- NOUVEAU : Contrôles Audio -->
+        <div class="controles-audio">
+          <div class="param-audio">
+            <label for="volume-musique">🎵 Musique</label>
+            <input
+              type="range"
+              id="volume-musique"
+              min="0"
+              max="1"
+              step="0.05"
+              value="0.3"
+            />
+          </div>
+          <div class="param-audio">
+            <label for="volume-sfx">✨ Effets (SFX)</label>
+            <input
+              type="range"
+              id="volume-sfx"
+              min="0"
+              max="1"
+              step="0.05"
+              value="0.5"
+            />
+          </div>
+        </div>
+
+        <div class="modal-actions-colonne">
+          <button id="btn-reprendre" class="bouton-magique">
+            ▶️ Reprendre la partie
+          </button>
+          <button class="bouton-secondaire btn-quitter">
+            🚪 Quitter le jeu
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==============================================
      ÉCRAN DE FIN (VICTOIRE / GAME OVER)
 =============================================== -->
-<div id="modal-fin" class="modal cache">
-  <div class="modal-contenu effet-magique">
-    <h2 class="modal-titre" id="titre-fin">Game Over</h2>
-    <p id="texte-fin" style="margin-bottom: 30px; font-size: 1.2rem;">Les ténèbres l'ont emporté...</p>
-    <div class="modal-actions-colonne">
-      <button id="btn-recommencer" class="bouton-magique">🔄 Recommencer</button>
-      <button class="bouton-secondaire btn-quitter">🏠 Retour à l'accueil</button>
+    <div id="modal-fin" class="modal cache">
+      <div class="modal-contenu effet-magique">
+        <h2 class="modal-titre" id="titre-fin">Game Over</h2>
+        <p id="texte-fin" style="margin-bottom: 30px; font-size: 1.2rem">
+          Les ténèbres l'ont emporté...
+        </p>
+        <div class="modal-actions-colonne">
+          <button id="btn-recommencer" class="bouton-magique">
+            🔄 Recommencer
+          </button>
+          <button class="bouton-secondaire btn-quitter">
+            🏠 Retour à l'accueil
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
 
     <script src="/src/disneyData.js" type="module"></script>
     <script src="/src/interaction.js" type="module"></script>
