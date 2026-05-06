@@ -312,6 +312,12 @@
             window.jouerSFX('/sounds/clic.mp3', 0.5); 
         });
     }
+    const selectJukebox = document.getElementById('select-jukebox');
+    if (selectJukebox) {
+        selectJukebox.addEventListener('change', (e) => {
+            if (window.changerMusique) window.changerMusique(e.target.value);
+        });
+    }
 
    // Synchronisation de l'UI avec l'état de pause global
     window.ui_syncPause = () => {

@@ -796,3 +796,7 @@ html {
 .param-audio input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.3);
 }
+.flex-choix { display: flex; gap: 15px; justify-content: center; margin: 25px 0; }
+.btn-diff { padding: 12px 25px; font-size: 1.2rem; font-weight: bold; border-radius: 12px; cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent; color: white; background: rgba(0,0,0,0.5); text-transform: uppercase; }
+.btn-diff:hover { transform: scale(1.1); box-shadow: 0 0 15px currentColor; }
+.btn-diff.facile { border-color: #2ed573; color: #2ed573; } .btn-diff.normal { border-color: #ffa502; color: #ffa502; } .btn-diff.hard { border-color: #ff4757; color: #ff4757; }
