@@ -39,16 +39,7 @@
         btnDecouvrir.addEventListener('click', () => {
             btnDecouvrir.style.display = "none";
             
-            // Lancement fort (0.8) avec fade-out sec et doux
-            const sonLancement = window.jouerSFX('/sounds/son_lancement.mp3', 0.8);
-            if (sonLancement) {
-                setTimeout(() => {
-                    let fade = setInterval(() => {
-                        if (sonLancement.volume > 0.1) sonLancement.volume -= 0.1;
-                        else { sonLancement.pause(); clearInterval(fade); }
-                    }, 50); // Baisse très rapide
-                }, 800); // Démarre le fondu après 800ms
-            }
+            window.sonLancementGlobal = window.jouerSFX('/sounds/son_lancement.mp3', 0.8);
 
             if (ecranTutoriel) {
                 ecranTutoriel.style.transition = "none";
@@ -85,6 +76,9 @@
 
     if (btnRentrer) {
         btnRentrer.addEventListener('click', () => {
+            // 🛑 FIX : Coupure nette du son de lancement
+            if (window.sonLancementGlobal) window.sonLancementGlobal.pause();
+
              // --- MUSIQUE DE FOND APPARTEMENT ---
             if (!window.ambiance) {
                 window.ambiance = new Audio('/sounds/ambiance.mp3');
