@@ -200,7 +200,7 @@ manager.onError = (url) => { if (!isMobile) alert(`Le fichier ${url} refuse de c
 const loader = new GLTFLoader(manager);
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
-dracoLoader.setWorkerLimit(Math.max(1, (navigator.hardwareConcurrency || 4) - 1));
+dracoLoader.setWorkerLimit(1);
 loader.setDRACOLoader(dracoLoader);
 
 const chargerTout = async () => {
@@ -230,7 +230,6 @@ const chargerTout = async () => {
 
   // --- CHARGEMENT DES OBJETS DISNEY ---
   for (const item of disneyData) {
-    if (isMobile) lod.levels[0].distance = 1; // Force le passage au niveau simplifié très vite
     const lod = new THREE.LOD();
     lod.name = item.id;
     lod.userData = { ...item };
@@ -251,9 +250,9 @@ const chargerTout = async () => {
       hitbox.position.copy(center);
       hitbox.name = lod.name; hitbox.userData = lod.userData;
       
-      lod.addLevel(gltf.scene, 0);
+      lod.addLevel(gltf.scene, isMobile ? 1 : 0); // 🛑 FIX : Distance mobile injectée proprement
       lod.add(hitbox); objetsCliquables.push(hitbox);
-    lod.addLevel(new THREE.Object3D(), 200); // LOD de secours
+      lod.addLevel(new THREE.Object3D(), 200); // LOD de secours
       scene.add(lod);
       lodsScene.push(lod);
     } catch (error) { console.error("❌ Erreur sur :", item.id, error); }
