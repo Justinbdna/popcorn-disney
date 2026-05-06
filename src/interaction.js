@@ -4,6 +4,21 @@
 
 (function initUIManager() {
     'use strict';
+    // === AUDIO MANAGER GLOBAL ===
+    // On remplace les true/false par des valeurs de volume (0 à 1)
+    window.audioState = { volumeMusique: 0.3, volumeSFX: 0.5, muteRetro: false }; 
+    window.ambiance = null;
+
+    window.jouerSFX = (chemin, volumeBase = 1.0) => { 
+        if (window.audioState.volumeSFX > 0 && !window.audioState.muteRetro) {
+            const audio = new Audio(chemin);
+            // On multiplie le volume du son par le niveau choisi dans les réglages
+            audio.volume = volumeBase * window.audioState.volumeSFX;
+            audio.play().catch(e => console.warn("Audio bloqué:", e));
+            return audio; 
+        }
+        return null;
+    };
 
     // === GESTION DU SAS DE CHARGEMENT ===
     const ecranChargement = document.getElementById('ecran-chargement');
@@ -11,22 +26,12 @@
     const ecranTutoriel = document.getElementById('ecran-tutoriel');
     const texteChargement = document.querySelector('.texte-chargement');
 
-    setTimeout(() => {
-        if (btnDecouvrir && btnDecouvrir.classList.contains('cache')) {
-            console.warn("⏳ Sécurité Safari : Déblocage bouton");
-            btnDecouvrir.classList.remove('cache');
-            if (texteChargement) {
-                texteChargement.style.transition = "opacity 0.5s ease";
-                texteChargement.style.opacity = "0";
-                setTimeout(() => texteChargement.style.display = 'none', 500);
-            }
-        }
-    }, 10000);
-
     if (btnDecouvrir) {
         btnDecouvrir.addEventListener('click', () => {
             btnDecouvrir.style.display = "none";
-            new Audio('/sounds/son_lancement.mp3').play();
+            
+            window.sonLancementGlobal = window.jouerSFX('/sounds/son_lancement.mp3', 0.8);
+
             if (ecranTutoriel) {
                 ecranTutoriel.style.transition = "none";
                 ecranTutoriel.style.opacity = "1";
@@ -48,7 +53,7 @@
 
     if (btnSuivant) {
         btnSuivant.addEventListener('click', () => {
-            new Audio('/sounds/clic.mp3').play();
+            window.jouerSFX('/sounds/clic.mp3');
             if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.remove('active');
             etapeActuelle++;
             if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.add('active');
@@ -62,12 +67,19 @@
 
     if (btnRentrer) {
         btnRentrer.addEventListener('click', () => {
-             new Audio('/sounds/ambiance.mp3').play();
-            // --- MUSIQUE DE FOND APPARTEMENT ---
-            const ambiance = new Audio('/sounds/ambiance.mp3');
-            ambiance.loop = true; 
-            ambiance.volume = 0.3; // Volume à 30%
-            ambiance.play();
+            // 🛑 FIX : Coupure nette du son de lancement
+            if (window.sonLancementGlobal) window.sonLancementGlobal.pause();
+
+             // --- MUSIQUE DE FOND APPARTEMENT ---
+            if (!window.ambiance) {
+                window.ambiance = new Audio('/sounds/ambiance.mp3');
+                window.ambiance.loop = true; 
+            }
+            // On applique le volume choisi par le joueur
+            window.ambiance.volume = window.audioState.volumeMusique;
+            if (window.ambiance.volume > 0) {
+                window.ambiance.play().catch(e => console.warn("Musique bloquée:", e));
+            }
 
             if (ecranTutoriel) {
                 ecranTutoriel.style.backgroundColor = "#050510"; 
@@ -93,7 +105,7 @@
     let tempsRestant = 600; 
     let intervalChrono;
 
-    function initialiserHUD() {
+    window.initialiserHUD = function() {
         if (hud) hud.classList.remove('cache');
         demarrerChrono();
     }
@@ -106,17 +118,15 @@
         setTimeout(() => affichageScore.parentElement.style.transform = "scale(1)", 200);
     };
 
+    // Mise à jour de la fonction perdreVie pour déclencher l'écran de Game Over
     window.perdreVie = function() {
         if (vies > 0) vies--;
         if (affichageVies) {
             affichageVies.textContent = "❤️".repeat(vies) + "🖤".repeat(3 - vies);
         }
-        if (vies === 0) {
-            // --- SON DE DÉFAITE ---
-            new Audio('/sounds/game_over.mp3').play();
+       if (vies === 0) {
             console.log("GAME OVER !");
-            if (window.bloquerControles3D) window.bloquerControles3D(true); // 🛑 FIX : On coupe le moteur 3D
-            window.afficherInfobulle("GAME OVER", "La partie est terminée.", null);
+            if (window.afficherFin) window.afficherFin(false);
         }
     };
 
@@ -132,10 +142,10 @@
                     affichageChrono.textContent = `${m}:${s}`;
                     if(tempsRestant <= 30) affichageChrono.style.color = "#ff4757";
                 }
-            } else {
+           } else {
                 clearInterval(intervalChrono);
-                if (window.bloquerControles3D) window.bloquerControles3D(true); // 🛑 FIX : On coupe le moteur 3D
                 console.log("TEMPS ÉCOULÉ !");
+                if (window.afficherFin) window.afficherFin(false);
             }
         }, 1000);
     }
@@ -207,13 +217,13 @@
                     const estBonne = (index === data.reponseCorrecte);
 
                     if (estBonne) {
-                        new Audio('/sounds/succes.mp3').play(); // SON DE BONNE RÉPONSE
+                        window.jouerSFX('/sounds/succes.mp3'); // SON DE BONNE RÉPONSE
                         
                         btn.classList.add('correct');
                         DOM.feedback.textContent = data.anecdoteSucces || "Bonne réponse !";
                         DOM.feedback.classList.add('succes');
                     } else {
-                        new Audio('/sounds/erreur.mp3').play(); // SON DE MAUVAISE RÉPONSE
+                       window.jouerSFX('/sounds/erreur.mp3'); // SON DE MAUVAISE RÉPONSE
                         
                         btn.classList.add('incorrect');
                         DOM.feedback.textContent = data.anecdoteEchec || "Mauvaise réponse !";
@@ -237,11 +247,97 @@
         if(window.bloquerControles3D) window.bloquerControles3D(true);
         DOM.modal.classList.remove('cache');
     };
+    // === GESTION DE LA MODALE DES CONTRÔLES ===
+    const btnOuvrirControles = document.getElementById('btn-ouvrir-controles');
+    const btnFermerControles = document.getElementById('btn-fermer-controles');
+    const modalControles = document.getElementById('modal-controles');
+    const onglets = document.querySelectorAll('.onglet');
+    const schemas = document.querySelectorAll('.schema');
+
+    if (btnOuvrirControles && modalControles) btnOuvrirControles.addEventListener('click', () => modalControles.classList.remove('cache'));
+    if (btnFermerControles && modalControles) btnFermerControles.addEventListener('click', () => modalControles.classList.add('cache'));
+
+    onglets.forEach(onglet => {
+        onglet.addEventListener('click', (e) => {
+            onglets.forEach(o => o.classList.remove('active'));
+            schemas.forEach(s => s.classList.remove('active'));
+            e.target.classList.add('active');
+            const cible = document.getElementById(e.target.getAttribute('data-cible'));
+            if (cible) cible.classList.add('active');
+        });
+    });
+    // === GESTION DES MENUS PAUSE & FIN ===
+    const modalPause = document.getElementById('modal-pause');
+    const btnPause = document.getElementById('btn-pause');
+    const btnReprendre = document.getElementById('btn-reprendre');
+    const btnRecommencer = document.getElementById('btn-recommencer');
+    const btnQuitterList = document.querySelectorAll('.btn-quitter');
+
+    if (btnPause) btnPause.addEventListener('click', () => { if (window.togglePause) window.togglePause(); });
+    if (btnReprendre) btnReprendre.addEventListener('click', () => { if (window.togglePause) window.togglePause(); });
+   if (btnRecommencer) btnRecommencer.addEventListener('click', () => { 
+        vies = 3; 
+        tempsRestant = 600; 
+        if (affichageVies) affichageVies.textContent = "❤️❤️❤️";
+        document.getElementById('modal-fin')?.classList.add('cache');
+        if (window.bloquerControles3D) window.bloquerControles3D(false);
+        demarrerChrono();
+        if (window.resetCamera) window.resetCamera(); // Téléportation
+    });
+    btnQuitterList.forEach(btn => btn.addEventListener('click', () => location.reload()));
+
+    // === GESTION DES VOLUMES (Sliders Menu Pause) ===
+    const sliderMusique = document.getElementById('volume-musique');
+    const sliderSFX = document.getElementById('volume-sfx');
+
+    if (sliderMusique) {
+        sliderMusique.addEventListener('input', (e) => {
+            const vol = parseFloat(e.target.value);
+            window.audioState.volumeMusique = vol;
+            if (window.ambiance) window.ambiance.volume = vol; // Modifie la musique en temps réel !
+        });
+    }
+
+    if (sliderSFX) {
+        sliderSFX.addEventListener('input', (e) => {
+            window.audioState.volumeSFX = parseFloat(e.target.value);
+            // On joue un tout petit clic silencieux pour que le joueur se rende compte du niveau sonore
+            window.jouerSFX('/sounds/clic.mp3', 0.5); 
+        });
+    }
+
+   // Synchronisation de l'UI avec l'état de pause global
+    window.ui_syncPause = () => {
+        const modalPause = document.getElementById('modal-pause');
+        if (modalPause) {
+            if (window.enPause) {
+                modalPause.classList.remove('cache');
+            } else {
+                modalPause.classList.add('cache');
+            }
+        }
+    };
+    // === GESTION DE L'ÉCRAN DE FIN ===
+    window.afficherFin = (victoire) => {
+        if (window.bloquerControles3D) window.bloquerControles3D(true);
+        if (typeof intervalChrono !== 'undefined') clearInterval(intervalChrono);
+        const titreFin = document.getElementById('titre-fin');
+        const texteFin = document.getElementById('texte-fin');
+        const modalFin = document.getElementById('modal-fin');
+        
+        if (titreFin) titreFin.innerHTML = victoire ? "<span style='color:#2ed573'>👑 VICTOIRE !</span>" : "<span style='color:#ff4757'>💀 GAME OVER</span>";
+        if (texteFin) texteFin.textContent = victoire ? "Vous avez trouvé tous les objets magiques !" : "Vous n'avez plus de vies ou le temps est écoulé...";
+        if (modalFin) modalFin.classList.remove('cache');
+    };
+    window.isRetroMode = false;
     window.ui_AnimationPS2 = () => {
+        window.isRetroMode = !window.isRetroMode;
+        window.audioState.muteRetro = window.isRetroMode;
+        if (window.ambiance) window.ambiance.volume = window.isRetroMode ? 0 : window.audioState.volumeMusique;
         const vid = document.getElementById("video-ps2");
-        if (!vid) return; 
-        vid.classList.remove("cache"); vid.play();
-        vid.onended = () => vid.classList.add("cache");
+        if (!vid) return;
+        if (window.isRetroMode) { vid.classList.remove("cache"); vid.currentTime = 0; vid.play(); vid.onended = () => vid.classList.add("cache"); }
+        else { vid.pause(); vid.classList.add("cache"); }
     };
 
 })();

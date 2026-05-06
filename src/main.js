@@ -75,7 +75,12 @@ window.deselectionnerObjet = () => {
   camera.getWorldDirection(direction);
   controls.target.copy(camera.position).add(direction.multiplyScalar(0.1)); // 🛑 FIX : Recentre la cible pile devant les yeux (FPS)
   controls.update();
-
+  
+window.resetCamera = () => {
+  camera.position.set(0, 23, 5);
+  controls.target.set(0, 23, 4.9);
+  controls.update();
+};
   if (typeof transformControls !== 'undefined' && transformControls) transformControls.detach();
   if (window.bloquerControles3D) window.bloquerControles3D(false);
   document.getElementById('modal-quiz')?.classList.add('cache');
@@ -95,8 +100,8 @@ window.addEventListener("keydown", (e) => {
   if (touches.hasOwnProperty(e.key)) touches[e.key] = true;
   if (e.key === "g") transformControls?.setMode("translate");
   if (e.key === "r") transformControls?.setMode("rotate");
+  if (e.key === "e" || e.key === "E") window.deselectionnerObjet();
   if (e.key === "Escape") {
-    window.deselectionnerObjet(); // 🛑 FIX : Applique la désélection propre FPS
     if (window.togglePause) window.togglePause(); 
   }
 });
@@ -109,6 +114,9 @@ window.togglePause = () => {
   window.enPause = !window.enPause;
   if (window.bloquerControles3D) window.bloquerControles3D(window.enPause);
   console.log(window.enPause ? "⏸️ JEU EN PAUSE" : "▶️ REPRISE DU JEU");
+  
+  // 🪄 FIX : Prévient l'interface HTML de s'afficher ou disparaître
+  if (window.ui_syncPause) window.ui_syncPause(); 
 };
 // =========================================================================
 // 📱 5. INITIALISATION DU JOYSTICK MOBILE (Nipple.js)
@@ -176,9 +184,14 @@ setTimeout(() => {
   if (btn && btn.classList.contains("cache")) btn.classList.remove("cache");
 }, 10000);
 
+let dernierPourcentage = 0;
 manager.onProgress = (url, loaded, total) => {
   const el = document.getElementById("loading-percent");
-  if (el) el.textContent = `${Math.round((loaded / total) * 100)}%`;
+  let actuel = Math.round((loaded / total) * 100);
+  if (el && actuel > dernierPourcentage) {
+    dernierPourcentage = actuel;
+    el.textContent = `${actuel}%`;
+  }
 };
 
 manager.onLoad = () => console.log("✅ Fichiers 3D téléchargés en mémoire locale.");
@@ -261,9 +274,12 @@ const chargerTout = async () => {
     if (ecranChargement) ecranChargement.remove();
     if (tuto) tuto.remove();
     if (window.lancerJeu3D) window.lancerJeu3D();
+  } else if (sessionStorage.getItem("skipIntro") === "true") {
+    sessionStorage.removeItem("skipIntro");
+    document.getElementById("ecran-chargement")?.remove(); document.getElementById("ecran-tutoriel")?.remove();
+    if (window.initialiserHUD) window.initialiserHUD(); if (window.lancerJeu3D) window.lancerJeu3D();
   } else {
-    const btnDecouvrir = document.getElementById("btn-decouvrir");
-    const texteChargement = document.querySelector(".texte-chargement");
+    const btnDecouvrir = document.getElementById("btn-decouvrir"); const texteChargement = document.querySelector(".texte-chargement");
     if (btnDecouvrir && texteChargement) {
       texteChargement.style.transition = "opacity 0.5s ease";
       texteChargement.style.opacity = "0";
@@ -301,7 +317,17 @@ const outils = {
     alert("Coordonnées ET Tailles copiées ! 📋");
   },
 };
+
 gui?.add(outils, "exporter").name("💾 Exporter Coordonnées");
+const cheats = {
+  gagner: () => { if (window.afficherFin) window.afficherFin(true); },
+  perdre: () => { if (window.afficherFin) window.afficherFin(false); },
+  respawn: () => { document.getElementById('btn-recommencer')?.click(); }
+};
+const cheatFolder = gui?.addFolder("🎭 God Mode (Cheat)");
+cheatFolder?.add(cheats, "gagner").name("🏆 Forcer Victoire");
+cheatFolder?.add(cheats, "perdre").name("💀 Forcer Game Over");
+cheatFolder?.add(cheats, "respawn").name("🔄 Forcer Respawn");
 
 const stats = !isMobile ? new Stats() : null;
 if (stats) document.body.appendChild(stats.dom);
@@ -560,6 +586,10 @@ const animate = () => {
   if (padB && !padBPrevious) {
     window.deselectionnerObjet(); // 🛑 FIX : Désélection FPS propre via manette
   }
+  let padXBtn = gamepadActif ? gamepadActif.buttons[2].pressed : false;
+  if (padXBtn && !window.padXPrevious) window.deselectionnerObjet();
+  window.padXPrevious = padXBtn;
+  
   padAPrevious = padA; padBPrevious = padB; padYPrevious = padYBtn;
 
   // --------------------------------------------------------
@@ -603,7 +633,7 @@ const animate = () => {
     
     if (Math.abs(padRotX) > 0.15) { offsetCam.subVectors(controls.target, camera.position); offsetCam.applyAxisAngle(axeY, -padRotX * 0.05); controls.target.copy(camera.position).add(offsetCam); }
     if (Math.abs(padRotY) > 0.15) { 
-      let nouvelleHauteur = controls.target.y - (padRotY * 0.8);
+      let nouvelleHauteur = controls.target.y - (padRotY * 0.2);
       let dist = camera.position.distanceTo(controls.target);
       controls.target.y = Math.max(camera.position.y - (dist * 0.9), Math.min(camera.position.y + (dist * 0.9), nouvelleHauteur));
     }
