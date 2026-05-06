@@ -60,9 +60,10 @@ const padMobile = { x: 0, y: 0, actif: false };
 let objetActif = null;
 let renduAutorise = false; // Bloque le rendu GPU pendant le chargement
 window.activerModeRetro = () => {
-  if (window.easterEggDebloque) return;
-  window.easterEggDebloque = true; renderer.setPixelRatio(0.37); canvas.classList.add('mode-retro');
-  console.log("🎮 CHEAT CODE ACTIVÉ !"); if (window.ui_AnimationPS2) window.ui_AnimationPS2();
+  window.easterEggDebloque = !window.easterEggDebloque;
+  renderer.setPixelRatio(window.easterEggDebloque ? 0.37 : (isMobile ? 1 : Math.min(window.devicePixelRatio, 2)));
+  window.easterEggDebloque ? canvas.classList.add('mode-retro') : canvas.classList.remove('mode-retro');
+  if (window.ui_AnimationPS2) window.ui_AnimationPS2();
 };
 
 const touches = { z: false, q: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };

@@ -349,8 +349,11 @@
         if (window.ambiance) window.ambiance.volume = window.isRetroMode ? 0 : window.audioState.volumeMusique;
         const vid = document.getElementById("video-ps2");
         if (!vid) return;
-        if (window.isRetroMode) { vid.classList.remove("cache"); vid.currentTime = 0; vid.play(); vid.onended = () => vid.classList.add("cache"); }
-        else { vid.pause(); vid.classList.add("cache"); }
+        if (window.isRetroMode) { 
+            vid.classList.remove("cache"); vid.currentTime = 0; vid.play(); 
+            vid.onended = () => { vid.classList.add("cache"); if (window.ambiance) window.ambiance.volume = window.audioState.volumeMusique; }; 
+        }
+        else { vid.pause(); vid.classList.add("cache"); if (window.ambiance) window.ambiance.volume = window.audioState.volumeMusique; }
     };
     window.changerMusique = (nomFichier) => {
         if (!window.ambiance) return;
