@@ -316,31 +316,16 @@
         });
     }
 
-    // Synchronisation de l'UI avec l'état de pause global
-    const ancienTogglePause = window.togglePause;
-    window.togglePause = () => {
-        if (ancienTogglePause) ancienTogglePause();
+   // Synchronisation de l'UI avec l'état de pause global
+    window.ui_syncPause = () => {
+        const modalPause = document.getElementById('modal-pause');
         if (modalPause) {
-            if (window.enPause) modalPause.classList.remove('cache');
-            else modalPause.classList.add('cache');
+            if (window.enPause) {
+                modalPause.classList.remove('cache');
+            } else {
+                modalPause.classList.add('cache');
+            }
         }
-    };
-
-    window.afficherFin = (victoire) => {
-        if (window.bloquerControles3D) window.bloquerControles3D(true);
-        if (typeof intervalChrono !== 'undefined') clearInterval(intervalChrono);
-        document.getElementById('titre-fin').innerHTML = victoire ? "<span style='color:#2ed573'>👑 VICTOIRE !</span>" : "<span style='color:#ff4757'>💀 GAME OVER</span>";
-        document.getElementById('texte-fin').textContent = victoire ? "Vous avez trouvé tous les objets magiques !" : "Vous n'avez plus de vies ou le temps est écoulé...";
-        document.getElementById('modal-fin')?.classList.remove('cache');
-    };
-
-    window.ui_AnimationPS2 = () => {
-        const vid = document.getElementById("video-ps2");
-        if (!vid) return; 
-        vid.classList.remove("cache"); 
-        vid.play().catch(() => vid.classList.add("cache")); // Sécurité anti-crash
-        vid.onended = () => vid.classList.add("cache");
-        vid.onerror = () => vid.classList.add("cache");
     };
     
 

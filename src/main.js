@@ -109,6 +109,9 @@ window.togglePause = () => {
   window.enPause = !window.enPause;
   if (window.bloquerControles3D) window.bloquerControles3D(window.enPause);
   console.log(window.enPause ? "⏸️ JEU EN PAUSE" : "▶️ REPRISE DU JEU");
+  
+  // 🪄 FIX : Prévient l'interface HTML de s'afficher ou disparaître
+  if (window.ui_syncPause) window.ui_syncPause(); 
 };
 // =========================================================================
 // 📱 5. INITIALISATION DU JOYSTICK MOBILE (Nipple.js)
