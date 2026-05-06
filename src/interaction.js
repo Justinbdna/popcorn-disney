@@ -106,14 +106,13 @@
         setTimeout(() => affichageScore.parentElement.style.transform = "scale(1)", 200);
     };
 
+    // Mise à jour de la fonction perdreVie pour déclencher l'écran de Game Over
     window.perdreVie = function() {
         if (vies > 0) vies--;
         if (affichageVies) {
             affichageVies.textContent = "❤️".repeat(vies) + "🖤".repeat(3 - vies);
         }
         if (vies === 0) {
-            // --- SON DE DÉFAITE ---
-            new Audio('/sounds/game_over.mp3').play();
             console.log("GAME OVER !");
             if (window.bloquerControles3D) window.bloquerControles3D(true); // 🛑 FIX : On coupe le moteur 3D
             window.afficherInfobulle("GAME OVER", "La partie est terminée.", null);
@@ -236,12 +235,6 @@
 
         if(window.bloquerControles3D) window.bloquerControles3D(true);
         DOM.modal.classList.remove('cache');
-    };
-    window.ui_AnimationPS2 = () => {
-        const vid = document.getElementById("video-ps2");
-        if (!vid) return; 
-        vid.classList.remove("cache"); vid.play();
-        vid.onended = () => vid.classList.add("cache");
     };
 
 })();

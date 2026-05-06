@@ -138,3 +138,139 @@ body, html {
   .btn-option { min-height: 55px; font-size: 1rem; padding: 10px; }
   .message-feedback { font-size: 1rem; min-height: 15px; }
 }
+
+/* ==============================================
+   BOUTON ICONE DU HUD
+=============================================== */
+.bouton-icone {
+  background: var(--fond-ui);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 50px; height: 50px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+.bouton-icone:hover {
+  transform: scale(1.1);
+  border-color: var(--or-disney);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+}
+
+/* ==============================================
+   MODALE CONTRÔLES (STYLE BLUEPRINT)
+=============================================== */
+.blueprint-magique { max-width: 700px !important; }
+
+.onglets-controles {
+    display: flex; justify-content: center; gap: 15px; margin-bottom: 25px;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.2); padding-bottom: 15px;
+}
+.onglet {
+    background: transparent; border: none; color: #aaa; font-size: 1.2rem;
+    font-weight: bold; text-transform: uppercase; cursor: pointer;
+    padding: 10px 20px; transition: all 0.3s ease; border-radius: 8px;
+}
+.onglet:hover { color: white; }
+.onglet.active {
+    color: var(--or-disney); background: rgba(255, 215, 0, 0.1);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.2) inset;
+}
+
+.schemas-container { position: relative; min-height: 250px; }
+.schema { display: none; position: relative; width: 100%; height: 100%; animation: apparitionDouce 0.4s ease-out forwards; }
+.schema.active { display: block; }
+
+@keyframes apparitionDouce {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.silhouette-image {
+    width: 100%; max-width: 350px; height: 200px; object-fit: contain;
+    opacity: 0.4; filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.8)); margin: 0 auto; display: block;
+}
+
+.label-touche {
+    position: absolute; background: rgba(10, 10, 15, 0.9); border: 1px solid var(--or-disney);
+    padding: 8px 12px; border-radius: 8px; text-align: left; box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+    display: flex; flex-direction: column; z-index: 2;
+}
+.label-touche .touche { color: var(--or-disney); font-weight: bold; font-size: 0.9rem; text-transform: uppercase; margin-bottom: 4px; }
+.label-touche .desc { color: white; font-size: 0.8rem; }
+
+/* Position des labels autour de l'image */
+.t-gauche-haut { top: 0; left: 0; }
+.t-gauche-bas { bottom: 10%; left: 0; }
+.t-droite { top: 30%; right: 0; }
+
+.liste-pc {
+    text-align: left; display: inline-block; background: rgba(255,255,255,0.05);
+    padding: 20px 40px; border-radius: 15px; border-left: 3px solid var(--or-disney);
+    margin-top: 20px;
+}
+.liste-pc p { margin: 15px 0; font-size: 1.2rem; }
+.liste-pc strong { color: var(--or-disney); }
+
+/* Ajustements Mobiles pour les Contrôles */
+@media screen and (max-width: 768px) {
+  .onglet { font-size: 0.9rem; padding: 8px 12px; }
+  .label-touche { padding: 5px 8px; }
+  .label-touche .touche { font-size: 0.75rem; }
+  .label-touche .desc { font-size: 0.7rem; }
+  .silhouette-image { height: 150px; }
+  .liste-pc p { font-size: 1rem; }
+}
+
+/* ==============================================
+   MENUS PAUSE & FIN (Boutons en colonne)
+=============================================== */
+.modal-actions-colonne {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.modal-actions-colonne button {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.1rem;
+}
+
+/* ==============================================
+   INDICATIONS MULTI-PLATEFORMES (HINTS)
+=============================================== */
+.ui-hints {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    font-size: 0.85rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.ui-hints b {
+    color: var(--or-disney);
+}
+
+/* Par défaut, on cache le texte mobile */
+.hint-mobile { display: none; }
+
+/* 🪄 MAGIE CSS : Si l'écran est tactile (doigt), on inverse l'affichage ! */
+@media (hover: none) and (pointer: coarse) {
+    .hint-desktop { display: none; }
+    .hint-mobile { display: inline-block; color: var(--or-disney); }
+}
