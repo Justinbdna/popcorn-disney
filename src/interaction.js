@@ -6,11 +6,11 @@
     'use strict';
     // === AUDIO MANAGER GLOBAL ===
     // On remplace les true/false par des valeurs de volume (0 à 1)
-    window.audioState = { volumeMusique: 0.3, volumeSFX: 0.5 }; 
+    window.audioState = { volumeMusique: 0.3, volumeSFX: 0.5, muteRetro: false }; 
     window.ambiance = null;
 
     window.jouerSFX = (chemin, volumeBase = 1.0) => { 
-        if (window.audioState.volumeSFX > 0) {
+        if (window.audioState.volumeSFX > 0 && !window.audioState.muteRetro) {
             const audio = new Audio(chemin);
             // On multiplie le volume du son par le niveau choisi dans les réglages
             audio.volume = volumeBase * window.audioState.volumeSFX;
@@ -321,6 +321,15 @@
             }
         }
     };
-    
+    window.isRetroMode = false;
+    window.ui_AnimationPS2 = () => {
+        window.isRetroMode = !window.isRetroMode;
+        window.audioState.muteRetro = window.isRetroMode;
+        if (window.ambiance) window.ambiance.volume = window.isRetroMode ? 0 : window.audioState.volumeMusique;
+        const vid = document.getElementById("video-ps2");
+        if (!vid) return;
+        if (window.isRetroMode) { vid.classList.remove("cache"); vid.currentTime = 0; vid.play(); vid.onended = () => vid.classList.add("cache"); }
+        else { vid.pause(); vid.classList.add("cache"); }
+    };
 
 })();
