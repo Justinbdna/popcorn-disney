@@ -26,18 +26,6 @@
     const ecranTutoriel = document.getElementById('ecran-tutoriel');
     const texteChargement = document.querySelector('.texte-chargement');
 
-    setTimeout(() => {
-        if (btnDecouvrir && btnDecouvrir.classList.contains('cache')) {
-            console.warn("⏳ Sécurité Safari : Déblocage bouton");
-            btnDecouvrir.classList.remove('cache');
-            if (texteChargement) {
-                texteChargement.style.transition = "opacity 0.5s ease";
-                texteChargement.style.opacity = "0";
-                setTimeout(() => texteChargement.style.display = 'none', 500);
-            }
-        }
-    }, 10000);
-
     if (btnDecouvrir) {
         btnDecouvrir.addEventListener('click', () => {
             btnDecouvrir.style.display = "none";
@@ -117,7 +105,7 @@
     let tempsRestant = 600; 
     let intervalChrono;
 
-    function initialiserHUD() {
+    window.initialiserHUD = function() {
         if (hud) hud.classList.remove('cache');
         demarrerChrono();
     }
@@ -287,7 +275,15 @@
 
     if (btnPause) btnPause.addEventListener('click', () => { if (window.togglePause) window.togglePause(); });
     if (btnReprendre) btnReprendre.addEventListener('click', () => { if (window.togglePause) window.togglePause(); });
-    if (btnRecommencer) btnRecommencer.addEventListener('click', () => location.reload());
+   if (btnRecommencer) btnRecommencer.addEventListener('click', () => { 
+        vies = 3; 
+        tempsRestant = 600; 
+        if (affichageVies) affichageVies.textContent = "❤️❤️❤️";
+        document.getElementById('modal-fin')?.classList.add('cache');
+        if (window.bloquerControles3D) window.bloquerControles3D(false);
+        demarrerChrono();
+        if (window.resetCamera) window.resetCamera(); // Téléportation
+    });
     btnQuitterList.forEach(btn => btn.addEventListener('click', () => location.reload()));
 
     // === GESTION DES VOLUMES (Sliders Menu Pause) ===
