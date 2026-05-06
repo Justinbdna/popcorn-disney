@@ -312,7 +312,17 @@ const outils = {
     alert("Coordonnées ET Tailles copiées ! 📋");
   },
 };
+
 gui?.add(outils, "exporter").name("💾 Exporter Coordonnées");
+const cheats = {
+  gagner: () => { if (window.afficherFin) window.afficherFin(true); },
+  perdre: () => { if (window.afficherFin) window.afficherFin(false); },
+  respawn: () => { document.getElementById('btn-recommencer')?.click(); }
+};
+const cheatFolder = gui?.addFolder("🎭 God Mode (Cheat)");
+cheatFolder?.add(cheats, "gagner").name("🏆 Forcer Victoire");
+cheatFolder?.add(cheats, "perdre").name("💀 Forcer Game Over");
+cheatFolder?.add(cheats, "respawn").name("🔄 Forcer Respawn");
 
 const stats = !isMobile ? new Stats() : null;
 if (stats) document.body.appendChild(stats.dom);
