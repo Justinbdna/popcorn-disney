@@ -4,12 +4,17 @@
 
 (function initUIManager() {
     'use strict';
-    // === AUDIO MANAGER GLOBAL ===
+    /// === AUDIO MANAGER GLOBAL ===
     window.audioState = { musiqueActive: true, sfxActifs: true };
-    let pisteAmbiance = null;
 
-    window.jouerSFX = (chemin) => {
-        if (window.audioState.sfxActifs) new Audio(chemin).play().catch(e => console.warn("Audio bloqué:", e));
+    window.jouerSFX = (chemin, volume = 0.5) => { // Volume par défaut à 50%
+        if (window.audioState.sfxActifs) {
+            const audio = new Audio(chemin);
+            audio.volume = volume;
+            audio.play().catch(e => console.warn("Audio bloqué:", e));
+            return audio; // On retourne la piste pour pouvoir faire des effets dessus
+        }
+        return null;
     };
 
     // === GESTION DU SAS DE CHARGEMENT ===
@@ -33,7 +38,18 @@
     if (btnDecouvrir) {
         btnDecouvrir.addEventListener('click', () => {
             btnDecouvrir.style.display = "none";
-            window.jouerSFX('/sounds/son_lancement.mp3');
+            
+            // Lancement fort (0.8) avec fade-out sec et doux
+            const sonLancement = window.jouerSFX('/sounds/son_lancement.mp3', 0.8);
+            if (sonLancement) {
+                setTimeout(() => {
+                    let fade = setInterval(() => {
+                        if (sonLancement.volume > 0.1) sonLancement.volume -= 0.1;
+                        else { sonLancement.pause(); clearInterval(fade); }
+                    }, 50); // Baisse très rapide
+                }, 800); // Démarre le fondu après 800ms
+            }
+
             if (ecranTutoriel) {
                 ecranTutoriel.style.transition = "none";
                 ecranTutoriel.style.opacity = "1";
