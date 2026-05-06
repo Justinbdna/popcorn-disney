@@ -4,15 +4,18 @@
 
 (function initUIManager() {
     'use strict';
-    /// === AUDIO MANAGER GLOBAL ===
-    window.audioState = { musiqueActive: true, sfxActifs: true };
+    // === AUDIO MANAGER GLOBAL ===
+    // On remplace les true/false par des valeurs de volume (0 à 1)
+    window.audioState = { volumeMusique: 0.3, volumeSFX: 0.5 }; 
+    window.ambiance = null;
 
-    window.jouerSFX = (chemin, volume = 0.5) => { // Volume par défaut à 50%
-        if (window.audioState.sfxActifs) {
+    window.jouerSFX = (chemin, volumeBase = 1.0) => { 
+        if (window.audioState.volumeSFX > 0) {
             const audio = new Audio(chemin);
-            audio.volume = volume;
+            // On multiplie le volume du son par le niveau choisi dans les réglages
+            audio.volume = volumeBase * window.audioState.volumeSFX;
             audio.play().catch(e => console.warn("Audio bloqué:", e));
-            return audio; // On retourne la piste pour pouvoir faire des effets dessus
+            return audio; 
         }
         return null;
     };
@@ -89,9 +92,10 @@
             if (!window.ambiance) {
                 window.ambiance = new Audio('/sounds/ambiance.mp3');
                 window.ambiance.loop = true; 
-                window.ambiance.volume = 0.3; // Volume à 30%
             }
-            if (window.audioState.musiqueActive) {
+            // On applique le volume choisi par le joueur
+            window.ambiance.volume = window.audioState.volumeMusique;
+            if (window.ambiance.volume > 0) {
                 window.ambiance.play().catch(e => console.warn("Musique bloquée:", e));
             }
 
@@ -291,6 +295,26 @@
     if (btnReprendre) btnReprendre.addEventListener('click', () => { if (window.togglePause) window.togglePause(); });
     if (btnRecommencer) btnRecommencer.addEventListener('click', () => location.reload());
     btnQuitterList.forEach(btn => btn.addEventListener('click', () => location.reload()));
+
+    // === GESTION DES VOLUMES (Sliders Menu Pause) ===
+    const sliderMusique = document.getElementById('volume-musique');
+    const sliderSFX = document.getElementById('volume-sfx');
+
+    if (sliderMusique) {
+        sliderMusique.addEventListener('input', (e) => {
+            const vol = parseFloat(e.target.value);
+            window.audioState.volumeMusique = vol;
+            if (window.ambiance) window.ambiance.volume = vol; // Modifie la musique en temps réel !
+        });
+    }
+
+    if (sliderSFX) {
+        sliderSFX.addEventListener('input', (e) => {
+            window.audioState.volumeSFX = parseFloat(e.target.value);
+            // On joue un tout petit clic silencieux pour que le joueur se rende compte du niveau sonore
+            window.jouerSFX('/sounds/clic.mp3', 0.5); 
+        });
+    }
 
     // Synchronisation de l'UI avec l'état de pause global
     const ancienTogglePause = window.togglePause;
