@@ -285,7 +285,7 @@
     const btnRecommencer = document.getElementById('btn-recommencer');
     const btnQuitterList = document.querySelectorAll('.btn-quitter');
 
-    if (btnPause) btnPause.addEventListener('click', () => { window.jouerSFX('/sounds/pause.mp3'); if (window.togglePause) window.togglePause(); });
+    if (btnPause) btnPause.addEventListener('click', () => { window.jouerSFX('/sounds/clic.mp3'); if (window.togglePause) window.togglePause(); });
     if (btnReprendre) btnReprendre.addEventListener('click', () => { window.jouerSFX('/sounds/clic.mp3'); if (window.togglePause) window.togglePause(); });
    if (btnRecommencer) btnRecommencer.addEventListener('click', () => { 
         window.jouerSFX('/sounds/clic.mp3');
@@ -309,6 +309,7 @@
             const vol = parseFloat(e.target.value);
             window.audioState.volumeMusique = vol;
             if (window.ambiance) window.ambiance.volume = vol; // Modifie la musique en temps réel !
+            if (window.musiquePause) window.musiquePause.volume = vol; // 🛑 FIX : Applique aussi au menu pause
         });
     }
 
@@ -328,15 +329,21 @@
 
    // Synchronisation de l'UI avec l'état de pause global
     window.ui_syncPause = () => {
+        if (!window.musiquePause) { window.musiquePause = new Audio('/sounds/pause.mp3'); window.musiquePause.loop = true; }
         const modalPause = document.getElementById('modal-pause');
         if (modalPause) {
             if (window.enPause) {
                 modalPause.classList.remove('cache');
+                if (window.ambiance) window.ambiance.pause();
+                window.musiquePause.volume = window.audioState.volumeMusique; window.musiquePause.play();
             } else {
                 modalPause.classList.add('cache');
+                window.musiquePause.pause();
+                if (window.ambiance && !window.audioState.muteRetro) window.ambiance.play();
             }
         }
     };
+    
     // === GESTION DE L'ÉCRAN DE FIN ===
     window.afficherFin = (victoire) => {
         if (window.bloquerControles3D) window.bloquerControles3D(true);
