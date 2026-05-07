@@ -108,7 +108,8 @@
     let penaliteVie = 1;
     document.querySelectorAll('.btn-diff').forEach(b => b.addEventListener('click', e => {
         let l = e.target.dataset.lvl; tempsRestant = l==='facile'?720:l==='difficile'?480:600;
-        vies = l==='facile'?6:l==='difficile'?2:3; penaliteVie = l==='facile'?0.5:l==='difficile'?1.5:1;
+        window.viesMax = l==='facile'?6:l==='difficile'?2:3; vies = window.viesMax;
+        penaliteVie = l==='facile'?0.5:l==='difficile'?1.5:1;
         if (affichageVies) affichageVies.textContent = "❤️".repeat(vies); document.getElementById('btn-suivant').click();
     }));
 
@@ -129,7 +130,7 @@
     window.perdreVie = function() {
         if (vies > 0) vies--;
         if (affichageVies) {
-            affichageVies.textContent = "❤️".repeat(vies) + "🖤".repeat(3 - vies);
+            affichageVies.textContent = "❤️".repeat(vies) + "🖤".repeat((window.viesMax || 3) - vies);
         }
        if (vies === 0) {
             console.log("GAME OVER !");
@@ -283,9 +284,9 @@
     if (btnPause) btnPause.addEventListener('click', () => { if (window.togglePause) window.togglePause(); });
     if (btnReprendre) btnReprendre.addEventListener('click', () => { if (window.togglePause) window.togglePause(); });
    if (btnRecommencer) btnRecommencer.addEventListener('click', () => { 
-        vies = 3; 
-        tempsRestant = 600; 
-        if (affichageVies) affichageVies.textContent = "❤️❤️❤️";
+        vies = window.viesMax || 3; 
+        tempsRestant = vies === 6 ? 720 : (vies === 2 ? 480 : 600); 
+        if (affichageVies) affichageVies.textContent = "❤️".repeat(vies);
         document.getElementById('modal-fin')?.classList.add('cache');
         if (window.bloquerControles3D) window.bloquerControles3D(false);
         demarrerChrono();
