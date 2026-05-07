@@ -281,16 +281,18 @@
     const btnRecommencer = document.getElementById('btn-recommencer');
     const btnQuitterList = document.querySelectorAll('.btn-quitter');
 
-    if (btnPause) btnPause.addEventListener('click', () => { if (window.togglePause) window.togglePause(); });
-    if (btnReprendre) btnReprendre.addEventListener('click', () => { if (window.togglePause) window.togglePause(); });
+    if (btnPause) btnPause.addEventListener('click', () => { window.jouerSFX('/sounds/pause.mp3'); if (window.togglePause) window.togglePause(); });
+    if (btnReprendre) btnReprendre.addEventListener('click', () => { window.jouerSFX('/sounds/clic.mp3'); if (window.togglePause) window.togglePause(); });
    if (btnRecommencer) btnRecommencer.addEventListener('click', () => { 
+        window.jouerSFX('/sounds/clic.mp3');
         vies = window.viesMax || 3; 
-        tempsRestant = vies === 6 ? 720 : (vies === 2 ? 480 : 600); 
+        tempsRestant = vies === 6 ? 720 : (vies === 2 ? 480 : 600);
         if (affichageVies) affichageVies.textContent = "❤️".repeat(vies);
         document.getElementById('modal-fin')?.classList.add('cache');
         if (window.bloquerControles3D) window.bloquerControles3D(false);
         demarrerChrono();
         if (window.resetCamera) window.resetCamera(); // Téléportation
+        if (window.ambiance && window.ambiance.paused) window.ambiance.play(); // 🎵 RELANCE LA MUSIQUE
     });
     btnQuitterList.forEach(btn => btn.addEventListener('click', () => location.reload()));
 
@@ -340,8 +342,7 @@
         const modalFin = document.getElementById('modal-fin');
         
         if (window.ambiance) window.ambiance.pause(); // Coupe le Jukebox
-        if (victoire) window.jouerSFX('/sounds/victoire_final.mp3', 1.0);
-        else window.jouerSFX('/sounds/game_over.mp3', 1.0);
+        window.jouerSFX(victoire ? '/sounds/victoire_final.mp3' : '/sounds/game_over.mp3', 1.0);
         
         if (titreFin) titreFin.innerHTML = victoire ? "<span style='color:#2ed573'>👑 VICTOIRE !</span>" : "<span style='color:#ff4757'>💀 GAME OVER</span>";
         if (texteFin) texteFin.textContent = victoire ? "Vous avez trouvé tous les objets magiques !" : "Vous n'avez plus de vies ou le temps est écoulé...";
