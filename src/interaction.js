@@ -339,6 +339,10 @@
         const texteFin = document.getElementById('texte-fin');
         const modalFin = document.getElementById('modal-fin');
         
+        if (window.ambiance) window.ambiance.pause(); // Coupe le Jukebox
+        if (victoire) window.jouerSFX('/sounds/victoire_final.mp3', 1.0);
+        else window.jouerSFX('/sounds/game_over.mp3', 1.0);
+        
         if (titreFin) titreFin.innerHTML = victoire ? "<span style='color:#2ed573'>👑 VICTOIRE !</span>" : "<span style='color:#ff4757'>💀 GAME OVER</span>";
         if (texteFin) texteFin.textContent = victoire ? "Vous avez trouvé tous les objets magiques !" : "Vous n'avez plus de vies ou le temps est écoulé...";
         if (modalFin) modalFin.classList.remove('cache');
