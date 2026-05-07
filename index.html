@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="/src/stylisation.css" />
     <link rel="stylesheet" href="/src/style.css" />
     <link rel="icon" type="image/png" href="/favicon_disney.png" />
-    <script src="//cdn.jsdelivr.net/npm/eruda"></script>
   </head>
   <body>
     <div id="webgl-container">
@@ -22,32 +21,32 @@
     <div id="ecran-chargement">
       <div id="galerie-personnages">
         <img
-          src="/public/pictures/lezard.png"
+          src="/pictures/lezard.png"
           class="perso-flottant pos-1"
           alt="Lézard"
         />
         <img
-          src="/public/pictures/olaf.png"
+          src="/pictures/olaf.png"
           class="perso-flottant pos-2"
           alt="Olaf"
         />
         <img
-          src="/public/pictures/stitch.png"
+          src="/pictures/stitch.png"
           class="perso-flottant pos-3"
           alt="Stitch"
         />
         <img
-          src="/public/pictures/nemo.png"
+          src="/pictures/nemo.png"
           class="perso-flottant pos-4"
           alt="Nemo"
         />
         <img
-          src="/public/pictures/vanellope.png"
+          src="/pictures/vanellope.png"
           class="perso-flottant pos-5"
           alt="Vanellope"
         />
         <img
-          src="/public/pictures/mike.png"
+          src="/pictures/mike.png"
           class="perso-flottant pos-6"
           alt="Mike"
         />
@@ -55,7 +54,7 @@
       <div class="contenu-chargement">
         <div class="cercle-image">
           <img
-            src="/public/pictures/chateau_disney.jpg"
+            src="/pictures/chateau_disney.jpg"
             alt="Disney Magie"
             class="image-ronde"
             id="logo-loader"
@@ -94,7 +93,7 @@
       <video
         id="video-ps2"
         class="cache"
-        src="/public/pictures/video-ps2.mp4"
+        src="/pictures/video-ps2.mp4"
         style="
           position: fixed;
           top: 0;
@@ -135,12 +134,12 @@
               </p>
             </div>
             <div class="etape-tuto" id="etape-2">
-              <h2>Les Règles</h2>
-              <p>
-                Attention, le temps presse ! Vous disposez d'un chronomètre et
-                de seulement <span class="vies">❤️❤️❤️</span> (3 vies). Chaque
-                mauvaise réponse vous rapproche du Game Over.
-              </p>
+              <h2>Niveau de difficultés</h2>
+              <div class="flex-choix">
+                <button class="btn-diff facile" data-lvl="facile">🌱 Facile</button>
+                <button class="btn-diff normal" data-lvl="normal">⚖️ Normal</button>
+                <button class="btn-diff hard" data-lvl="difficile">🔥 Hard</button>
+              </div>
             </div>
             <div class="etape-tuto" id="etape-3">
               <h2>Le Score</h2>
@@ -347,6 +346,25 @@
             />
           </div>
         </div>
+
+       <div class="param-audio" style="flex-direction:column; align-items:flex-start; margin-top:15px; border-top:1px solid rgba(255,215,0,0.2); padding-top:15px;">
+            <label style="margin-bottom:8px;">📻 Jukebox Magique</label>
+            <select id="select-jukebox" style="width:100%; padding:10px; background:rgba(0,0,0,0.8); color:white; border:1px solid var(--or-disney); border-radius:8px; outline:none; font-family:inherit; font-size:1rem; cursor:pointer;">
+              <option value="disney.mp3">✨ Disney Classique</option>
+              <option value="sims2.mp3">💎 Sims 2 Theme</option>
+              <option value="dsi.mp3">🛍️ Nintendo DSi Shop</option>
+              <option value="mario64.mp3">🌊 Dire Dire Docks (M64)</option>
+              <option value="pokerface.mp3">🃏 Lady Gaga - Poker Face</option>
+              <option value="breakmysoul.mp3">🪩 Beyoncé - BREAK MY SOUL</option>
+              <option value="crazyinlove.mp3">👑 Beyoncé - Crazy In Love</option>
+              <option value="streets.mp3">🌆 Doja Cat - Streets</option>
+              <option value="sayso.mp3">🛼 Doja Cat - Say So</option>
+              <option value="sade1.mp3">🎷 Sade - Smooth Operator</option>
+              <option value="sade2.mp3">🏹 Sade - Like a Tattoo</option>
+              <option value="sade3.mp3">🍷 Sade - Is It A Crime</option>
+              <option value="tears.mp3">🎹 Tears For Fears</option>
+            </select>
+          </div>
 
         <div class="modal-actions-colonne">
           <button id="btn-reprendre" class="bouton-magique">

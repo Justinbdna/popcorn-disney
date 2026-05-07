@@ -104,6 +104,13 @@
     let vies = 3;
     let tempsRestant = 600; 
     let intervalChrono;
+    
+    let penaliteVie = 1;
+    document.querySelectorAll('.btn-diff').forEach(b => b.addEventListener('click', e => {
+        let l = e.target.dataset.lvl; tempsRestant = l==='facile'?720:l==='difficile'?480:600;
+        vies = l==='facile'?6:l==='difficile'?2:3; penaliteVie = l==='facile'?0.5:l==='difficile'?1.5:1;
+        if (affichageVies) affichageVies.textContent = "❤️".repeat(vies); document.getElementById('btn-suivant').click();
+    }));
 
     window.initialiserHUD = function() {
         if (hud) hud.classList.remove('cache');
@@ -305,6 +312,12 @@
             window.jouerSFX('/sounds/clic.mp3', 0.5); 
         });
     }
+    const selectJukebox = document.getElementById('select-jukebox');
+    if (selectJukebox) {
+        selectJukebox.addEventListener('change', (e) => {
+            if (window.changerMusique) window.changerMusique(e.target.value);
+        });
+    }
 
    // Synchronisation de l'UI avec l'état de pause global
     window.ui_syncPause = () => {
@@ -336,8 +349,14 @@
         if (window.ambiance) window.ambiance.volume = window.isRetroMode ? 0 : window.audioState.volumeMusique;
         const vid = document.getElementById("video-ps2");
         if (!vid) return;
-        if (window.isRetroMode) { vid.classList.remove("cache"); vid.currentTime = 0; vid.play(); vid.onended = () => vid.classList.add("cache"); }
-        else { vid.pause(); vid.classList.add("cache"); }
+        if (window.isRetroMode) { 
+            vid.classList.remove("cache"); vid.currentTime = 0; vid.play(); 
+            vid.onended = () => { vid.classList.add("cache"); if (window.ambiance) window.ambiance.volume = window.audioState.volumeMusique; }; 
+        }
+        else { vid.pause(); vid.classList.add("cache"); if (window.ambiance) window.ambiance.volume = window.audioState.volumeMusique; }
     };
-
+    window.changerMusique = (nomFichier) => {
+        if (!window.ambiance) return;
+        window.ambiance.pause(); window.ambiance.src = `/sounds/${nomFichier}`; window.ambiance.play();
+    };
 })();

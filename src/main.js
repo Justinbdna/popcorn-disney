@@ -5,8 +5,6 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import GUI from "lil-gui";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import Stats from "three/examples/jsm/libs/stats.module.js";
-import { injectSpeedInsights } from "@vercel/speed-insights";
-import { inject } from "@vercel/analytics";
 import { disneyData } from "./disneyData.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import nipplejs from "nipplejs";
@@ -62,9 +60,10 @@ const padMobile = { x: 0, y: 0, actif: false };
 let objetActif = null;
 let renduAutorise = false; // Bloque le rendu GPU pendant le chargement
 window.activerModeRetro = () => {
-  if (window.easterEggDebloque) return;
-  window.easterEggDebloque = true; renderer.setPixelRatio(0.37); canvas.classList.add('mode-retro');
-  console.log("🎮 CHEAT CODE ACTIVÉ !"); if (window.ui_AnimationPS2) window.ui_AnimationPS2();
+  window.easterEggDebloque = !window.easterEggDebloque;
+  renderer.setPixelRatio(window.easterEggDebloque ? 0.37 : (isMobile ? 1 : Math.min(window.devicePixelRatio, 2)));
+  window.easterEggDebloque ? canvas.classList.add('mode-retro') : canvas.classList.remove('mode-retro');
+  if (window.ui_AnimationPS2) window.ui_AnimationPS2();
 };
 
 const touches = { z: false, q: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
@@ -73,14 +72,9 @@ window.deselectionnerObjet = () => {
   objetActif = null;
   const direction = new THREE.Vector3();
   camera.getWorldDirection(direction);
-  controls.target.copy(camera.position).add(direction.multiplyScalar(0.1)); // 🛑 FIX : Recentre la cible pile devant les yeux (FPS)
+  controls.target.copy(camera.position).add(direction.multiplyScalar(0.1));
   controls.update();
-  
-window.resetCamera = () => {
-  camera.position.set(0, 23, 5);
-  controls.target.set(0, 23, 4.9);
-  controls.update();
-};
+
   if (typeof transformControls !== 'undefined' && transformControls) transformControls.detach();
   if (window.bloquerControles3D) window.bloquerControles3D(false);
   document.getElementById('modal-quiz')?.classList.add('cache');
@@ -88,6 +82,12 @@ window.resetCamera = () => {
     dossierSelection.destroy();
     dossierSelection = typeof gui !== 'undefined' ? gui?.addFolder("Aucun objet sélectionné") : null;
   }
+}; // 🛑 LA VRAIE FERMETURE EST ICI
+
+window.resetCamera = () => {
+  camera.position.set(0, 23, 5);
+  controls.target.set(0, 23, 4.9);
+  controls.update();
 };
 window.addEventListener("keyup", (e) => {
   if (touches.hasOwnProperty(e.key)) touches[e.key] = false;
@@ -230,7 +230,7 @@ const chargerTout = async () => {
 
   // --- CHARGEMENT DES OBJETS DISNEY ---
   for (const item of disneyData) {
-    const lod = new THREE.LOD();
+    const lod = new THREE.Group(); // 🛑 FIX : Un Groupe simple, zéro plantage.
     lod.name = item.id;
     lod.userData = { ...item };
     if (item.flotte) Object.assign(lod.userData, { flotteActive: true, baseY: item.y || 0, vitesse: item.vitesse || 0.8, amplitude: item.amplitude || 0.08 });
@@ -250,13 +250,12 @@ const chargerTout = async () => {
       hitbox.position.copy(center);
       hitbox.name = lod.name; hitbox.userData = lod.userData;
       
-      lod.addLevel(gltf.scene, 0);
+      lod.add(gltf.scene); // 🛑 FIX : Ajout direct
       lod.add(hitbox); objetsCliquables.push(hitbox);
-    lod.addLevel(new THREE.Object3D(), 200); // LOD de secours
       scene.add(lod);
       lodsScene.push(lod);
     } catch (error) { console.error("❌ Erreur sur :", item.id, error); }
-    await new Promise(resolve => setTimeout(resolve, 150)); // 🫁 Respiration VRAM Safari
+    await new Promise(resolve => setTimeout(resolve, 10)); // 🫁 Micro-respiration VRAM optimisée
   }
 
   dracoLoader.dispose();
@@ -668,7 +667,6 @@ const animate = () => {
     }
   });
 
-  lodsScene.forEach(lod => lod.update(camera));
   // 🛑 FIX RADICAL : On cloue le joueur. OrbitControls ne peut plus te faire voler.
   if (!objetActif) {
     const decalageY = hauteurJoueur - camera.position.y;
