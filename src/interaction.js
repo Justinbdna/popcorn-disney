@@ -308,8 +308,8 @@
         sliderMusique.addEventListener('input', (e) => {
             const vol = parseFloat(e.target.value);
             window.audioState.volumeMusique = vol;
-            if (window.ambiance) window.ambiance.volume = vol; // Modifie la musique en temps réel !
-            if (window.musiquePause) window.musiquePause.volume = vol; // 🛑 FIX : Applique aussi au menu pause
+            if (window.ambiance) window.ambiance.volume = vol; 
+            if (window.musiquePause) window.musiquePause.volume = vol; // Modifie aussi la musique de pause !
         });
     }
 
@@ -329,17 +329,18 @@
 
    // Synchronisation de l'UI avec l'état de pause global
     window.ui_syncPause = () => {
-        if (!window.musiquePause) { window.musiquePause = new Audio('/sounds/pause.mp3'); window.musiquePause.loop = true; }
         const modalPause = document.getElementById('modal-pause');
         if (modalPause) {
             if (window.enPause) {
                 modalPause.classList.remove('cache');
-                if (window.ambiance) window.ambiance.pause();
-                window.musiquePause.volume = window.audioState.volumeMusique; window.musiquePause.play();
+                if (window.ambiance) window.ambiance.pause(); // Coupe le Jukebox
+                if (!window.musiquePause) { window.musiquePause = new Audio('/sounds/pause.mp3'); window.musiquePause.loop = true; }
+                window.musiquePause.volume = window.audioState.volumeMusique;
+                window.musiquePause.play().catch(e => console.warn(e)); // Lance la musique de pause
             } else {
                 modalPause.classList.add('cache');
-                window.musiquePause.pause();
-                if (window.ambiance && !window.audioState.muteRetro) window.ambiance.play();
+                if (window.musiquePause) window.musiquePause.pause(); // Coupe la musique de pause
+                if (window.ambiance && !window.isRetroMode) window.ambiance.play().catch(e => console.warn(e)); // Relance le Jukebox
             }
         }
     };
