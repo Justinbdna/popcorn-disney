@@ -230,9 +230,9 @@ const chargerTout = async () => {
 
   // --- CHARGEMENT DES OBJETS DISNEY ---
   for (const item of disneyData) {
-    const lod = new THREE.Group(); // 🛑 FIX : Un Groupe simple, zéro plantage.
+    const lod = new THREE.LOD(); // 🛑 FIX : Le LOD agit comme un interrupteur de visibilité
     lod.name = item.id;
-    lod.userData = { ...item };
+    
     if (item.flotte) Object.assign(lod.userData, { flotteActive: true, baseY: item.y || 0, vitesse: item.vitesse || 0.8, amplitude: item.amplitude || 0.08 });
     lod.position.set(item.x || 0, item.y || 0, item.z || 0);
     lod.rotation.set(item.rotX || 0, item.rotY || 0, item.rotZ || 0);
@@ -250,12 +250,15 @@ const chargerTout = async () => {
       hitbox.position.copy(center);
       hitbox.name = lod.name; hitbox.userData = lod.userData;
       
-      lod.add(gltf.scene); // 🛑 FIX : Ajout direct
+      lod.addLevel(gltf.scene, 0); 
+      lod.addLevel(new THREE.Object3D(), isMobile ? 35 : 200); // 🛑 MAGIE : Modèle déchargé si loin !
       lod.add(hitbox); objetsCliquables.push(hitbox);
       scene.add(lod);
       lodsScene.push(lod);
+
+      if (isMobile) THREE.Cache.clear(); // 🧹 PURGE LA RAM
     } catch (error) { console.error("❌ Erreur sur :", item.id, error); }
-    await new Promise(resolve => setTimeout(resolve, 10)); // 🫁 Micro-respiration VRAM optimisée
+    await new Promise(resolve => setTimeout(resolve, isMobile ? 50 : 10)); // 🫁 Respiration renforcée
   }
 
   dracoLoader.dispose();
@@ -263,8 +266,8 @@ const chargerTout = async () => {
 // 💾 CHARGEMENT SAUVEGARDE
   const saves = JSON.parse(localStorage.getItem("popcorn_save")) || [];
   // --- GESTION DE L'INTERFACE À LA FIN ABSOLUE DU CHARGEMENT ---
-  console.log("✅ Tous les modèles sont chargés. Compilation GPU...");
-  renderer.compile(scene, camera); // Compilation silencieuse
+  console.log("✅ Tous les modèles sont chargés.");
+  if (!isMobile) renderer.compile(scene, camera); // Évite le crash RAM mobile
   
   if (MODE_DEV) {
     if (isMobile) { const s = document.createElement('script'); s.src="//cdn.jsdelivr.net/npm/eruda"; document.head.appendChild(s); s.onload=()=>eruda.init(); }
@@ -673,7 +676,9 @@ const animate = () => {
     camera.position.y = hauteurJoueur;
     controls.target.y += decalageY;
   }
-  if (renduAutorise) renderer.render(scene, camera); 
+  
+  lodsScene.forEach(l => l.update(camera)); // 👁️ Désactive les objets lointains du GPU
+  if (renduAutorise) renderer.render(scene, camera);
   if (stats) {
     stats.update();
     perfData.polygones = renderer.info.render.triangles;
