@@ -251,7 +251,7 @@ const chargerTout = async () => {
       hitbox.name = lod.name; hitbox.userData = lod.userData;
       
       lod.addLevel(gltf.scene, 0); 
-      lod.addLevel(new THREE.Object3D(), isMobile ? 35 : 200); // 🛑 MAGIE : Modèle déchargé si loin !
+      lod.addLevel(new THREE.Object3D(), isMobile ? 90 : 200); // 🛑 MAGIE : Modèle déchargé si loin !
       lod.add(hitbox); objetsCliquables.push(hitbox);
       scene.add(lod);
       lodsScene.push(lod);
