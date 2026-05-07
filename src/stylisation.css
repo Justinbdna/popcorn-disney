@@ -468,24 +468,30 @@ html {
 
   /* HUD - Protection encoche iPhone (Safe Area) */
   #hud {
-    padding: env(safe-area-inset-top, 10px) 10px 5px 10px;
+    padding: env(safe-area-inset-top, 10px) 5px 5px 5px;
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 8px;
+    gap: 5px;
   }
   .hud-section {
-    gap: 8px;
-    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
   }
   .hud-bulle {
-    font-size: 1rem;
-    padding: 8px 15px;
+    font-size: 0.85rem;
+    padding: 6px 10px;
   }
   .chrono-container {
-    font-size: 1.2rem;
+    font-size: 0.95rem;
+    padding: 6px 10px;
   }
-
+  .bouton-icone {
+    width: 38px;
+    height: 38px;
+    font-size: 1.1rem;
+  }
   /* Modale & Quiz - Scroll automatique et ajustement tactile */
   .modal-contenu {
     width: 92%;

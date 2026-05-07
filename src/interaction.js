@@ -58,9 +58,13 @@
             etapeActuelle++;
             if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.add('active');
 
-            if (etapeActuelle === etapes.length - 1) {
-                btnSuivant.classList.add('cache');
+            if (etapeActuelle === 2) {
+                btnSuivant.style.display = 'none'; // Cache le bouton pour l'écran difficulté
+            } else if (etapeActuelle === etapes.length - 1) {
+                btnSuivant.style.display = 'none';
                 setTimeout(() => btnRentrer.classList.remove('cache'), 300);
+            } else {
+                btnSuivant.style.display = 'inline-block';
             }
         });
     }
