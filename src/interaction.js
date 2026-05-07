@@ -59,7 +59,7 @@
             if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.add('active');
 
             if (etapeActuelle === 2) {
-                btnSuivant.style.display = 'none'; // Cache le bouton pour l'écran difficulté
+                btnSuivant.style.display = 'none'; // 🛑 FIX : Plus de bouton "Suivant" ici
             } else if (etapeActuelle === etapes.length - 1) {
                 btnSuivant.style.display = 'none';
                 setTimeout(() => btnRentrer.classList.remove('cache'), 300);

@@ -677,7 +677,12 @@ const animate = () => {
     controls.target.y += decalageY;
   }
   
-  lodsScene.forEach(l => l.update(camera)); // 👁️ Désactive les objets lointains du GPU
+  // 🚀 OPTI AGRESSIVE : On coupe littéralement la visibilité des objets loin
+  lodsScene.forEach(l => {
+    l.update(camera); 
+    if (isMobile) l.visible = (l.position.distanceTo(camera.position) < 80);
+  });
+  
   if (renduAutorise) renderer.render(scene, camera);
   if (stats) {
     stats.update();
