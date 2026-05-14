@@ -60,6 +60,13 @@ const padMobile = { x: 0, y: 0, actif: false };
 let objetActif = null;
 let renduAutorise = false; // Bloque le rendu GPU pendant le chargement
 
+window.activerModeRetro = () => {
+  window.easterEggDebloque = !window.easterEggDebloque;
+  renderer.setPixelRatio(window.easterEggDebloque ? 0.18 : (isMobile ? 1 : Math.min(window.devicePixelRatio, 2)));
+  window.easterEggDebloque ? canvas.classList.add('mode-retro') : canvas.classList.remove('mode-retro');
+  if (window.ui_AnimationPS2) window.ui_AnimationPS2();
+};
+
 const touches = { z: false, q: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
 
 window.addEventListener("keyup", (e) => {
