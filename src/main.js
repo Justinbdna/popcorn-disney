@@ -224,6 +224,7 @@ dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5
 dracoLoader.setWorkerLimit(1);
 loader.setDRACOLoader(dracoLoader);
 
+
 const chargerTout = async () => {
   manager.itemStart("chargement_sequentiel");
 
@@ -271,7 +272,7 @@ const chargerTout = async () => {
       hitbox.position.copy(center);
       hitbox.name = lod.name; hitbox.userData = lod.userData;
       
-      lod.addLevel(gltf.scene, 0); 
+      lod.addLevel(gltf.scene, 0);
       // 🛑 OPTI TIERING : La distance s'adapte à la puissance de la carte graphique !
       lod.addLevel(new THREE.Object3D(), window.lodDist);
       lod.add(hitbox); objetsCliquables.push(hitbox);
