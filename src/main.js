@@ -251,7 +251,8 @@ const chargerTout = async () => {
       hitbox.name = lod.name; hitbox.userData = lod.userData;
       
       lod.addLevel(gltf.scene, 0); 
-      lod.addLevel(new THREE.Object3D(), isMobile ? 90 : 200); // 🛑 MAGIE : Modèle déchargé si loin !
+      // 🛑 OPTI : 80m sur mobile, 120m sur PC (idéal pour PC peu puissants)
+      lod.addLevel(new THREE.Object3D(), isMobile ? 80 : 120); 
       lod.add(hitbox); objetsCliquables.push(hitbox);
       scene.add(lod);
       lodsScene.push(lod);
@@ -579,9 +580,11 @@ const animate = () => {
       if (indexBoutonFocus === -1 && boutons.length > 0) indexBoutonFocus = 0; 
       if (boutons[indexBoutonFocus]) boutons[indexBoutonFocus].click();
     }
-    // 3. Ou bien tir du Raycaster 3D classique
+    // 3. Ou bien tir du Raycaster 3D classique (Fix PointerEvent manette)
     else {
-      canvas.dispatchEvent(new MouseEvent("click", { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2, bubbles: true }));
+      const xc = window.innerWidth / 2, yc = window.innerHeight / 2;
+      canvas.dispatchEvent(new PointerEvent("pointerdown", { clientX: xc, clientY: yc }));
+      canvas.dispatchEvent(new PointerEvent("pointerup", { clientX: xc, clientY: yc }));
     }
   }
 

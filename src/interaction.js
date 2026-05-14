@@ -145,20 +145,9 @@
     function demarrerChrono() {
         clearInterval(intervalChrono);
         intervalChrono = setInterval(() => {
-            if (window.enPause) return; // 🛑 FIX : Le minuteur vérifie la pause CHAQUE seconde
-            if (tempsRestant > 0) {
-                tempsRestant--;
-                let m = Math.floor(tempsRestant / 60).toString().padStart(2, '0');
-                let s = (tempsRestant % 60).toString().padStart(2, '0');
-                if (affichageChrono) {
-                    affichageChrono.textContent = `${m}:${s}`;
-                    if(tempsRestant <= 30) affichageChrono.style.color = "#ff4757";
-                }
-           } else {
-                clearInterval(intervalChrono);
-                console.log("TEMPS ÉCOULÉ !");
-                if (window.afficherFin) window.afficherFin(false);
-            }
+            if (window.enPause) return; 
+            if (affichageChrono) affichageChrono.style.display = "none"; 
+            // 🧘🏽 Mode contemplatif : Le temps ne s'écoule plus, on ne fait plus rien ici.
         }, 1000);
     }
 
@@ -356,8 +345,10 @@
         if (window.ambiance) window.ambiance.pause(); // Coupe le Jukebox
         window.jouerSFX(victoire ? '/sounds/victoire_final.mp3' : '/sounds/game_over.mp3', 1.0);
         
-        if (titreFin) titreFin.innerHTML = victoire ? "<span style='color:#2ed573'>👑 VICTOIRE !</span>" : "<span style='color:#ff4757'>💀 GAME OVER</span>";
-        if (texteFin) texteFin.textContent = victoire ? "Vous avez trouvé tous les objets magiques !" : "Vous n'avez plus de vies ou le temps est écoulé...";
+        const best = Math.max(score, localStorage.getItem('dis_best') || 0);
+        localStorage.setItem('dis_best', best);
+        if (titreFin) titreFin.innerHTML = victoire ? "<span style='color:#2ed573'>👑 VICTOIRE !</span>" : "<span style='color:#ff4757'>💀 FIN DE PARTIE</span>";
+        if (texteFin) texteFin.innerHTML = `Ton Score : ${score} <br><br>🏆 Meilleur Score : ${best}`;
         if (modalFin) modalFin.classList.remove('cache');
     };
     window.isRetroMode = false;
