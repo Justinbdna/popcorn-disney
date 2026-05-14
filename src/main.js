@@ -25,6 +25,16 @@ const scene = new THREE.Scene();
 const objetsCliquables = [];
 const lodsScene = []; // Tableau global pour les LODs
 
+// --- SKYBOX (La vue par les fenêtres) ---
+// ⚠️ Assure-toi d'avoir une image panoramique dans public/pictures/ciel.jpg
+const textureLoader = new THREE.TextureLoader(); // 🛑 FIX : Plus de 'manager' ici !
+textureLoader.load('/pictures/ciel.jpg', (texture) => {
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  scene.background = texture;
+  scene.environment = texture; // Donne aussi de jolis reflets réalistes
+});
+
 // 🛑 FIX : On force le FOV à 75 partout pour éviter l'effet "zoom énorme" en mode portrait
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 23, 5);
@@ -214,12 +224,13 @@ dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5
 dracoLoader.setWorkerLimit(1);
 loader.setDRACOLoader(dracoLoader);
 
+
 const chargerTout = async () => {
   manager.itemStart("chargement_sequentiel");
 
   // --- CHARGEMENT DE LA MAISON ---
   try {
-    const gltfMaison = await loader.loadAsync("/assets/MaisonV2.glb");
+    const gltfMaison = await loader.loadAsync("/assets/MaisonV3.glb");
     const maison = gltfMaison.scene;
     maison.scale.set(15, 15, 15);
     maison.name = "Maison";
@@ -261,7 +272,7 @@ const chargerTout = async () => {
       hitbox.position.copy(center);
       hitbox.name = lod.name; hitbox.userData = lod.userData;
       
-      lod.addLevel(gltf.scene, 0); 
+      lod.addLevel(gltf.scene, 0);
       // 🛑 OPTI TIERING : La distance s'adapte à la puissance de la carte graphique !
       lod.addLevel(new THREE.Object3D(), window.lodDist);
       lod.add(hitbox); objetsCliquables.push(hitbox);
@@ -461,7 +472,10 @@ window.objetTrouve = (idObjet) => {
     const saves = JSON.parse(localStorage.getItem("popcorn_save")) ||[];
     if (!saves.includes(idObjet)) localStorage.setItem("popcorn_save", JSON.stringify([...saves, idObjet]));
     const idxLod = lodsScene.findIndex(l => l.name === idObjet);
-    if (idxLod > -1) { lodsScene.splice(idxLod, 1); if (lodsScene.length === 0) console.log("👑 VICTOIRE !"); }
+    if (idxLod > -1) { 
+      lodsScene.splice(idxLod, 1); 
+      if (lodsScene.length === 0 && window.afficherFin) window.afficherFin(true); // 🏆 DÉCLENCHE LA FIN !
+    }
   }
 };
 
