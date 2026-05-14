@@ -274,14 +274,8 @@
     if (btnReprendre) btnReprendre.addEventListener('click', () => { window.jouerSFX('/sounds/clic.mp3'); if (window.togglePause) window.togglePause(); });
    if (btnRecommencer) btnRecommencer.addEventListener('click', () => { 
         window.jouerSFX('/sounds/clic.mp3');
-        vies = window.viesMax || 3; 
-        tempsRestant = vies === 6 ? 720 : (vies === 2 ? 480 : 600);
-        if (affichageVies) affichageVies.textContent = "❤️".repeat(vies);
-        document.getElementById('modal-fin')?.classList.add('cache');
-        if (window.bloquerControles3D) window.bloquerControles3D(false);
-        demarrerChrono();
-        if (window.resetCamera) window.resetCamera(); // Téléportation
-        if (window.ambiance && window.ambiance.paused) window.ambiance.play(); // 🎵 RELANCE LA MUSIQUE
+        localStorage.removeItem("popcorn_save"); // 🛑 FIX : Oublie les objets trouvés
+        location.reload(); // 🛑 FIX : Recharge la page (purge la RAM et fait respawn les objets)
     });
     btnQuitterList.forEach(btn => btn.addEventListener('click', () => location.reload()));
 

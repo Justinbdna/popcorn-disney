@@ -12,7 +12,7 @@ import nipplejs from "nipplejs";
 // =========================================================================
 // 🛠️ 1. CONFIGURATION GLOBALE ET DÉVELOPPEMENT
 // =========================================================================
-const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
+const MODE_DEV = false; // Mets sur 'false' pour le rendu final !
 window.easterEggDebloque = false;
 
 // Détection mobile immédiate
@@ -493,6 +493,9 @@ if (MODE_DEV) {
   debugManette.style.cssText = "position:fixed;top:10px;left:10px;background:rgba(0,0,0,0.8);color:lime;padding:10px;font-family:monospace;z-index:99999;pointer-events:none;";
   document.body.appendChild(debugManette);
 }
+// --- OPTIMISATION ANTI-CRASH : RADAR DE VISION ---
+const frustum = new THREE.Frustum();
+const projScreenMatrix = new THREE.Matrix4();
 
 const animate = () => {
   window.requestAnimationFrame(animate); 
@@ -691,10 +694,17 @@ const animate = () => {
     controls.target.y += decalageY;
   }
   
-  // 🚀 OPTI AGRESSIVE : On coupe littéralement la visibilité des objets loin
+  // 🚀 OPTI AGRESSIVE ANTI-CRASH : Cône de vision + Distance adaptative
+  camera.updateMatrixWorld();
+  projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+  frustum.setFromProjectionMatrix(projScreenMatrix);
+
   lodsScene.forEach(l => {
     l.update(camera); 
-    if (isMobile) l.visible = (l.position.distanceTo(camera.position) < 80);
+    if (isMobile) {
+      // 🛑 L'objet ne s'affiche QUE s'il est proche ET dans ton champ de vision
+      l.visible = (l.position.distanceTo(camera.position) < window.lodDist) && frustum.intersectsObject(l);
+    }
   });
   
   if (renduAutorise) renderer.render(scene, camera);

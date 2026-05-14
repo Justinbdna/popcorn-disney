@@ -827,3 +827,7 @@ html {
     font-size: 1.1rem;
   }
 }
+/* 🛑 FIX : Désintégration totale de la bulle chrono sur le HUD */
+.chrono-container, #chrono-affichage {
+    display: none !important;
+}
