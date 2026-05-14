@@ -230,7 +230,7 @@ const chargerTout = async () => {
 
   // --- CHARGEMENT DE LA MAISON ---
   try {
-    const gltfMaison = await loader.loadAsync("/assets/MaisonV2.glb");
+    const gltfMaison = await loader.loadAsync("/assets/MaisonV3.glb");
     const maison = gltfMaison.scene;
     maison.scale.set(15, 15, 15);
     maison.name = "Maison";
