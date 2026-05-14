@@ -215,13 +215,13 @@
                     const estBonne = (index === data.reponseCorrecte);
 
                     if (estBonne) {
-                        window.jouerSFX('/sounds/succes.mp3', 0.4); // SON DE BONNE RÉPONSE
+                        window.jouerSFX('/sounds/succes.mp3', 0.3); // SON DE BONNE RÉPONSE
                         
                         btn.classList.add('correct');
                         DOM.feedback.textContent = data.anecdoteSucces || "Bonne réponse !";
                         DOM.feedback.classList.add('succes' );
                     } else {
-                       window.jouerSFX('/sounds/erreur.mp3', 0.4); // SON DE MAUVAISE RÉPONSE
+                       window.jouerSFX('/sounds/erreur.mp3', 0.3); // SON DE MAUVAISE RÉPONSE
                         
                         btn.classList.add('incorrect');
                         DOM.feedback.textContent = data.anecdoteEchec || "Mauvaise réponse !";
