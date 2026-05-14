@@ -39,8 +39,9 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 window.lodDist = isMobile ? 80 : 120; // Valeur par défaut
 const ext = renderer.getContext().getExtension('WEBGL_debug_renderer_info');
 const gpu = ext ? renderer.getContext().getParameter(ext.UNMASKED_RENDERER_WEBGL).toLowerCase() : '';
-if (gpu.includes('intel') || gpu.includes('mali')) { renderer.setPixelRatio(1); window.lodDist = isMobile ? 50 : 80; }
-else { renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); window.lodDist = isMobile ? 90 : 150; }
+// 🛑 TEMP FIX : Distances augmentées en attendant les vrais modèles décimés (LOD 1)
+if (gpu.includes('intel') || gpu.includes('mali')) { renderer.setPixelRatio(1); window.lodDist = isMobile ? 80 : 130; }
+else { renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); window.lodDist = isMobile ? 130 : 220; }
 renderer.shadowMap.enabled = false; // Désactivé pour sauver la VRAM
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 

@@ -109,12 +109,11 @@
     let tempsRestant = 600; 
     let intervalChrono;
     
-    let penaliteVie = 1;
     document.querySelectorAll('.btn-diff').forEach(b => b.addEventListener('click', e => {
-        let l = e.target.dataset.lvl; tempsRestant = l==='facile'?720:l==='difficile'?480:600;
+        let l = e.target.dataset.lvl; 
         window.viesMax = l==='facile'?6:l==='difficile'?2:3; vies = window.viesMax;
-        penaliteVie = l==='facile'?0.5:l==='difficile'?1.5:1;
-        if (affichageVies) affichageVies.textContent = "❤️".repeat(vies); document.getElementById('btn-suivant').click();
+        if (affichageVies) affichageVies.textContent = "❤️".repeat(vies); 
+        document.getElementById('btn-suivant').click();
     }));
 
     window.initialiserHUD = function() {
@@ -144,11 +143,8 @@
 
     function demarrerChrono() {
         clearInterval(intervalChrono);
-        intervalChrono = setInterval(() => {
-            if (window.enPause) return; 
-            if (affichageChrono) affichageChrono.style.display = "none"; 
-            // 🧘🏽 Mode contemplatif : Le temps ne s'écoule plus, on ne fait plus rien ici.
-        }, 1000);
+        // 🛑 FIX : Cache la boîte complète du chrono, et plus de boucle d'animation !
+        if (affichageChrono && affichageChrono.parentElement) affichageChrono.parentElement.style.display = "none";
     }
 
     // === GESTION DE L'INFOBULLE FLUIDE (LERP) ===
