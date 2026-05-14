@@ -143,8 +143,9 @@
 
     function demarrerChrono() {
         clearInterval(intervalChrono);
-        // 🛑 FIX : Cache la boîte complète du chrono, et plus de boucle d'animation !
-        if (affichageChrono && affichageChrono.parentElement) affichageChrono.parentElement.style.display = "none";
+        // 🛑 FIX RADICAL : Destruction totale de l'élément HTML pour contourner le cache iOS
+        const conteneurCentre = document.querySelector('.hud-centre');
+        if (conteneurCentre) conteneurCentre.remove();
     }
 
     // === GESTION DE L'INFOBULLE FLUIDE (LERP) ===
@@ -214,13 +215,13 @@
                     const estBonne = (index === data.reponseCorrecte);
 
                     if (estBonne) {
-                        window.jouerSFX('/sounds/succes.mp3'); // SON DE BONNE RÉPONSE
+                        window.jouerSFX('/sounds/succes.mp3', 0.3); // SON DE BONNE RÉPONSE
                         
                         btn.classList.add('correct');
                         DOM.feedback.textContent = data.anecdoteSucces || "Bonne réponse !";
-                        DOM.feedback.classList.add('succes');
+                        DOM.feedback.classList.add('succes' );
                     } else {
-                       window.jouerSFX('/sounds/erreur.mp3'); // SON DE MAUVAISE RÉPONSE
+                       window.jouerSFX('/sounds/erreur.mp3', 0.3); // SON DE MAUVAISE RÉPONSE
                         
                         btn.classList.add('incorrect');
                         DOM.feedback.textContent = data.anecdoteEchec || "Mauvaise réponse !";
@@ -313,7 +314,7 @@
             if (window.enPause) {
                 modalPause.classList.remove('cache');
                 if (window.ambiance) window.ambiance.pause(); // Coupe le Jukebox
-                if (!window.musiquePause) { window.musiquePause = new Audio('/sounds/pause.mp3'); window.musiquePause.loop = true; }
+                if (!window.musiquePause) { window.musiquePause = new Audio('/sounds/pause.mp3', 0.5); window.musiquePause.loop = true; }
                 window.musiquePause.volume = window.audioState.volumeMusique;
                 window.musiquePause.play().catch(e => console.warn(e)); // Lance la musique de pause
             } else {

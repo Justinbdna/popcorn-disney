@@ -25,7 +25,8 @@ const scene = new THREE.Scene();
 const objetsCliquables = [];
 const lodsScene = []; // Tableau global pour les LODs
 
-const camera = new THREE.PerspectiveCamera(isMobile ? 90 : 75, window.innerWidth / window.innerHeight, 0.1, 1000);
+// 🛑 FIX : On force le FOV à 75 partout pour éviter l'effet "zoom énorme" en mode portrait
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 23, 5);
 
 const canvas = document.querySelector("#webgl");
@@ -702,8 +703,8 @@ const animate = () => {
   lodsScene.forEach(l => {
     l.update(camera); 
     if (isMobile) {
-      // 🛑 L'objet ne s'affiche QUE s'il est proche ET dans ton champ de vision
-      l.visible = (l.position.distanceTo(camera.position) < window.lodDist) && frustum.intersectsObject(l);
+      // 🛑 FIX : On teste le cône de vision sur la grosse Hitbox (children[2]) pour éviter que l'objet disparaisse trop tôt sur les bords
+      l.visible = (l.position.distanceTo(camera.position) < window.lodDist) && frustum.intersectsObject(l.children[2] || l);
     }
   });
   
