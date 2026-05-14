@@ -143,8 +143,9 @@
 
     function demarrerChrono() {
         clearInterval(intervalChrono);
-        // 🛑 FIX : Cache la boîte complète du chrono, et plus de boucle d'animation !
-        if (affichageChrono && affichageChrono.parentElement) affichageChrono.parentElement.style.display = "none";
+        // 🛑 FIX RADICAL : Destruction totale de l'élément HTML pour contourner le cache iOS
+        const conteneurCentre = document.querySelector('.hud-centre');
+        if (conteneurCentre) conteneurCentre.remove();
     }
 
     // === GESTION DE L'INFOBULLE FLUIDE (LERP) ===
