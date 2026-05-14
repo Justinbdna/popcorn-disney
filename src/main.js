@@ -5,8 +5,6 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import GUI from "lil-gui";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import Stats from "three/examples/jsm/libs/stats.module.js";
-import { injectSpeedInsights } from "@vercel/speed-insights";
-import { inject } from "@vercel/analytics";
 import { disneyData } from "./disneyData.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import nipplejs from "nipplejs";
@@ -14,7 +12,7 @@ import nipplejs from "nipplejs";
 // =========================================================================
 // 🛠️ 1. CONFIGURATION GLOBALE ET DÉVELOPPEMENT
 // =========================================================================
-const MODE_DEV = true; // Mets sur 'false' pour le rendu final !
+const MODE_DEV = false; // Mets sur 'false' pour le rendu final !
 window.easterEggDebloque = false;
 
 // Détection mobile immédiate
@@ -27,13 +25,24 @@ const scene = new THREE.Scene();
 const objetsCliquables = [];
 const lodsScene = []; // Tableau global pour les LODs
 
-const camera = new THREE.PerspectiveCamera(isMobile ? 90 : 75, window.innerWidth / window.innerHeight, 0.1, 1000);
+// 🛑 FIX : On force le FOV à 75 partout pour éviter l'effet "zoom énorme" en mode portrait
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 23, 5);
 
 const canvas = document.querySelector("#webgl");
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile });
+// 🛑 OPTI : Antialias désactivé sur mobile, et on force la VRAIE carte graphique
+const renderer = new THREE.WebGLRenderer({ 
+  canvas: canvas, 
+  antialias: !isMobile, 
+  powerPreference: "high-performance" 
+});
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
+window.lodDist = isMobile ? 80 : 120; // Valeur par défaut
+const ext = renderer.getContext().getExtension('WEBGL_debug_renderer_info');
+const gpu = ext ? renderer.getContext().getParameter(ext.UNMASKED_RENDERER_WEBGL).toLowerCase() : '';
+// 🛑 TEMP FIX : Distances augmentées en attendant les vrais modèles décimés (LOD 1)
+if (gpu.includes('intel') || gpu.includes('mali')) { renderer.setPixelRatio(1); window.lodDist = isMobile ? 80 : 130; }
+else { renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); window.lodDist = isMobile ? 130 : 220; }
 renderer.shadowMap.enabled = false; // Désactivé pour sauver la VRAM
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
@@ -47,9 +56,11 @@ if (isMobile) {
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.listenToKeyEvents(window); // Le canevas écoute enfin la fenêtre entière
 controls.enableDamping = true;
+controls.enableZoom = MODE_DEV; // 🛑 FIX : Empêche le zoom à deux doigts
+controls.enablePan = MODE_DEV;  // 🛑 FIX : Empêche le glissement latéral passe-muraille
 controls.target.y = 23;
 controls.maxPolarAngle = Math.PI / 2 - 0.05;
-controls.minDistance = 2;
+controls.minDistance = 0.1;
 controls.maxDistance = 250;
 controls.update();
 
@@ -59,6 +70,12 @@ controls.update();
 const padMobile = { x: 0, y: 0, actif: false };
 let objetActif = null;
 let renduAutorise = false; // Bloque le rendu GPU pendant le chargement
+window.activerModeRetro = () => {
+  window.easterEggDebloque = !window.easterEggDebloque;
+  renderer.setPixelRatio(window.easterEggDebloque ? 0.37 : (isMobile ? 1 : Math.min(window.devicePixelRatio, 2)));
+  window.easterEggDebloque ? canvas.classList.add('mode-retro') : canvas.classList.remove('mode-retro');
+  if (window.ui_AnimationPS2) window.ui_AnimationPS2();
+};
 
 window.activerModeRetro = () => {
   window.easterEggDebloque = !window.easterEggDebloque;
@@ -69,23 +86,56 @@ window.activerModeRetro = () => {
 
 const touches = { z: false, q: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
 
+window.deselectionnerObjet = () => {
+  objetActif = null;
+  const direction = new THREE.Vector3();
+  camera.getWorldDirection(direction);
+  controls.target.copy(camera.position).add(direction.multiplyScalar(0.1));
+  controls.update();
+
+  if (typeof transformControls !== 'undefined' && transformControls) transformControls.detach();
+  if (window.bloquerControles3D) window.bloquerControles3D(false);
+  document.getElementById('modal-quiz')?.classList.add('cache');
+  if (typeof dossierSelection !== 'undefined' && dossierSelection) {
+    dossierSelection.destroy();
+    dossierSelection = typeof gui !== 'undefined' ? gui?.addFolder("Aucun objet sélectionné") : null;
+  }
+}; // 🛑 LA VRAIE FERMETURE EST ICI
+
+window.resetCamera = () => {
+  camera.position.set(0, 23, 5);
+  controls.target.set(0, 23, 4.9);
+  controls.update();
+};
 window.addEventListener("keyup", (e) => {
   if (touches.hasOwnProperty(e.key)) touches[e.key] = false;
 });
 
 window.addEventListener("keydown", (e) => {
+  window.seqClavier = ((window.seqClavier || "") + e.key).slice(-6);
+  if (window.seqClavier.toLowerCase() === "mickey") window.activerModeRetro();
+  
   if (touches.hasOwnProperty(e.key)) touches[e.key] = true;
   if (e.key === "g") transformControls?.setMode("translate");
   if (e.key === "r") transformControls?.setMode("rotate");
+  if (e.key === "e" || e.key === "E") window.deselectionnerObjet();
   if (e.key === "Escape") {
-    if (transformControls) transformControls.detach();
-    objetActif = null;
-    if (window.bloquerControles3D) window.bloquerControles3D(false);
-    document.getElementById('modal-quiz')?.classList.remove('is-active');
-    dossierSelection?.destroy();
+    if (window.togglePause) window.togglePause(); 
   }
 });
+// =========================================================================
+// Système de pause 
+// =========================================================================
 
+window.enPause = false;
+window.togglePause = () => {
+  window.enPause = !window.enPause;
+  if (window.bloquerControles3D) window.bloquerControles3D(window.enPause);
+  console.log(window.enPause ? "⏸️ JEU EN PAUSE" : "▶️ REPRISE DU JEU");
+  
+  // 🪄 FIX : Prévient l'interface HTML de s'afficher ou disparaître
+  if (window.ui_syncPause) window.ui_syncPause(); 
+};
 // =========================================================================
 // 📱 5. INITIALISATION DU JOYSTICK MOBILE (Nipple.js)
 // =========================================================================
@@ -152,9 +202,14 @@ setTimeout(() => {
   if (btn && btn.classList.contains("cache")) btn.classList.remove("cache");
 }, 10000);
 
+let dernierPourcentage = 0;
 manager.onProgress = (url, loaded, total) => {
   const el = document.getElementById("loading-percent");
-  if (el) el.textContent = `${Math.round((loaded / total) * 100)}%`;
+  let actuel = Math.round((loaded / total) * 100);
+  if (el && actuel > dernierPourcentage) {
+    dernierPourcentage = actuel;
+    el.textContent = `${actuel}%`;
+  }
 };
 
 manager.onLoad = () => console.log("✅ Fichiers 3D téléchargés en mémoire locale.");
@@ -193,9 +248,9 @@ const chargerTout = async () => {
 
   // --- CHARGEMENT DES OBJETS DISNEY ---
   for (const item of disneyData) {
-    const lod = new THREE.LOD();
+    const lod = new THREE.LOD(); // 🛑 FIX : Le LOD agit comme un interrupteur de visibilité
     lod.name = item.id;
-    lod.userData = { ...item };
+    
     if (item.flotte) Object.assign(lod.userData, { flotteActive: true, baseY: item.y || 0, vitesse: item.vitesse || 0.8, amplitude: item.amplitude || 0.08 });
     lod.position.set(item.x || 0, item.y || 0, item.z || 0);
     lod.rotation.set(item.rotX || 0, item.rotY || 0, item.rotZ || 0);
@@ -213,13 +268,16 @@ const chargerTout = async () => {
       hitbox.position.copy(center);
       hitbox.name = lod.name; hitbox.userData = lod.userData;
       
-      lod.addLevel(gltf.scene, 0);
+      lod.addLevel(gltf.scene, 0); 
+      // 🛑 OPTI TIERING : La distance s'adapte à la puissance de la carte graphique !
+      lod.addLevel(new THREE.Object3D(), window.lodDist);
       lod.add(hitbox); objetsCliquables.push(hitbox);
-    lod.addLevel(new THREE.Object3D(), 200); // LOD de secours
       scene.add(lod);
       lodsScene.push(lod);
+
+      if (isMobile) THREE.Cache.clear(); // 🧹 PURGE LA RAM
     } catch (error) { console.error("❌ Erreur sur :", item.id, error); }
-    await new Promise(resolve => setTimeout(resolve, 150)); // 🫁 Respiration VRAM Safari
+    await new Promise(resolve => setTimeout(resolve, isMobile ? 50 : 10)); // 🫁 Respiration renforcée
   }
 
   dracoLoader.dispose();
@@ -227,8 +285,8 @@ const chargerTout = async () => {
 // 💾 CHARGEMENT SAUVEGARDE
   const saves = JSON.parse(localStorage.getItem("popcorn_save")) || [];
   // --- GESTION DE L'INTERFACE À LA FIN ABSOLUE DU CHARGEMENT ---
-  console.log("✅ Tous les modèles sont chargés. Compilation GPU...");
-  renderer.compile(scene, camera); // Compilation silencieuse
+  console.log("✅ Tous les modèles sont chargés.");
+  if (!isMobile) renderer.compile(scene, camera); // Évite le crash RAM mobile
   
   if (MODE_DEV) {
     if (isMobile) { const s = document.createElement('script'); s.src="//cdn.jsdelivr.net/npm/eruda"; document.head.appendChild(s); s.onload=()=>eruda.init(); }
@@ -237,9 +295,12 @@ const chargerTout = async () => {
     if (ecranChargement) ecranChargement.remove();
     if (tuto) tuto.remove();
     if (window.lancerJeu3D) window.lancerJeu3D();
+  } else if (sessionStorage.getItem("skipIntro") === "true") {
+    sessionStorage.removeItem("skipIntro");
+    document.getElementById("ecran-chargement")?.remove(); document.getElementById("ecran-tutoriel")?.remove();
+    if (window.initialiserHUD) window.initialiserHUD(); if (window.lancerJeu3D) window.lancerJeu3D();
   } else {
-    const btnDecouvrir = document.getElementById("btn-decouvrir");
-    const texteChargement = document.querySelector(".texte-chargement");
+    const btnDecouvrir = document.getElementById("btn-decouvrir"); const texteChargement = document.querySelector(".texte-chargement");
     if (btnDecouvrir && texteChargement) {
       texteChargement.style.transition = "opacity 0.5s ease";
       texteChargement.style.opacity = "0";
@@ -277,7 +338,17 @@ const outils = {
     alert("Coordonnées ET Tailles copiées ! 📋");
   },
 };
+
 gui?.add(outils, "exporter").name("💾 Exporter Coordonnées");
+const cheats = {
+  gagner: () => { if (window.afficherFin) window.afficherFin(true); },
+  perdre: () => { if (window.afficherFin) window.afficherFin(false); },
+  respawn: () => { document.getElementById('btn-recommencer')?.click(); }
+};
+const cheatFolder = gui?.addFolder("🎭 God Mode (Cheat)");
+cheatFolder?.add(cheats, "gagner").name("🏆 Forcer Victoire");
+cheatFolder?.add(cheats, "perdre").name("💀 Forcer Game Over");
+cheatFolder?.add(cheats, "respawn").name("🔄 Forcer Respawn");
 
 const stats = !isMobile ? new Stats() : null;
 if (stats) document.body.appendChild(stats.dom);
@@ -313,10 +384,8 @@ window.addEventListener("pointermove", (event) => {
   
   if (hits.length > 0 && !estMaison) {
     document.body.style.cursor = "pointer";
-    if (!MODE_DEV && window.afficherInfobulle) window.afficherInfobulle(cibleHover.name, "");
   } else {
     document.body.style.cursor = "default";
-    if (!MODE_DEV && window.cacherInfobulle) window.cacherInfobulle();
   }
 });
 
@@ -346,9 +415,6 @@ window.addEventListener("pointerup", (event) => {
     objetActif = cible;
     controls.target.copy(cible.position);
 
-    // 🛑 FIX : On force le masquage de l'infobulle fantôme
-    if (window.cacherInfobulle) window.cacherInfobulle();
-
     if (!MODE_DEV && window.ouvrirQuiz) window.ouvrirQuiz(cible.userData.id || cible.name, cible.userData.nom || cible.name);
     if (MODE_DEV && transformControls) transformControls.attach(cible);
     
@@ -366,12 +432,7 @@ window.addEventListener("pointerup", (event) => {
       dossierSelection?.open();
     }
   } else {
-    transformControls?.detach();
-    objetActif = null;
-    if (dossierSelection) {
-      dossierSelection.destroy();
-      dossierSelection = gui?.addFolder("Aucun objet sélectionné");
-    }
+    window.deselectionnerObjet(); // 🛑 FIX : Applique la désélection propre FPS
   }
 });
 // 🟢 LOGIQUE DU QUIZ (Le Cerveau connecté à disneyData)
@@ -386,8 +447,7 @@ window.ouvrirQuiz = (idObjet, nomObjet) => {
  if (window.ui_afficherQuiz) {
     window.ui_afficherQuiz(data, (succes) => {
       if (succes) window.objetTrouve(idObjet);
-      if (window.bloquerControles3D) window.bloquerControles3D(false);
-      objetActif = null;
+      window.deselectionnerObjet(); // 🛑 FIX : Reset la caméra FPS après le quiz
     });
   }
 };
@@ -425,7 +485,8 @@ const axeY = new THREE.Vector3(0, 1, 0);
 const vitesseZQSD = 0.5;
 let deltaAccumule = 0;
 let hauteurJoueur = 26; // 🛑 FIX : L'ancre absolue du joueur
-const intervalleFPS = 1 / 90; // Bride à 90 FPS max
+const fpsMax = (isMobile || window.lodDist < 100) ? 60 : 90; // 🛑 OPTI : Adapte les FPS !
+const intervalleFPS = 1 / fpsMax;
 
 // --- VISEUR MANETTE ---
 let padAPrevious = false, padBPrevious = false, padYPrevious = false;
@@ -440,6 +501,9 @@ if (MODE_DEV) {
   debugManette.style.cssText = "position:fixed;top:10px;left:10px;background:rgba(0,0,0,0.8);color:lime;padding:10px;font-family:monospace;z-index:99999;pointer-events:none;";
   document.body.appendChild(debugManette);
 }
+// --- OPTIMISATION ANTI-CRASH : RADAR DE VISION ---
+const frustum = new THREE.Frustum();
+const projScreenMatrix = new THREE.Matrix4();
 
 const animate = () => {
   window.requestAnimationFrame(animate); 
@@ -476,6 +540,10 @@ const animate = () => {
     padYBtn = gamepadActif.buttons[3].pressed; 
     padLT = gamepadActif.buttons[6].value;
     padRT = gamepadActif.buttons[7].value;
+    // 🛑 FIX : Le bouton Start doit être lu MÊME quand le jeu est en pause !
+    let padStart = gamepadActif.buttons[9]?.pressed;
+    if (padStart && !window.padStartPrev) { if (window.togglePause) window.togglePause(); }
+    window.padStartPrev = padStart;
   } else {
     crosshair.style.display = "none";
   }
@@ -513,6 +581,10 @@ const animate = () => {
   // --------------------------------------------------------
   // B. ACTIONS DES BOUTONS (A, B, Y)
   // --------------------------------------------------------
+  let btnPress = (padA && !padAPrevious) ? "A" : (padB && !padBPrevious) ? "B" : (padYBtn && !padYPrevious) ? "Y" : "";
+  if (btnPress) window.seqPad = ((window.seqPad || "") + btnPress).slice(-4);
+  if (window.seqPad === "YYBA") window.activerModeRetro();
+
   if (padA && !padAPrevious) {
     const btnDecvrir = document.getElementById("btn-decouvrir");
     const btnSuivant = document.getElementById("btn-suivant");
@@ -530,20 +602,21 @@ const animate = () => {
       if (indexBoutonFocus === -1 && boutons.length > 0) indexBoutonFocus = 0; 
       if (boutons[indexBoutonFocus]) boutons[indexBoutonFocus].click();
     }
-    // 3. Ou bien tir du Raycaster 3D classique
+    // 3. Ou bien tir du Raycaster 3D classique (Fix PointerEvent manette)
     else {
-      canvas.dispatchEvent(new MouseEvent("click", { clientX: window.innerWidth / 2, clientY: window.innerHeight / 2, bubbles: true }));
+      const xc = window.innerWidth / 2, yc = window.innerHeight / 2;
+      canvas.dispatchEvent(new PointerEvent("pointerdown", { clientX: xc, clientY: yc }));
+      canvas.dispatchEvent(new PointerEvent("pointerup", { clientX: xc, clientY: yc }));
     }
   }
 
   if (padB && !padBPrevious) {
-    if (transformControls) transformControls.detach();
-    objetActif = null;
-    if (window.bloquerControles3D) window.bloquerControles3D(false);
-    document.getElementById('modal-quiz')?.classList.remove('is-active');
-    if (dossierSelection) { dossierSelection.destroy(); dossierSelection = gui?.addFolder("Aucun objet sélectionné"); }
+    window.deselectionnerObjet(); // 🛑 FIX : Désélection FPS propre via manette
   }
-
+  let padXBtn = gamepadActif ? gamepadActif.buttons[2].pressed : false;
+  if (padXBtn && !window.padXPrevious) window.deselectionnerObjet();
+  window.padXPrevious = padXBtn;
+  
   padAPrevious = padA; padBPrevious = padB; padYPrevious = padYBtn;
 
   // --------------------------------------------------------
@@ -574,7 +647,7 @@ const animate = () => {
     return intersect.length === 0 || intersect[0].distance > 1.5;
   };
 
-  if (!objetActif) {
+  if (!objetActif && !window.enPause) { // 🛑 FIX : Gèle les moteurs en pause
     camera.getWorldDirection(dirCamera);
     dirCamera.y = 0; dirCamera.normalize();
     dirLaterale.crossVectors(camera.up, dirCamera).normalize();
@@ -587,13 +660,14 @@ const animate = () => {
     
     if (Math.abs(padRotX) > 0.15) { offsetCam.subVectors(controls.target, camera.position); offsetCam.applyAxisAngle(axeY, -padRotX * 0.05); controls.target.copy(camera.position).add(offsetCam); }
     if (Math.abs(padRotY) > 0.15) { 
-      let nouvelleHauteur = controls.target.y - (padRotY * 0.8);
+      let nouvelleHauteur = controls.target.y - (padRotY * 0.2);
       let dist = camera.position.distanceTo(controls.target);
       controls.target.y = Math.max(camera.position.y - (dist * 0.9), Math.min(camera.position.y + (dist * 0.9), nouvelleHauteur));
     }
 
     if (MODE_DEV && padLT > 0.1) hauteurJoueur += padLT * 0.4;
     if (MODE_DEV && padRT > 0.1) hauteurJoueur -= padRT * 0.4;
+
 
     // -- Tactile Mobile --
     if (Math.abs(padMobile.y) > 0.05 && peutBouger(dirCamera, padMobile.y < 0)) {
@@ -621,14 +695,27 @@ const animate = () => {
     }
   });
 
-  lodsScene.forEach(lod => lod.update(camera));
   // 🛑 FIX RADICAL : On cloue le joueur. OrbitControls ne peut plus te faire voler.
   if (!objetActif) {
     const decalageY = hauteurJoueur - camera.position.y;
     camera.position.y = hauteurJoueur;
     controls.target.y += decalageY;
   }
-  if (renduAutorise) renderer.render(scene, camera); 
+  
+  // 🚀 OPTI AGRESSIVE ANTI-CRASH : Cône de vision + Distance adaptative
+  camera.updateMatrixWorld();
+  projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+  frustum.setFromProjectionMatrix(projScreenMatrix);
+
+  lodsScene.forEach(l => {
+    l.update(camera); 
+    if (isMobile) {
+      // 🛑 FIX : On teste le cône de vision sur la grosse Hitbox (children[2]) pour éviter que l'objet disparaisse trop tôt sur les bords
+      l.visible = (l.position.distanceTo(camera.position) < window.lodDist) && frustum.intersectsObject(l.children[2] || l);
+    }
+  });
+  
+  if (renduAutorise) renderer.render(scene, camera);
   if (stats) {
     stats.update();
     perfData.polygones = renderer.info.render.triangles;

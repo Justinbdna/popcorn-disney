@@ -4,6 +4,21 @@
 
 (function initUIManager() {
     'use strict';
+    // === AUDIO MANAGER GLOBAL ===
+    // On remplace les true/false par des valeurs de volume (0 à 1)
+    window.audioState = { volumeMusique: 0.3, volumeSFX: 0.5, muteRetro: false }; 
+    window.ambiance = null;
+
+    window.jouerSFX = (chemin, volumeBase = 1.0) => { 
+        if (window.audioState.volumeSFX > 0 && !window.audioState.muteRetro) {
+            const audio = new Audio(chemin);
+            // On multiplie le volume du son par le niveau choisi dans les réglages
+            audio.volume = volumeBase * window.audioState.volumeSFX;
+            audio.play().catch(e => console.warn("Audio bloqué:", e));
+            return audio; 
+        }
+        return null;
+    };
 
     // === GESTION DU SAS DE CHARGEMENT ===
     const ecranChargement = document.getElementById('ecran-chargement');
@@ -11,21 +26,12 @@
     const ecranTutoriel = document.getElementById('ecran-tutoriel');
     const texteChargement = document.querySelector('.texte-chargement');
 
-    setTimeout(() => {
-        if (btnDecouvrir && btnDecouvrir.classList.contains('cache')) {
-            console.warn("⏳ Sécurité Safari : Déblocage bouton");
-            btnDecouvrir.classList.remove('cache');
-            if (texteChargement) {
-                texteChargement.style.transition = "opacity 0.5s ease";
-                texteChargement.style.opacity = "0";
-                setTimeout(() => texteChargement.style.display = 'none', 500);
-            }
-        }
-    }, 10000);
-
     if (btnDecouvrir) {
         btnDecouvrir.addEventListener('click', () => {
             btnDecouvrir.style.display = "none";
+            
+            window.sonLancementGlobal = window.jouerSFX('/sounds/son_lancement.mp3', 0.8);
+
             if (ecranTutoriel) {
                 ecranTutoriel.style.transition = "none";
                 ecranTutoriel.style.opacity = "1";
@@ -47,19 +53,38 @@
 
     if (btnSuivant) {
         btnSuivant.addEventListener('click', () => {
+            window.jouerSFX('/sounds/clic.mp3');
             if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.remove('active');
             etapeActuelle++;
             if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.add('active');
 
-            if (etapeActuelle === etapes.length - 1) {
-                btnSuivant.classList.add('cache');
+            if (etapeActuelle === 2) {
+                btnSuivant.style.display = 'none'; // 🛑 FIX : Plus de bouton "Suivant" ici
+            } else if (etapeActuelle === etapes.length - 1) {
+                btnSuivant.style.display = 'none';
                 setTimeout(() => btnRentrer.classList.remove('cache'), 300);
+            } else {
+                btnSuivant.style.display = 'inline-block';
             }
         });
     }
 
     if (btnRentrer) {
         btnRentrer.addEventListener('click', () => {
+            // 🛑 FIX : Coupure nette du son de lancement
+            if (window.sonLancementGlobal) window.sonLancementGlobal.pause();
+
+             // --- MUSIQUE DE FOND APPARTEMENT ---
+            if (!window.ambiance) {
+                window.ambiance = new Audio('/sounds/ambiance.mp3');
+                window.ambiance.loop = true; 
+            }
+            // On applique le volume choisi par le joueur
+            window.ambiance.volume = window.audioState.volumeMusique;
+            if (window.ambiance.volume > 0) {
+                window.ambiance.play().catch(e => console.warn("Musique bloquée:", e));
+            }
+
             if (ecranTutoriel) {
                 ecranTutoriel.style.backgroundColor = "#050510"; 
                 const video = document.getElementById("bg-video");
@@ -83,8 +108,15 @@
     let vies = 3;
     let tempsRestant = 600; 
     let intervalChrono;
+    
+    document.querySelectorAll('.btn-diff').forEach(b => b.addEventListener('click', e => {
+        let l = e.target.dataset.lvl; 
+        window.viesMax = l==='facile'?6:l==='difficile'?2:3; vies = window.viesMax;
+        if (affichageVies) affichageVies.textContent = "❤️".repeat(vies); 
+        document.getElementById('btn-suivant').click();
+    }));
 
-    function initialiserHUD() {
+    window.initialiserHUD = function() {
         if (hud) hud.classList.remove('cache');
         demarrerChrono();
     }
@@ -97,35 +129,23 @@
         setTimeout(() => affichageScore.parentElement.style.transform = "scale(1)", 200);
     };
 
+    // Mise à jour de la fonction perdreVie pour déclencher l'écran de Game Over
     window.perdreVie = function() {
         if (vies > 0) vies--;
         if (affichageVies) {
-            affichageVies.textContent = "❤️".repeat(vies) + "🖤".repeat(3 - vies);
+            affichageVies.textContent = "❤️".repeat(vies) + "🖤".repeat((window.viesMax || 3) - vies);
         }
-        if (vies === 0) {
+       if (vies === 0) {
             console.log("GAME OVER !");
-            if (window.bloquerControles3D) window.bloquerControles3D(true); // 🛑 FIX : On coupe le moteur 3D
-            window.afficherInfobulle("GAME OVER", "La partie est terminée.", null);
+            if (window.afficherFin) window.afficherFin(false);
         }
     };
 
     function demarrerChrono() {
         clearInterval(intervalChrono);
-        intervalChrono = setInterval(() => {
-            if (tempsRestant > 0) {
-                tempsRestant--;
-                let m = Math.floor(tempsRestant / 60).toString().padStart(2, '0');
-                let s = (tempsRestant % 60).toString().padStart(2, '0');
-                if (affichageChrono) {
-                    affichageChrono.textContent = `${m}:${s}`;
-                    if(tempsRestant <= 30) affichageChrono.style.color = "#ff4757";
-                }
-            } else {
-                clearInterval(intervalChrono);
-                if (window.bloquerControles3D) window.bloquerControles3D(true); // 🛑 FIX : On coupe le moteur 3D
-                console.log("TEMPS ÉCOULÉ !");
-            }
-        }, 1000);
+        // 🛑 FIX RADICAL : Destruction totale de l'élément HTML pour contourner le cache iOS
+        const conteneurCentre = document.querySelector('.hud-centre');
+        if (conteneurCentre) conteneurCentre.remove();
     }
 
     // === GESTION DE L'INFOBULLE FLUIDE (LERP) ===
@@ -195,15 +215,20 @@
                     const estBonne = (index === data.reponseCorrecte);
 
                     if (estBonne) {
+                        window.jouerSFX('/sounds/succes.mp3', 0.3); // SON DE BONNE RÉPONSE
+                        
                         btn.classList.add('correct');
                         DOM.feedback.textContent = data.anecdoteSucces || "Bonne réponse !";
-                        DOM.feedback.classList.add('succes');
+                        DOM.feedback.classList.add('succes' );
                     } else {
+                       window.jouerSFX('/sounds/erreur.mp3', 0.3); // SON DE MAUVAISE RÉPONSE
+                        
                         btn.classList.add('incorrect');
                         DOM.feedback.textContent = data.anecdoteEchec || "Mauvaise réponse !";
                         DOM.feedback.classList.add('erreur');
                         boutons[data.reponseCorrecte].classList.add('correct');
                     }
+
 
                     setTimeout(() => {
                         DOM.modal.classList.add('cache');
@@ -220,5 +245,118 @@
         if(window.bloquerControles3D) window.bloquerControles3D(true);
         DOM.modal.classList.remove('cache');
     };
+    // === GESTION DE LA MODALE DES CONTRÔLES ===
+    const btnOuvrirControles = document.getElementById('btn-ouvrir-controles');
+    const btnFermerControles = document.getElementById('btn-fermer-controles');
+    const modalControles = document.getElementById('modal-controles');
+    const onglets = document.querySelectorAll('.onglet');
+    const schemas = document.querySelectorAll('.schema');
 
+    if (btnOuvrirControles && modalControles) btnOuvrirControles.addEventListener('click', () => modalControles.classList.remove('cache'));
+    if (btnFermerControles && modalControles) btnFermerControles.addEventListener('click', () => modalControles.classList.add('cache'));
+
+    onglets.forEach(onglet => {
+        onglet.addEventListener('click', (e) => {
+            onglets.forEach(o => o.classList.remove('active'));
+            schemas.forEach(s => s.classList.remove('active'));
+            e.target.classList.add('active');
+            const cible = document.getElementById(e.target.getAttribute('data-cible'));
+            if (cible) cible.classList.add('active');
+        });
+    });
+    // === GESTION DES MENUS PAUSE & FIN ===
+    const modalPause = document.getElementById('modal-pause');
+    const btnPause = document.getElementById('btn-pause');
+    const btnReprendre = document.getElementById('btn-reprendre');
+    const btnRecommencer = document.getElementById('btn-recommencer');
+    const btnQuitterList = document.querySelectorAll('.btn-quitter');
+
+    if (btnPause) btnPause.addEventListener('click', () => { window.jouerSFX('/sounds/clic.mp3'); if (window.togglePause) window.togglePause(); });
+    if (btnReprendre) btnReprendre.addEventListener('click', () => { window.jouerSFX('/sounds/clic.mp3'); if (window.togglePause) window.togglePause(); });
+   if (btnRecommencer) btnRecommencer.addEventListener('click', () => { 
+        window.jouerSFX('/sounds/clic.mp3');
+        localStorage.removeItem("popcorn_save"); // 🛑 FIX : Oublie les objets trouvés
+        location.reload(); // 🛑 FIX : Recharge la page (purge la RAM et fait respawn les objets)
+    });
+    btnQuitterList.forEach(btn => btn.addEventListener('click', () => location.reload()));
+
+    // === GESTION DES VOLUMES (Sliders Menu Pause) ===
+    const sliderMusique = document.getElementById('volume-musique');
+    const sliderSFX = document.getElementById('volume-sfx');
+
+    if (sliderMusique) {
+        sliderMusique.addEventListener('input', (e) => {
+            const vol = parseFloat(e.target.value);
+            window.audioState.volumeMusique = vol;
+            if (window.ambiance) window.ambiance.volume = vol; 
+            if (window.musiquePause) window.musiquePause.volume = vol; // Modifie aussi la musique de pause !
+        });
+    }
+
+    if (sliderSFX) {
+        sliderSFX.addEventListener('input', (e) => {
+            window.audioState.volumeSFX = parseFloat(e.target.value);
+            // On joue un tout petit clic silencieux pour que le joueur se rende compte du niveau sonore
+            window.jouerSFX('/sounds/clic.mp3', 0.5); 
+        });
+    }
+    const selectJukebox = document.getElementById('select-jukebox');
+    if (selectJukebox) {
+        selectJukebox.addEventListener('change', (e) => {
+            if (window.changerMusique) window.changerMusique(e.target.value);
+        });
+    }
+
+   // Synchronisation de l'UI avec l'état de pause global
+    window.ui_syncPause = () => {
+        const modalPause = document.getElementById('modal-pause');
+        if (modalPause) {
+            if (window.enPause) {
+                modalPause.classList.remove('cache');
+                if (window.ambiance) window.ambiance.pause(); // Coupe le Jukebox
+                if (!window.musiquePause) { window.musiquePause = new Audio('/sounds/pause.mp3', 0.5); window.musiquePause.loop = true; }
+                window.musiquePause.volume = window.audioState.volumeMusique;
+                window.musiquePause.play().catch(e => console.warn(e)); // Lance la musique de pause
+            } else {
+                modalPause.classList.add('cache');
+                if (window.musiquePause) window.musiquePause.pause(); // Coupe la musique de pause
+                if (window.ambiance && !window.isRetroMode) window.ambiance.play().catch(e => console.warn(e)); // Relance le Jukebox
+            }
+        }
+    };
+    
+    // === GESTION DE L'ÉCRAN DE FIN ===
+    window.afficherFin = (victoire) => {
+        if (window.bloquerControles3D) window.bloquerControles3D(true);
+        if (typeof intervalChrono !== 'undefined') clearInterval(intervalChrono);
+        const titreFin = document.getElementById('titre-fin');
+        const texteFin = document.getElementById('texte-fin');
+        const modalFin = document.getElementById('modal-fin');
+        
+        if (window.ambiance) window.ambiance.pause(); // Coupe le Jukebox
+        window.jouerSFX(victoire ? '/sounds/victoire_final.mp3' : '/sounds/game_over.mp3', 1.0);
+        
+        const best = Math.max(score, localStorage.getItem('dis_best') || 0);
+        localStorage.setItem('dis_best', best);
+        if (titreFin) titreFin.innerHTML = victoire ? "<span style='color:#2ed573'>👑 VICTOIRE !</span>" : "<span style='color:#ff4757'>💀 FIN DE PARTIE</span>";
+        if (texteFin) texteFin.innerHTML = `Ton Score : ${score} <br><br>🏆 Meilleur Score : ${best}`;
+        if (modalFin) modalFin.classList.remove('cache');
+    };
+    window.isRetroMode = false;
+    window.ui_AnimationPS2 = () => {
+        window.isRetroMode = !window.isRetroMode;
+        window.audioState.muteRetro = window.isRetroMode;
+        if (window.ambiance) window.ambiance.volume = window.isRetroMode ? 0 : window.audioState.volumeMusique;
+        const vid = document.getElementById("video-ps2");
+        if (!vid) return;
+        if (window.isRetroMode) { 
+            vid.classList.remove("cache"); vid.currentTime = 0; vid.play(); 
+            vid.onended = () => { vid.classList.add("cache"); if (window.ambiance) window.ambiance.volume = window.audioState.volumeMusique; }; 
+        }
+        else { vid.pause(); vid.classList.add("cache"); if (window.ambiance) window.ambiance.volume = window.audioState.volumeMusique; }
+    };
+    window.changerMusique = (nomFichier) => {
+        if (!window.ambiance) return;
+        window.ambiance.pause(); window.ambiance.src = `/sounds/${nomFichier}`; window.ambiance.play();
+    };
 })();
