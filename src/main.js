@@ -25,6 +25,16 @@ const scene = new THREE.Scene();
 const objetsCliquables = [];
 const lodsScene = []; // Tableau global pour les LODs
 
+// --- SKYBOX (La vue par les fenêtres) ---
+// ⚠️ Assure-toi d'avoir une image panoramique dans public/pictures/ciel.jpg
+const textureLoader = new THREE.TextureLoader(); // 🛑 FIX : Plus de 'manager' ici !
+textureLoader.load('/pictures/ciel.jpg', (texture) => {
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  scene.background = texture;
+  scene.environment = texture; // Donne aussi de jolis reflets réalistes
+});
+
 // 🛑 FIX : On force le FOV à 75 partout pour éviter l'effet "zoom énorme" en mode portrait
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 23, 5);
