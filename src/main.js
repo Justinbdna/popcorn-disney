@@ -29,7 +29,12 @@ const camera = new THREE.PerspectiveCamera(isMobile ? 90 : 75, window.innerWidth
 camera.position.set(0, 23, 5);
 
 const canvas = document.querySelector("#webgl");
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, powerPreference: "high-performance", precision: "mediump" });
+// 🛑 OPTI : Antialias désactivé sur mobile, et on force la VRAIE carte graphique
+const renderer = new THREE.WebGLRenderer({ 
+  canvas: canvas, 
+  antialias: !isMobile, 
+  powerPreference: "high-performance" 
+});
 renderer.setSize(window.innerWidth, window.innerHeight);
 window.lodDist = isMobile ? 80 : 120; // Valeur par défaut
 const ext = renderer.getContext().getExtension('WEBGL_debug_renderer_info');
@@ -471,7 +476,8 @@ const axeY = new THREE.Vector3(0, 1, 0);
 const vitesseZQSD = 0.5;
 let deltaAccumule = 0;
 let hauteurJoueur = 26; // 🛑 FIX : L'ancre absolue du joueur
-const intervalleFPS = 1 / 90; // Bride à 90 FPS max
+const fpsMax = (isMobile || window.lodDist < 100) ? 60 : 90; // 🛑 OPTI : Adapte les FPS !
+const intervalleFPS = 1 / fpsMax;
 
 // --- VISEUR MANETTE ---
 let padAPrevious = false, padBPrevious = false, padYPrevious = false;
