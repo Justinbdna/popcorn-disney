@@ -314,7 +314,7 @@
             if (window.enPause) {
                 modalPause.classList.remove('cache');
                 if (window.ambiance) window.ambiance.pause(); // Coupe le Jukebox
-                if (!window.musiquePause) { window.musiquePause = new Audio('/sounds/pause.mp3'); window.musiquePause.loop = true; }
+                if (!window.musiquePause) { window.musiquePause = new Audio('/sounds/pause.mp3', 0.5); window.musiquePause.loop = true; }
                 window.musiquePause.volume = window.audioState.volumeMusique;
                 window.musiquePause.play().catch(e => console.warn(e)); // Lance la musique de pause
             } else {
