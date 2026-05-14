@@ -31,7 +31,11 @@ camera.position.set(0, 23, 5);
 const canvas = document.querySelector("#webgl");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, powerPreference: "high-performance", precision: "mediump" });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2)); // 🛑 Retour en HD par défaut
+window.lodDist = isMobile ? 80 : 120; // Valeur par défaut
+const ext = renderer.getContext().getExtension('WEBGL_debug_renderer_info');
+const gpu = ext ? renderer.getContext().getParameter(ext.UNMASKED_RENDERER_WEBGL).toLowerCase() : '';
+if (gpu.includes('intel') || gpu.includes('mali')) { renderer.setPixelRatio(1); window.lodDist = isMobile ? 50 : 80; }
+else { renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); window.lodDist = isMobile ? 90 : 150; }
 renderer.shadowMap.enabled = false; // Désactivé pour sauver la VRAM
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
@@ -251,8 +255,8 @@ const chargerTout = async () => {
       hitbox.name = lod.name; hitbox.userData = lod.userData;
       
       lod.addLevel(gltf.scene, 0); 
-      // 🛑 OPTI : 80m sur mobile, 120m sur PC (idéal pour PC peu puissants)
-      lod.addLevel(new THREE.Object3D(), isMobile ? 80 : 120); 
+      // 🛑 OPTI TIERING : La distance s'adapte à la puissance de la carte graphique !
+      lod.addLevel(new THREE.Object3D(), window.lodDist);
       lod.add(hitbox); objetsCliquables.push(hitbox);
       scene.add(lod);
       lodsScene.push(lod);
