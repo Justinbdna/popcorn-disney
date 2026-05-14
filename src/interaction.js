@@ -111,12 +111,18 @@
     
     document.querySelectorAll('.btn-diff').forEach(b => b.addEventListener('click', e => {
         let l = e.target.dataset.lvl; 
+        sessionStorage.setItem('diff_popcorn', l); // 💾 Mémorise la difficulté pour le Fast-Restart
         window.viesMax = l==='facile'?6:l==='difficile'?2:3; vies = window.viesMax;
         if (affichageVies) affichageVies.textContent = "❤️".repeat(vies); 
         document.getElementById('btn-suivant').click();
     }));
 
     window.initialiserHUD = function() {
+        // 🔄 Fast-Restart : Restaure les vies selon la difficulté mémorisée
+        let l = sessionStorage.getItem('diff_popcorn') || 'normal';
+        window.viesMax = l==='facile'?6:l==='difficile'?2:3; vies = window.viesMax;
+        if (affichageVies) affichageVies.textContent = "❤️".repeat(vies);
+
         if (hud) hud.classList.remove('cache');
         demarrerChrono();
     }
@@ -275,8 +281,9 @@
     if (btnReprendre) btnReprendre.addEventListener('click', () => { window.jouerSFX('/sounds/clic.mp3'); if (window.togglePause) window.togglePause(); });
    if (btnRecommencer) btnRecommencer.addEventListener('click', () => { 
         window.jouerSFX('/sounds/clic.mp3');
-        localStorage.removeItem("popcorn_save"); // 🛑 FIX : Oublie les objets trouvés
-        location.reload(); // 🛑 FIX : Recharge la page (purge la RAM et fait respawn les objets)
+        localStorage.removeItem("popcorn_save"); 
+        sessionStorage.setItem("skipIntro", "true"); // 🚀 MAGIE : Bypasse le tuto au rechargement !
+        location.reload(); 
     });
     btnQuitterList.forEach(btn => btn.addEventListener('click', () => location.reload()));
 
