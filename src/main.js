@@ -39,8 +39,9 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 window.lodDist = isMobile ? 80 : 120; // Valeur par défaut
 const ext = renderer.getContext().getExtension('WEBGL_debug_renderer_info');
 const gpu = ext ? renderer.getContext().getParameter(ext.UNMASKED_RENDERER_WEBGL).toLowerCase() : '';
-if (gpu.includes('intel') || gpu.includes('mali')) { renderer.setPixelRatio(1); window.lodDist = isMobile ? 50 : 80; }
-else { renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); window.lodDist = isMobile ? 90 : 150; }
+// 🛑 TEMP FIX : Distances augmentées en attendant les vrais modèles décimés (LOD 1)
+if (gpu.includes('intel') || gpu.includes('mali')) { renderer.setPixelRatio(1); window.lodDist = isMobile ? 80 : 130; }
+else { renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); window.lodDist = isMobile ? 130 : 220; }
 renderer.shadowMap.enabled = false; // Désactivé pour sauver la VRAM
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
@@ -492,6 +493,9 @@ if (MODE_DEV) {
   debugManette.style.cssText = "position:fixed;top:10px;left:10px;background:rgba(0,0,0,0.8);color:lime;padding:10px;font-family:monospace;z-index:99999;pointer-events:none;";
   document.body.appendChild(debugManette);
 }
+// --- OPTIMISATION ANTI-CRASH : RADAR DE VISION ---
+const frustum = new THREE.Frustum();
+const projScreenMatrix = new THREE.Matrix4();
 
 const animate = () => {
   window.requestAnimationFrame(animate); 
@@ -690,10 +694,17 @@ const animate = () => {
     controls.target.y += decalageY;
   }
   
-  // 🚀 OPTI AGRESSIVE : On coupe littéralement la visibilité des objets loin
+  // 🚀 OPTI AGRESSIVE ANTI-CRASH : Cône de vision + Distance adaptative
+  camera.updateMatrixWorld();
+  projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+  frustum.setFromProjectionMatrix(projScreenMatrix);
+
   lodsScene.forEach(l => {
     l.update(camera); 
-    if (isMobile) l.visible = (l.position.distanceTo(camera.position) < 80);
+    if (isMobile) {
+      // 🛑 L'objet ne s'affiche QUE s'il est proche ET dans ton champ de vision
+      l.visible = (l.position.distanceTo(camera.position) < window.lodDist) && frustum.intersectsObject(l);
+    }
   });
   
   if (renduAutorise) renderer.render(scene, camera);
