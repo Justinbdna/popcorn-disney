@@ -472,7 +472,10 @@ window.objetTrouve = (idObjet) => {
     const saves = JSON.parse(localStorage.getItem("popcorn_save")) ||[];
     if (!saves.includes(idObjet)) localStorage.setItem("popcorn_save", JSON.stringify([...saves, idObjet]));
     const idxLod = lodsScene.findIndex(l => l.name === idObjet);
-    if (idxLod > -1) { lodsScene.splice(idxLod, 1); if (lodsScene.length === 0) console.log("👑 VICTOIRE !"); }
+    if (idxLod > -1) { 
+      lodsScene.splice(idxLod, 1); 
+      if (lodsScene.length === 0 && window.afficherFin) window.afficherFin(true); // 🏆 DÉCLENCHE LA FIN !
+    }
   }
 };
 
