@@ -6,6 +6,7 @@ export default function resize(camera, renderer) {
 
     // Met à jour le moteur de rendu
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const isMobile = window.innerWidth < 768;
+    renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
   });
 }

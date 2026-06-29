@@ -32,11 +32,11 @@ textureLoader.load('/pictures/ciel.jpg', (texture) => {
   texture.mapping = THREE.EquirectangularReflectionMapping;
   texture.colorSpace = THREE.SRGBColorSpace;
   scene.background = texture;
-  scene.environment = texture; // Donne aussi de jolis reflets réalistes
+  if (!isMobile) scene.environment = texture; // Reflets réalistes (desktop uniquement, économise ~24 Mo VRAM)
 });
 
 // 🛑 FIX : On force le FOV à 75 partout pour éviter l'effet "zoom énorme" en mode portrait
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.5, 500);
 camera.position.set(0, 23, 5);
 
 const canvas = document.querySelector("#webgl");
@@ -56,9 +56,7 @@ else { renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); window.lodD
 renderer.shadowMap.enabled = false; // Désactivé pour sauver la VRAM
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-if (isMobile) {
-  THREE.Cache.clear(); // 🚫 PURGE DU CACHE SUR IOS POUR ÉVITER LE CRASH RAM
-}
+// 🛑 Cache.clear() retiré : il purgeait les textures encore utilisées → points noirs
 
 // =========================================================================
 // 🎥 3. CONTRÔLES DE LA CAMÉRA (OrbitControls)
@@ -279,7 +277,7 @@ const chargerTout = async () => {
       scene.add(lod);
       lodsScene.push(lod);
 
-      if (isMobile) THREE.Cache.clear(); // 🧹 PURGE LA RAM
+      // 🛑 Cache.clear() retiré : causait la suppression de textures actives → artefacts noirs
     } catch (error) { console.error("❌ Erreur sur :", item.id, error); }
     await new Promise(resolve => setTimeout(resolve, isMobile ? 50 : 10)); // 🫁 Respiration renforcée
   }
@@ -462,7 +460,11 @@ window.objetTrouve = (idObjet) => {
     obj.traverse((child) => {
       if (child.isMesh) {
         if (child.geometry) child.geometry.dispose();
-        if (child.material) Array.isArray(child.material) ? child.material.forEach(m => m.dispose()) : child.material.dispose();
+        const mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats.forEach(m => {
+          ['map','normalMap','aoMap','emissiveMap','roughnessMap','metalnessMap'].forEach(k => { if (m[k]) m[k].dispose(); });
+          m.dispose();
+        });
       }
     });
     scene.remove(obj);

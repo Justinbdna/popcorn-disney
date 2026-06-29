@@ -9,11 +9,13 @@
     window.audioState = { volumeMusique: 0.3, volumeSFX: 0.5, muteRetro: false }; 
     window.ambiance = null;
 
+    const sfxPool = {}; // Pool : 1 élément Audio par chemin unique
     window.jouerSFX = (chemin, volumeBase = 1.0) => { 
         if (window.audioState.volumeSFX > 0 && !window.audioState.muteRetro) {
-            const audio = new Audio(chemin);
-            // On multiplie le volume du son par le niveau choisi dans les réglages
+            if (!sfxPool[chemin]) sfxPool[chemin] = new Audio(chemin);
+            const audio = sfxPool[chemin];
             audio.volume = volumeBase * window.audioState.volumeSFX;
+            audio.currentTime = 0;
             audio.play().catch(e => console.warn("Audio bloqué:", e));
             return audio; 
         }
@@ -167,10 +169,9 @@
             infobulleY += (sourisY - infobulleY) * vitesseLerp;
             infobulle.style.left = `${infobulleX}px`;
             infobulle.style.top = `${infobulleY}px`;
+            requestAnimationFrame(animerUI);
         }
-        requestAnimationFrame(animerUI);
     }
-    animerUI();
 
     window.afficherInfobulle = function(titre, film, urlImage = null) {
         if (!infobulle) return;
@@ -183,6 +184,7 @@
         document.body.classList.add('survol-objet');
         if (!estVisible) { infobulleX = sourisX; infobulleY = sourisY; }
         estVisible = true;
+        requestAnimationFrame(animerUI); // Relance la boucle d'animation
     };
 
     window.cacherInfobulle = function() {
