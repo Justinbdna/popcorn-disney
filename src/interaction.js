@@ -1,3 +1,4 @@
+
 /**
  * interaction.js - Gestionnaire d'Interface Utilisateur
  */
@@ -6,18 +7,18 @@
     'use strict';
     // === AUDIO MANAGER GLOBAL ===
     // On remplace les true/false par des valeurs de volume (0 à 1)
-    window.audioState = { volumeMusique: 0.3, volumeSFX: 0.5, muteRetro: false }; 
+    window.audioState = { volumeMusique: 0.3, volumeSFX: 0.5, muteRetro: false };
     window.ambiance = null;
 
     const sfxPool = {}; // Pool : 1 élément Audio par chemin unique
-    window.jouerSFX = (chemin, volumeBase = 1.0) => { 
+    window.jouerSFX = (chemin, volumeBase = 1.0) => {
         if (window.audioState.volumeSFX > 0 && !window.audioState.muteRetro) {
             if (!sfxPool[chemin]) sfxPool[chemin] = new Audio(chemin);
             const audio = sfxPool[chemin];
             audio.volume = volumeBase * window.audioState.volumeSFX;
             audio.currentTime = 0;
             audio.play().catch(e => console.warn("Audio bloqué:", e));
-            return audio; 
+            return audio;
         }
         return null;
     };
@@ -31,7 +32,7 @@
     if (btnDecouvrir) {
         btnDecouvrir.addEventListener('click', () => {
             btnDecouvrir.style.display = "none";
-            
+
             window.sonLancementGlobal = window.jouerSFX('/sounds/son_lancement.mp3', 0.8);
 
             if (ecranTutoriel) {
@@ -76,10 +77,10 @@
             // 🛑 FIX : Coupure nette du son de lancement
             if (window.sonLancementGlobal) window.sonLancementGlobal.pause();
 
-             // --- MUSIQUE DE FOND APPARTEMENT ---
+            // --- MUSIQUE DE FOND APPARTEMENT ---
             if (!window.ambiance) {
                 window.ambiance = new Audio('/sounds/ambiance.mp3');
-                window.ambiance.loop = true; 
+                window.ambiance.loop = true;
             }
             // On applique le volume choisi par le joueur
             window.ambiance.volume = window.audioState.volumeMusique;
@@ -88,9 +89,9 @@
             }
 
             if (ecranTutoriel) {
-                ecranTutoriel.style.backgroundColor = "#050510"; 
+                ecranTutoriel.style.backgroundColor = "#050510";
                 const video = document.getElementById("bg-video");
-                if(video) video.style.opacity = "0"; 
+                if (video) video.style.opacity = "0";
                 ecranTutoriel.style.transition = "opacity 1.5s ease-in-out";
                 ecranTutoriel.style.opacity = "0";
                 setTimeout(() => ecranTutoriel.remove(), 1500);
@@ -105,31 +106,31 @@
     const affichageScore = document.getElementById('score-affichage');
     const affichageVies = document.getElementById('vies-affichage');
     const affichageChrono = document.getElementById('chrono-affichage');
-    
+
     let score = 0;
     let vies = 3;
-    let tempsRestant = 600; 
+    let tempsRestant = 600;
     let intervalChrono;
-    
+
     document.querySelectorAll('.btn-diff').forEach(b => b.addEventListener('click', e => {
-        let l = e.target.dataset.lvl; 
+        let l = e.target.dataset.lvl;
         sessionStorage.setItem('diff_popcorn', l); // 💾 Mémorise la difficulté pour le Fast-Restart
-        window.viesMax = l==='facile'?6:l==='difficile'?2:3; vies = window.viesMax;
-        if (affichageVies) affichageVies.textContent = "❤️".repeat(vies); 
+        window.viesMax = l === 'facile' ? 6 : l === 'difficile' ? 2 : 3; vies = window.viesMax;
+        if (affichageVies) affichageVies.textContent = "❤️".repeat(vies);
         document.getElementById('btn-suivant').click();
     }));
 
-    window.initialiserHUD = function() {
+    window.initialiserHUD = function () {
         // 🔄 Fast-Restart : Restaure les vies selon la difficulté mémorisée
         let l = sessionStorage.getItem('diff_popcorn') || 'normal';
-        window.viesMax = l==='facile'?6:l==='difficile'?2:3; vies = window.viesMax;
+        window.viesMax = l === 'facile' ? 6 : l === 'difficile' ? 2 : 3; vies = window.viesMax;
         if (affichageVies) affichageVies.textContent = "❤️".repeat(vies);
 
         if (hud) hud.classList.remove('cache');
         demarrerChrono();
     }
 
-    window.ajouterScore = function(points) {
+    window.ajouterScore = function (points) {
         if (!affichageScore) return;
         score += points;
         affichageScore.textContent = score;
@@ -138,12 +139,12 @@
     };
 
     // Mise à jour de la fonction perdreVie pour déclencher l'écran de Game Over
-    window.perdreVie = function() {
+    window.perdreVie = function () {
         if (vies > 0) vies--;
         if (affichageVies) {
             affichageVies.textContent = "❤️".repeat(vies) + "🖤".repeat((window.viesMax || 3) - vies);
         }
-       if (vies === 0) {
+        if (vies === 0) {
             console.log("GAME OVER !");
             if (window.afficherFin) window.afficherFin(false);
         }
@@ -159,7 +160,7 @@
     // === GESTION DE L'INFOBULLE FLUIDE (LERP) ===
     const infobulle = document.getElementById('infobulle');
     let sourisX = 0, sourisY = 0, infobulleX = 0, infobulleY = 0, estVisible = false;
-    const vitesseLerp = 0.15; 
+    const vitesseLerp = 0.15;
 
     window.addEventListener('mousemove', (e) => { sourisX = e.clientX; sourisY = e.clientY; });
 
@@ -173,12 +174,12 @@
         }
     }
 
-    window.afficherInfobulle = function(titre, film, urlImage = null) {
+    window.afficherInfobulle = function (titre, film, urlImage = null) {
         if (!infobulle) return;
         document.getElementById('infobulle-titre').textContent = titre;
         document.getElementById('infobulle-film').textContent = `Film : ${film}`;
         const imgEl = document.getElementById('infobulle-img');
-        if (urlImage) { imgEl.src = urlImage; imgEl.style.display = 'block'; } 
+        if (urlImage) { imgEl.src = urlImage; imgEl.style.display = 'block'; }
         else { imgEl.style.display = 'none'; }
         infobulle.classList.add('visible');
         document.body.classList.add('survol-objet');
@@ -187,7 +188,7 @@
         requestAnimationFrame(animerUI); // Relance la boucle d'animation
     };
 
-    window.cacherInfobulle = function() {
+    window.cacherInfobulle = function () {
         if (!infobulle) return;
         infobulle.classList.remove('visible');
         document.body.classList.remove('survol-objet');
@@ -202,7 +203,7 @@
         feedback: document.getElementById('quiz-feedback')
     };
 
-    window.ui_afficherQuiz = function(data, callback) {
+    window.ui_afficherQuiz = function (data, callback) {
         if (!DOM.modal) { console.error("❌ ERREUR : Modale introuvable."); return; }
 
         DOM.optionsContainer.innerHTML = '';
@@ -224,13 +225,13 @@
 
                     if (estBonne) {
                         window.jouerSFX('/sounds/succes.mp3', 0.3); // SON DE BONNE RÉPONSE
-                        
+
                         btn.classList.add('correct');
                         DOM.feedback.textContent = data.anecdoteSucces || "Bonne réponse !";
-                        DOM.feedback.classList.add('succes' );
+                        DOM.feedback.classList.add('succes');
                     } else {
-                       window.jouerSFX('/sounds/erreur.mp3', 0.3); // SON DE MAUVAISE RÉPONSE
-                        
+                        window.jouerSFX('/sounds/erreur.mp3', 0.3); // SON DE MAUVAISE RÉPONSE
+
                         btn.classList.add('incorrect');
                         DOM.feedback.textContent = data.anecdoteEchec || "Mauvaise réponse !";
                         DOM.feedback.classList.add('erreur');
@@ -250,7 +251,7 @@
             });
         }
 
-        if(window.bloquerControles3D) window.bloquerControles3D(true);
+        if (window.bloquerControles3D) window.bloquerControles3D(true);
         DOM.modal.classList.remove('cache');
     };
     // === GESTION DE LA MODALE DES CONTRÔLES ===
@@ -281,12 +282,12 @@
 
     if (btnPause) btnPause.addEventListener('click', () => { window.jouerSFX('/sounds/clic.mp3'); if (window.togglePause) window.togglePause(); });
     if (btnReprendre) btnReprendre.addEventListener('click', () => { window.jouerSFX('/sounds/clic.mp3'); if (window.togglePause) window.togglePause(); });
-   if (btnRecommencer) btnRecommencer.addEventListener('click', () => { 
+    if (btnRecommencer) btnRecommencer.addEventListener('click', () => {
         window.jouerSFX('/sounds/clic.mp3');
-        localStorage.removeItem("popcorn_save"); 
+        localStorage.removeItem("popcorn_save");
         sessionStorage.setItem("skipIntro", "true"); // 🚀 MAGIE : Bypasse le tuto au rechargement !
         if (window.nettoyerMemoire) window.nettoyerMemoire();
-        location.reload(); 
+        location.reload();
     });
     btnQuitterList.forEach(btn => btn.addEventListener('click', () => {
         if (window.nettoyerMemoire) window.nettoyerMemoire();
@@ -301,7 +302,7 @@
         sliderMusique.addEventListener('input', (e) => {
             const vol = parseFloat(e.target.value);
             window.audioState.volumeMusique = vol;
-            if (window.ambiance) window.ambiance.volume = vol; 
+            if (window.ambiance) window.ambiance.volume = vol;
             if (window.musiquePause) window.musiquePause.volume = vol; // Modifie aussi la musique de pause !
         });
     }
@@ -310,7 +311,7 @@
         sliderSFX.addEventListener('input', (e) => {
             window.audioState.volumeSFX = parseFloat(e.target.value);
             // On joue un tout petit clic silencieux pour que le joueur se rende compte du niveau sonore
-            window.jouerSFX('/sounds/clic.mp3', 0.5); 
+            window.jouerSFX('/sounds/clic.mp3', 0.5);
         });
     }
     const selectJukebox = document.getElementById('select-jukebox');
@@ -320,7 +321,7 @@
         });
     }
 
-   // Synchronisation de l'UI avec l'état de pause global
+    // Synchronisation de l'UI avec l'état de pause global
     window.ui_syncPause = () => {
         const modalPause = document.getElementById('modal-pause');
         if (modalPause) {
@@ -337,7 +338,7 @@
             }
         }
     };
-    
+
     // === GESTION DE L'ÉCRAN DE FIN ===
     window.afficherFin = (victoire) => {
         if (window.bloquerControles3D) window.bloquerControles3D(true);
@@ -345,10 +346,10 @@
         const titreFin = document.getElementById('titre-fin');
         const texteFin = document.getElementById('texte-fin');
         const modalFin = document.getElementById('modal-fin');
-        
+
         if (window.ambiance) window.ambiance.pause(); // Coupe le Jukebox
         window.jouerSFX(victoire ? '/sounds/victoire_final.mp3' : '/sounds/game_over.mp3', 1.0);
-        
+
         const best = Math.max(score, localStorage.getItem('dis_best') || 0);
         localStorage.setItem('dis_best', best);
         if (titreFin) titreFin.innerHTML = victoire ? "<span style='color:#2ed573'>👑 VICTOIRE !</span>" : "<span style='color:#ff4757'>💀 FIN DE PARTIE</span>";
@@ -362,9 +363,9 @@
         if (window.ambiance) window.ambiance.volume = window.isRetroMode ? 0 : window.audioState.volumeMusique;
         const vid = document.getElementById("video-ps2");
         if (!vid) return;
-        if (window.isRetroMode) { 
-            vid.classList.remove("cache"); vid.currentTime = 0; vid.play(); 
-            vid.onended = () => { vid.classList.add("cache"); if (window.ambiance) window.ambiance.volume = window.audioState.volumeMusique; }; 
+        if (window.isRetroMode) {
+            vid.classList.remove("cache"); vid.currentTime = 0; vid.play();
+            vid.onended = () => { vid.classList.add("cache"); if (window.ambiance) window.ambiance.volume = window.audioState.volumeMusique; };
         }
         else { vid.pause(); vid.classList.add("cache"); if (window.ambiance) window.ambiance.volume = window.audioState.volumeMusique; }
     };
