@@ -236,6 +236,7 @@ export const disneyData =[
     flotte: false, x: -157.38, y: 13.64, z: -211.52, rotX: 0.346, rotY: 1.373, rotZ: -0.448, scale: 12.00,
     hasLowPoly: true
   },
+  /* 
   {
     id: "hyene", // 🟢 Le Roi Lion
     nom: "La Hyène",
@@ -247,6 +248,7 @@ export const disneyData =[
     flotte: false, x: 41.11, y: 2.79, z: -107.93, rotX: 0.000, rotY: 0.000, rotZ: 0.000, scale: 12.00,
     hasLowPoly: true
   },
+  */
   {
     id: "liane", // 🟢 Tarzan
     nom: "La Liane de Tarzan",

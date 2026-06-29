@@ -285,9 +285,13 @@
         window.jouerSFX('/sounds/clic.mp3');
         localStorage.removeItem("popcorn_save"); 
         sessionStorage.setItem("skipIntro", "true"); // 🚀 MAGIE : Bypasse le tuto au rechargement !
+        if (window.nettoyerMemoire) window.nettoyerMemoire();
         location.reload(); 
     });
-    btnQuitterList.forEach(btn => btn.addEventListener('click', () => location.reload()));
+    btnQuitterList.forEach(btn => btn.addEventListener('click', () => {
+        if (window.nettoyerMemoire) window.nettoyerMemoire();
+        location.reload();
+    }));
 
     // === GESTION DES VOLUMES (Sliders Menu Pause) ===
     const sliderMusique = document.getElementById('volume-musique');

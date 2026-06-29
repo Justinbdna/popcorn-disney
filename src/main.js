@@ -28,7 +28,7 @@ const lodsScene = []; // Tableau global pour les LODs
 // --- SKYBOX (La vue par les fenêtres) ---
 // ⚠️ Assure-toi d'avoir une image panoramique dans public/pictures/ciel.jpg
 const textureLoader = new THREE.TextureLoader(); // 🛑 FIX : Plus de 'manager' ici !
-textureLoader.load('/pictures/ciel.jpg', (texture) => {
+textureLoader.load('/pictures/cielV2.jpg', (texture) => {
   texture.mapping = THREE.EquirectangularReflectionMapping;
   texture.colorSpace = THREE.SRGBColorSpace;
   scene.background = texture;
@@ -732,5 +732,22 @@ const animate = () => {
     perfData.geometries = renderer.info.memory.geometries;
   }
 }; 
-
 animate();
+
+window.nettoyerMemoire = () => {
+  renduAutorise = false;
+  scene.traverse((child) => {
+    if (child.isMesh) {
+      if (child.geometry) child.geometry.dispose();
+      if (child.material) {
+        const mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats.forEach(m => {
+          ['map', 'normalMap', 'aoMap', 'emissiveMap', 'roughnessMap', 'metalnessMap'].forEach(k => { if (m[k]) m[k].dispose(); });
+          m.dispose();
+        });
+      }
+    }
+  });
+  renderer.dispose();
+  console.log("🧹 Mémoire WebGL purgée avec succès.");
+};
