@@ -134,14 +134,21 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 // --- SKYBOX (La vue par les fenêtres) ---
 const textureLoader = new THREE.TextureLoader();
-textureLoader.load("/pictures/cielV2.webp", (texture) => {
-  texture.mapping = THREE.EquirectangularReflectionMapping;
-  texture.colorSpace = THREE.SRGBColorSpace;
-  scene.background = texture;
-  // Économise la génération PMREM (~24 Mo VRAM) sur mobile et GPU intégrés modestes
-  if (!isMobile && !isLowEnd) scene.environment = texture;
-  window.demanderRendu?.();
-});
+const skyboxPromise = textureLoader
+  .loadAsync("/pictures/cielV2.webp")
+  .then((texture) => {
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+    texture.colorSpace = THREE.SRGBColorSpace;
+    scene.background = texture;
+    // Économise la génération PMREM (~24 Mo VRAM) sur mobile et GPU intégrés modestes
+    if (!isMobile && !isLowEnd) scene.environment = texture;
+    window.demanderRendu?.();
+    return texture;
+  })
+  .catch((err) => {
+    console.warn("⚠️ Skybox indisponible :", err);
+    return null;
+  });
 
 // =========================================================================
 // 🎥 3. CONTRÔLES DE LA CAMÉRA (OrbitControls)
@@ -315,6 +322,7 @@ window.togglePause = () => {
 // 📱 5. INITIALISATION DU JOYSTICK MOBILE (Nipple.js)
 // =========================================================================
 window.lancerJeu3D = () => {
+  window.finaliserPrechargementGPU?.();
   if (joystickInitialise) return;
   if (isTouchDevice || isMobile) {
     const zoneJoystick = document.getElementById("zone-joystick");
@@ -789,6 +797,107 @@ function updateVisionCulling() {
   }
 }
 
+const TEXTURE_SLOTS = [
+  "map",
+  "normalMap",
+  "aoMap",
+  "emissiveMap",
+  "roughnessMap",
+  "metalnessMap",
+  "bumpMap",
+  "lightMap",
+  "alphaMap",
+];
+const warmedTextures = new WeakSet();
+const warmupTextureQueue = [];
+let warmupRafId = 0;
+let warmupTexturesPerFrame = isMobile || isLowEnd ? 2 : 4;
+let gpuPreloadRequested = false;
+let pmremWarmed = false;
+let chargementModelesTermine = false;
+
+function collectSceneTextures() {
+  const pushTex = (tex) => {
+    if (tex && tex.isTexture && !warmedTextures.has(tex)) {
+      warmedTextures.add(tex);
+      warmupTextureQueue.push(tex);
+    }
+  };
+  pushTex(scene.background);
+  pushTex(scene.environment);
+  scene.traverse((child) => {
+    if (!child.isMesh || !child.material) return;
+    const mats = Array.isArray(child.material)
+      ? child.material
+      : [child.material];
+    for (let i = 0; i < mats.length; i++) {
+      const mat = mats[i];
+      if (!mat) continue;
+      for (let k = 0; k < TEXTURE_SLOTS.length; k++) {
+        pushTex(mat[TEXTURE_SLOTS[k]]);
+      }
+    }
+  });
+}
+
+function warmInitialRenderPass() {
+  if (pmremWarmed || !chargementModelesTermine) return;
+  pmremWarmed = true;
+  updateVisionCulling();
+  renderer.render(scene, camera);
+}
+
+function pumpTextureWarmup() {
+  warmupRafId = 0;
+  let count = 0;
+  while (warmupTextureQueue.length > 0 && count < warmupTexturesPerFrame) {
+    const tex = warmupTextureQueue.shift();
+    try {
+      renderer.initTexture(tex);
+    } catch {}
+    count++;
+  }
+  if (warmupTextureQueue.length > 0) {
+    warmupRafId = window.requestAnimationFrame(pumpTextureWarmup);
+  } else {
+    // Génère le PMREM envMap et amorce le pipeline GPU tant que le tuto/chargement masque la scène
+    warmInitialRenderPass();
+  }
+}
+
+function flushTextureWarmup() {
+  if (warmupRafId) {
+    window.cancelAnimationFrame(warmupRafId);
+    warmupRafId = 0;
+  }
+  while (warmupTextureQueue.length > 0) {
+    const tex = warmupTextureQueue.shift();
+    try {
+      renderer.initTexture(tex);
+    } catch {}
+  }
+  warmInitialRenderPass();
+}
+
+window.prechargerToutTuto = () => {
+  gpuPreloadRequested = true;
+  warmupTexturesPerFrame = isMobile || isLowEnd ? 4 : 8;
+  if (warmupTextureQueue.length > 0 && !warmupRafId) {
+    warmupRafId = window.requestAnimationFrame(pumpTextureWarmup);
+  } else if (chargementModelesTermine && warmupTextureQueue.length === 0) {
+    warmInitialRenderPass();
+  }
+};
+
+window.finaliserPrechargementGPU = () => {
+  gpuPreloadRequested = true;
+  flushTextureWarmup();
+  drsLastTime = performance.now();
+  stepAccumule = intervalleFPS;
+  renduAutorise = true;
+  forceRender = true;
+};
+
 const chargerTout = async () => {
   manager.itemStart("chargement_sequentiel");
 
@@ -956,12 +1065,35 @@ const chargerTout = async () => {
   dracoLoader.dispose();
   manager.itemEnd("chargement_sequentiel");
 
+  await skyboxPromise;
   console.log("✅ Tous les modèles sont chargés.");
-  if (!isMobile) renderer.compile(scene, camera);
+
+  try {
+    await renderer.compileAsync(scene, camera);
+  } catch {
+    renderer.compile(scene, camera);
+  }
+  collectSceneTextures();
+  if (gpuPreloadRequested) {
+    warmupTexturesPerFrame = isMobile || isLowEnd ? 4 : 8;
+  }
 
   await initDevTools();
   updateVisionCulling();
-  renduAutorise = true;
+  chargementModelesTermine = true;
+
+  if (MODE_DEV || sessionStorage.getItem("skipIntro") === "true") {
+    flushTextureWarmup();
+    renduAutorise = true;
+  } else {
+    if (warmupTextureQueue.length > 0 && !warmupRafId) {
+      warmupRafId = window.requestAnimationFrame(pumpTextureWarmup);
+    } else if (warmupTextureQueue.length === 0) {
+      warmInitialRenderPass();
+    }
+    renduAutorise = !estIntroPresente();
+  }
+  drsLastTime = performance.now();
   forceRender = true;
   window.ui_majDRSBadge?.(window.drsEnabled, drsScale);
 
@@ -1251,7 +1383,7 @@ const axeY = new THREE.Vector3(0, 1, 0);
 
 const vitesseUnitsParSec = 30;
 const vitesseRotPadRad = 3.0;
-const fpsMax = isMobile || isLowEnd ? 60 : 120;
+const fpsMax = 60;
 const intervalleFPS = 1 / fpsMax;
 let stepAccumule = 0;
 let hauteurJoueur = 26;
@@ -1323,14 +1455,19 @@ const animate = () => {
   window.requestAnimationFrame(animate);
   const rawDelta = clock.getDelta();
   if (document.hidden || !renduAutorise) {
+    stepAccumule = 0;
     drsLastTime = performance.now();
     return;
   }
 
   stepAccumule += rawDelta;
-  if (stepAccumule < intervalleFPS) return;
+  // Tolérance de 2 ms pour absorber la gigue VSync (évite un saut à 30 FPS sur écran 60 Hz)
+  if (stepAccumule < intervalleFPS - 0.002) return;
   const dt = Math.min(stepAccumule, 0.05);
-  stepAccumule = stepAccumule % intervalleFPS;
+  stepAccumule = Math.min(
+    Math.max(0, stepAccumule - intervalleFPS),
+    intervalleFPS * 0.5,
+  );
 
   // A. LECTURE MANETTE
   let gamepadActif = null;

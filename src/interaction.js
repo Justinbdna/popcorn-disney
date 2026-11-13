@@ -11,6 +11,31 @@
   window.isRetroMode = false;
 
   const sfxPool = Object.create(null);
+  let audioCritiquePrecharge = false;
+  window.prechargerAudioCritique = () => {
+    if (audioCritiquePrecharge) return;
+    audioCritiquePrecharge = true;
+    const pistesSFX = [
+      "/sounds/clic.mp3",
+      "/sounds/succes.mp3",
+      "/sounds/erreur.mp3",
+    ];
+    for (const src of pistesSFX) {
+      if (!sfxPool[src]) {
+        const audio = new Audio(src);
+        audio.preload = "auto";
+        audio.load();
+        sfxPool[src] = audio;
+      }
+    }
+    if (!window.ambiance) {
+      window.ambiance = new Audio("/sounds/ambiance.mp3");
+      window.ambiance.loop = true;
+      window.ambiance.preload = "auto";
+      window.ambiance.load();
+    }
+  };
+
   window.jouerSFX = (chemin, volumeBase = 1.0) => {
     if (window.audioState.volumeSFX > 0 && !window.audioState.muteRetro) {
       if (!sfxPool[chemin]) sfxPool[chemin] = new Audio(chemin);
@@ -92,6 +117,8 @@
   if (btnDecouvrir) {
     btnDecouvrir.addEventListener("click", () => {
       btnDecouvrir.style.display = "none";
+      window.prechargerAudioCritique?.();
+      window.prechargerToutTuto?.();
 
       if (repriseDepuisSauvegarde) {
         // Reprise directe de la partie sauvegardée sans repasser par le tutoriel
@@ -108,6 +135,7 @@
 
         window.demarrerAmbiance();
         window.initialiserHUD(totalSauvegarde, repriseDepuisSauvegarde);
+        window.finaliserPrechargementGPU?.();
         window.lancerJeu3D?.();
         return;
       }
@@ -174,6 +202,7 @@
         }, 1500);
       }
       window.initialiserHUD(totalSauvegarde, null);
+      window.finaliserPrechargementGPU?.();
       window.lancerJeu3D?.();
     });
   }
