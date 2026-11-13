@@ -1,23 +1,44 @@
 :root {
   --or-disney: #ffd700;
-  --fond-ui: rgba(15, 15, 25, 0.65);
+  --fond-ui: rgba(12, 12, 24, 0.86);
   --couleur-succes: #2ed573;
   --couleur-erreur: #ff4757;
   --taille-cible-tactile: 64px;
 }
 
-* {
+html {
   box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
 }
 
 /* 🛑 FIX : Force l'affichage en pixels bruts (Effet PS1) */
 canvas.mode-retro {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  #video-ps2 {
-  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-  object-fit: cover; z-index: 999999; background: black; pointer-events: none;
 }
+
+#video-ps2 {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  z-index: 999999;
+  background: black;
+  pointer-events: none;
+}
+
+#webgl {
+  position: fixed;
+  top: 0;
+  left: 0;
+  touch-action: none;
 }
 
 body,
@@ -27,6 +48,7 @@ html {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  touch-action: none;
   font-family: "Segoe UI", system-ui, sans-serif;
   background-color: #050510;
   color: white;
@@ -209,7 +231,7 @@ html {
   font-family: inherit;
   pointer-events: auto;
 }
-.bouton-magique:hover {
+.bouton-magique:hover:not(:disabled) {
   background: var(--or-disney);
   color: #000;
   box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
@@ -248,14 +270,15 @@ html {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
+  background: rgba(5, 5, 16, 0.62);
   z-index: -1;
 }
 
 .contenu-tuto {
   text-align: center;
   max-width: 700px;
+  max-height: 92dvh;
+  overflow-y: auto;
   padding: 40px;
   background: rgba(15, 15, 20, 0.5);
   border: 1px solid rgba(255, 215, 0, 0.3);
@@ -271,24 +294,34 @@ html {
   text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
 }
 .etapes-container {
-  position: relative;
-  height: 150px;
-  margin-bottom: 40px;
+  display: grid;
+  align-items: center;
+  margin-bottom: 28px;
 }
 .etape-tuto {
-  position: absolute;
-  top: 0;
-  left: 0;
+  grid-area: 1 / 1;
   width: 100%;
   opacity: 0;
-  transform: translateY(20px) scale(0.95);
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(16px) scale(0.96);
+  transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1), transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
 }
 .etape-tuto.active {
   opacity: 1;
   transform: translateY(0) scale(1);
   pointer-events: auto;
+  z-index: 1;
+}
+.navigation-tuto {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+#btn-rentrer.cache {
+  display: none;
 }
 .etape-tuto h2 {
   color: white;
@@ -317,6 +350,7 @@ html {
   z-index: 500;
   transition: opacity 0.5s ease;
   pointer-events: none;
+  contain: layout style;
 }
 .hud-section {
   display: flex;
@@ -325,26 +359,24 @@ html {
 }
 .hud-bulle {
   background: var(--fond-ui);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.35);
   padding: 10px 20px;
   border-radius: 30px;
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: bold;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   gap: 10px;
+  contain: layout style paint;
 }
-.chrono-container {
-  font-family: monospace;
-  font-size: 1.5rem;
+.objets-container {
   color: #fff;
-  border-color: var(--or-disney);
+  border-color: rgba(255, 215, 0, 0.55);
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
 }
 
-/* FENÊTRES MODALES (FIX CRITIQUE) */
+/* FENÊTRES MODALES */
 .modal {
   position: fixed;
   top: 0;
@@ -355,26 +387,29 @@ html {
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: opacity 0.4s ease;
-  background-color: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
-  pointer-events: auto; /* Bouclier actif ! */
+  transition: opacity 0.35s ease;
+  background-color: rgba(5, 6, 16, 0.72);
+  pointer-events: auto;
+  contain: layout style;
 }
 .modal-contenu {
-  background: rgba(15, 15, 20, 0.5);
-  backdrop-filter: blur(15px);
-  border: 2px solid rgba(255, 215, 0, 0.4);
+  background: rgba(16, 18, 30, 0.94);
+  border: 2px solid rgba(255, 215, 0, 0.45);
   border-radius: 20px;
   padding: 40px;
   width: 90%;
   max-width: 500px;
+  max-height: 92dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   text-align: center;
   box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.5),
+    0 20px 50px rgba(0, 0, 0, 0.6),
     0 0 30px rgba(255, 215, 0, 0.1) inset;
   transform: scale(1);
-  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   pointer-events: auto;
+  contain: layout style paint;
 }
 .modal.cache .modal-contenu {
   transform: scale(0.8) translateY(30px);
@@ -485,8 +520,8 @@ html {
     font-size: 0.75rem;
     padding: 4px 8px;
   }
-  .chrono-container {
-    font-size: 0.85rem;
+  .objets-container {
+    font-size: 0.78rem;
     padding: 4px 8px;
   }
   .bouton-icone {
@@ -525,21 +560,21 @@ html {
 =============================================== */
 .bouton-icone {
   background: var(--fond-ui);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 50%;
   width: 50px;
   height: 50px;
   font-size: 1.5rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
   color: white;
   display: flex;
   justify-content: center;
   align-items: center;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  contain: layout style paint;
 }
-.bouton-icone:hover {
+.bouton-icone:hover:not(:disabled) {
   transform: scale(1.1);
   border-color: var(--or-disney);
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
@@ -759,10 +794,10 @@ html {
 =============================================== */
 .controles-audio {
   background: rgba(0, 0, 0, 0.4);
-  padding: 20px;
+  padding: 16px;
   border-radius: 15px;
   border: 1px solid rgba(255, 215, 0, 0.2);
-  margin: 20px auto 30px auto;
+  margin: 14px auto 14px auto;
   width: 100%;
 }
 
@@ -810,12 +845,68 @@ html {
 .param-audio input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.3);
 }
+.param-drs {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.param-drs label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.98rem;
+  cursor: pointer;
+}
+.drs-badge {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--or-disney);
+  opacity: 0.9;
+}
+#toggle-drs {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 48px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.45);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+#toggle-drs::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+#toggle-drs:checked {
+  background: rgba(255, 215, 0, 0.35);
+}
+#toggle-drs:checked::after {
+  transform: translateX(22px);
+  background: var(--or-disney);
+}
 .flex-choix { display: flex; gap: 15px; justify-content: center; margin: 25px 0; }
 .btn-diff { padding: 12px 25px; font-size: 1.2rem; font-weight: bold; border-radius: 12px; cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent; color: white; background: rgba(0,0,0,0.5); text-transform: uppercase; }
-.btn-diff:hover { transform: scale(1.1); box-shadow: 0 0 15px currentColor; }
+.btn-diff:hover:not(:disabled) { transform: scale(1.1); box-shadow: 0 0 15px currentColor; }
 .btn-diff.facile { border-color: #2ed573; color: #2ed573; } .btn-diff.normal { border-color: #ffa502; color: #ffa502; } .btn-diff.hard { border-color: #ff4757; color: #ff4757; }
 /* 📱 FIX MOBILE : Menu des difficultés */
 @media screen and (max-width: 768px) {
+  .modal-contenu {
+    padding: 26px 18px;
+  }
+  .param-audio label {
+    min-width: 115px;
+    font-size: 0.96rem;
+  }
   .flex-choix {
     flex-direction: column;
     gap: 12px;
@@ -827,7 +918,20 @@ html {
     font-size: 1.1rem;
   }
 }
-/* 🛑 FIX : Désintégration totale de la bulle chrono sur le HUD */
-.chrono-container, #chrono-affichage {
-    display: none !important;
+
+@media (prefers-reduced-motion: reduce) {
+  .perso-flottant,
+  .cercle-image,
+  .schema {
+    animation: none !important;
+  }
+  .bouton-magique,
+  .bouton-icone,
+  .btn-option,
+  .btn-diff,
+  .etape-tuto,
+  .modal,
+  .modal-contenu {
+    transition: none !important;
+  }
 }

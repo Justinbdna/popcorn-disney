@@ -1,376 +1,618 @@
-
 /**
- * interaction.js - Gestionnaire d'Interface Utilisateur
+ * interaction.js - Gestionnaire d'Interface Utilisateur, Audio, DRS & Sauvegarde
  */
 
 (function initUIManager() {
-    'use strict';
-    // === AUDIO MANAGER GLOBAL ===
-    // On remplace les true/false par des valeurs de volume (0 à 1)
-    window.audioState = { volumeMusique: 0.3, volumeSFX: 0.5, muteRetro: false };
-    window.ambiance = null;
+  "use strict";
 
-    const sfxPool = {}; // Pool : 1 élément Audio par chemin unique
-    window.jouerSFX = (chemin, volumeBase = 1.0) => {
-        if (window.audioState.volumeSFX > 0 && !window.audioState.muteRetro) {
-            if (!sfxPool[chemin]) sfxPool[chemin] = new Audio(chemin);
-            const audio = sfxPool[chemin];
-            audio.volume = volumeBase * window.audioState.volumeSFX;
-            audio.currentTime = 0;
-            audio.play().catch(e => console.warn("Audio bloqué:", e));
-            return audio;
-        }
-        return null;
-    };
+  // === AUDIO MANAGER GLOBAL ===
+  window.audioState = { volumeMusique: 0.3, volumeSFX: 0.5, muteRetro: false };
+  window.ambiance = null;
+  window.isRetroMode = false;
 
-    // === GESTION DU SAS DE CHARGEMENT ===
-    const ecranChargement = document.getElementById('ecran-chargement');
-    const btnDecouvrir = document.getElementById('btn-decouvrir');
-    const ecranTutoriel = document.getElementById('ecran-tutoriel');
-    const texteChargement = document.querySelector('.texte-chargement');
-
-    if (btnDecouvrir) {
-        btnDecouvrir.addEventListener('click', () => {
-            btnDecouvrir.style.display = "none";
-
-            window.sonLancementGlobal = window.jouerSFX('/sounds/son_lancement.mp3', 0.8);
-
-            if (ecranTutoriel) {
-                ecranTutoriel.style.transition = "none";
-                ecranTutoriel.style.opacity = "1";
-                ecranTutoriel.classList.remove('cache');
-            }
-            if (ecranChargement) {
-                ecranChargement.style.transition = "opacity 1.5s ease-in-out";
-                setTimeout(() => ecranChargement.style.opacity = "0", 50);
-                setTimeout(() => ecranChargement.remove(), 1600);
-            }
-        });
+  const sfxPool = Object.create(null);
+  window.jouerSFX = (chemin, volumeBase = 1.0) => {
+    if (window.audioState.volumeSFX > 0 && !window.audioState.muteRetro) {
+      if (!sfxPool[chemin]) sfxPool[chemin] = new Audio(chemin);
+      const audio = sfxPool[chemin];
+      audio.volume = Math.min(1, volumeBase * window.audioState.volumeSFX);
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+      return audio;
     }
+    return null;
+  };
 
-    // === GESTION DU TUTORIEL FLUIDE ===
-    let etapeActuelle = 0;
-    const etapes = document.querySelectorAll('.etape-tuto');
-    const btnSuivant = document.getElementById('btn-suivant');
-    const btnRentrer = document.getElementById('btn-rentrer');
-
-    if (btnSuivant) {
-        btnSuivant.addEventListener('click', () => {
-            window.jouerSFX('/sounds/clic.mp3');
-            if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.remove('active');
-            etapeActuelle++;
-            if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.add('active');
-
-            if (etapeActuelle === 2) {
-                btnSuivant.style.display = 'none'; // 🛑 FIX : Plus de bouton "Suivant" ici
-            } else if (etapeActuelle === etapes.length - 1) {
-                btnSuivant.style.display = 'none';
-                setTimeout(() => btnRentrer.classList.remove('cache'), 300);
-            } else {
-                btnSuivant.style.display = 'inline-block';
-            }
-        });
+  window.demarrerAmbiance = () => {
+    if (!window.ambiance) {
+      window.ambiance = new Audio("/sounds/ambiance.mp3");
+      window.ambiance.loop = true;
     }
-
-    if (btnRentrer) {
-        btnRentrer.addEventListener('click', () => {
-            // 🛑 FIX : Coupure nette du son de lancement
-            if (window.sonLancementGlobal) window.sonLancementGlobal.pause();
-
-            // --- MUSIQUE DE FOND APPARTEMENT ---
-            if (!window.ambiance) {
-                window.ambiance = new Audio('/sounds/ambiance.mp3');
-                window.ambiance.loop = true;
-            }
-            // On applique le volume choisi par le joueur
-            window.ambiance.volume = window.audioState.volumeMusique;
-            if (window.ambiance.volume > 0) {
-                window.ambiance.play().catch(e => console.warn("Musique bloquée:", e));
-            }
-
-            if (ecranTutoriel) {
-                ecranTutoriel.style.backgroundColor = "#050510";
-                const video = document.getElementById("bg-video");
-                if (video) video.style.opacity = "0";
-                ecranTutoriel.style.transition = "opacity 1.5s ease-in-out";
-                ecranTutoriel.style.opacity = "0";
-                setTimeout(() => ecranTutoriel.remove(), 1500);
-            }
-            initialiserHUD();
-            if (typeof window.lancerJeu3D === 'function') window.lancerJeu3D();
-        });
+    window.ambiance.volume = window.audioState.volumeMusique;
+    if (
+      window.audioState.volumeMusique > 0 &&
+      !window.enPause &&
+      !window.isRetroMode
+    ) {
+      window.ambiance.play().catch(() => {
+        const repriseAuto = () => {
+          if (
+            window.ambiance &&
+            window.ambiance.paused &&
+            !window.enPause &&
+            !window.isRetroMode &&
+            window.audioState.volumeMusique > 0
+          ) {
+            window.ambiance.play().catch(() => {});
+          }
+        };
+        window.addEventListener("pointerdown", repriseAuto, { once: true });
+        window.addEventListener("keydown", repriseAuto, { once: true });
+      });
     }
+  };
 
-    // === GESTION DU HUD ===
-    const hud = document.getElementById('hud');
-    const affichageScore = document.getElementById('score-affichage');
-    const affichageVies = document.getElementById('vies-affichage');
-    const affichageChrono = document.getElementById('chrono-affichage');
-
-    let score = 0;
-    let vies = 3;
-    let tempsRestant = 600;
-    let intervalChrono;
-
-    document.querySelectorAll('.btn-diff').forEach(b => b.addEventListener('click', e => {
-        let l = e.target.dataset.lvl;
-        sessionStorage.setItem('diff_popcorn', l); // 💾 Mémorise la difficulté pour le Fast-Restart
-        window.viesMax = l === 'facile' ? 6 : l === 'difficile' ? 2 : 3; vies = window.viesMax;
-        if (affichageVies) affichageVies.textContent = "❤️".repeat(vies);
-        document.getElementById('btn-suivant').click();
-    }));
-
-    window.initialiserHUD = function () {
-        // 🔄 Fast-Restart : Restaure les vies selon la difficulté mémorisée
-        let l = sessionStorage.getItem('diff_popcorn') || 'normal';
-        window.viesMax = l === 'facile' ? 6 : l === 'difficile' ? 2 : 3; vies = window.viesMax;
-        if (affichageVies) affichageVies.textContent = "❤️".repeat(vies);
-
-        if (hud) hud.classList.remove('cache');
-        demarrerChrono();
+  // === VIDÉO FOND TUTORIEL (CHARGEMENT DIFFÉRÉ + REDUCED MOTION) ===
+  const activerVideoTuto = () => {
+    const vid = document.getElementById("bg-video");
+    if (!vid) return;
+    const reducedMotion = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (reducedMotion) return;
+    if (!vid.getAttribute("src") && vid.dataset.src) {
+      vid.src = vid.dataset.src;
     }
+    vid.play().catch(() => {});
+  };
 
-    window.ajouterScore = function (points) {
-        if (!affichageScore) return;
-        score += points;
-        affichageScore.textContent = score;
-        affichageScore.parentElement.style.transform = "scale(1.2)";
-        setTimeout(() => affichageScore.parentElement.style.transform = "scale(1)", 200);
-    };
+  const libererVideoTuto = () => {
+    const vid = document.getElementById("bg-video");
+    if (!vid) return;
+    vid.pause();
+    vid.removeAttribute("src");
+    vid.load();
+  };
 
-    // Mise à jour de la fonction perdreVie pour déclencher l'écran de Game Over
-    window.perdreVie = function () {
-        if (vies > 0) vies--;
-        if (affichageVies) {
-            affichageVies.textContent = "❤️".repeat(vies) + "🖤".repeat((window.viesMax || 3) - vies);
-        }
-        if (vies === 0) {
-            console.log("GAME OVER !");
-            if (window.afficherFin) window.afficherFin(false);
-        }
-    };
+  // === ÉTAT SAUVEGARDE & REPRISE ===
+  let repriseDepuisSauvegarde = null;
+  let totalSauvegarde = 26;
+  let partieTerminee = false;
 
-    function demarrerChrono() {
-        clearInterval(intervalChrono);
-        // 🛑 FIX RADICAL : Destruction totale de l'élément HTML pour contourner le cache iOS
-        const conteneurCentre = document.querySelector('.hud-centre');
-        if (conteneurCentre) conteneurCentre.remove();
-    }
+  window.ui_preparerRepriseSauvegarde = (totalObjets, savedData) => {
+    totalSauvegarde = totalObjets;
+    repriseDepuisSauvegarde = savedData || null;
+  };
 
-    // === GESTION DE L'INFOBULLE FLUIDE (LERP) ===
-    const infobulle = document.getElementById('infobulle');
-    let sourisX = 0, sourisY = 0, infobulleX = 0, infobulleY = 0, estVisible = false;
-    const vitesseLerp = 0.15;
+  // === GESTION DU SAS DE CHARGEMENT ===
+  const ecranChargement = document.getElementById("ecran-chargement");
+  const btnDecouvrir = document.getElementById("btn-decouvrir");
+  const ecranTutoriel = document.getElementById("ecran-tutoriel");
 
-    window.addEventListener('mousemove', (e) => { sourisX = e.clientX; sourisY = e.clientY; });
+  if (btnDecouvrir) {
+    btnDecouvrir.addEventListener("click", () => {
+      btnDecouvrir.style.display = "none";
 
-    function animerUI() {
-        if (estVisible && infobulle) {
-            infobulleX += (sourisX - infobulleX) * vitesseLerp;
-            infobulleY += (sourisY - infobulleY) * vitesseLerp;
-            infobulle.style.left = `${infobulleX}px`;
-            infobulle.style.top = `${infobulleY}px`;
-            requestAnimationFrame(animerUI);
-        }
-    }
+      if (repriseDepuisSauvegarde) {
+        // Reprise directe de la partie sauvegardée sans repasser par le tutoriel
+        window.jouerSFX("/sounds/clic.mp3", 0.7);
+        libererVideoTuto();
+        ecranTutoriel?.remove();
 
-    window.afficherInfobulle = function (titre, film, urlImage = null) {
-        if (!infobulle) return;
-        document.getElementById('infobulle-titre').textContent = titre;
-        document.getElementById('infobulle-film').textContent = `Film : ${film}`;
-        const imgEl = document.getElementById('infobulle-img');
-        if (urlImage) { imgEl.src = urlImage; imgEl.style.display = 'block'; }
-        else { imgEl.style.display = 'none'; }
-        infobulle.classList.add('visible');
-        document.body.classList.add('survol-objet');
-        if (!estVisible) { infobulleX = sourisX; infobulleY = sourisY; }
-        estVisible = true;
-        requestAnimationFrame(animerUI); // Relance la boucle d'animation
-    };
-
-    window.cacherInfobulle = function () {
-        if (!infobulle) return;
-        infobulle.classList.remove('visible');
-        document.body.classList.remove('survol-objet');
-        estVisible = false;
-    };
-
-    // === GESTION DU QUIZ ===
-    const DOM = {
-        modal: document.getElementById('modal-quiz'),
-        question: document.getElementById('quiz-titre'),
-        optionsContainer: document.getElementById('quiz-options'),
-        feedback: document.getElementById('quiz-feedback')
-    };
-
-    window.ui_afficherQuiz = function (data, callback) {
-        if (!DOM.modal) { console.error("❌ ERREUR : Modale introuvable."); return; }
-
-        DOM.optionsContainer.innerHTML = '';
-        DOM.feedback.textContent = '';
-        DOM.feedback.className = 'message-feedback';
-        DOM.question.textContent = data.question;
-
-        if (Array.isArray(data.options)) {
-            data.options.forEach((texteOption, index) => {
-                const btn = document.createElement('button');
-                btn.className = 'btn-option';
-                btn.textContent = texteOption;
-
-                btn.addEventListener('click', function onClick() {
-                    const boutons = DOM.optionsContainer.querySelectorAll('.btn-option');
-                    boutons.forEach(b => b.disabled = true);
-
-                    const estBonne = (index === data.reponseCorrecte);
-
-                    if (estBonne) {
-                        window.jouerSFX('/sounds/succes.mp3', 0.3); // SON DE BONNE RÉPONSE
-
-                        btn.classList.add('correct');
-                        DOM.feedback.textContent = data.anecdoteSucces || "Bonne réponse !";
-                        DOM.feedback.classList.add('succes');
-                    } else {
-                        window.jouerSFX('/sounds/erreur.mp3', 0.3); // SON DE MAUVAISE RÉPONSE
-
-                        btn.classList.add('incorrect');
-                        DOM.feedback.textContent = data.anecdoteEchec || "Mauvaise réponse !";
-                        DOM.feedback.classList.add('erreur');
-                        boutons[data.reponseCorrecte].classList.add('correct');
-                    }
-
-
-                    setTimeout(() => {
-                        DOM.modal.classList.add('cache');
-                        if (typeof callback === 'function') callback(estBonne);
-                        if (!estBonne) window.perdreVie(); else window.ajouterScore(100);
-                    }, 1800);
-
-                }, { once: true });
-
-                DOM.optionsContainer.appendChild(btn);
-            });
+        if (ecranChargement) {
+          ecranChargement.style.pointerEvents = "none";
+          ecranChargement.style.transition = "opacity 1.5s ease-in-out";
+          setTimeout(() => (ecranChargement.style.opacity = "0"), 50);
+          setTimeout(() => ecranChargement.remove(), 1600);
         }
 
-        if (window.bloquerControles3D) window.bloquerControles3D(true);
-        DOM.modal.classList.remove('cache');
-    };
-    // === GESTION DE LA MODALE DES CONTRÔLES ===
-    const btnOuvrirControles = document.getElementById('btn-ouvrir-controles');
-    const btnFermerControles = document.getElementById('btn-fermer-controles');
-    const modalControles = document.getElementById('modal-controles');
-    const onglets = document.querySelectorAll('.onglet');
-    const schemas = document.querySelectorAll('.schema');
+        window.demarrerAmbiance();
+        window.initialiserHUD(totalSauvegarde, repriseDepuisSauvegarde);
+        window.lancerJeu3D?.();
+        return;
+      }
 
-    if (btnOuvrirControles && modalControles) btnOuvrirControles.addEventListener('click', () => modalControles.classList.remove('cache'));
-    if (btnFermerControles && modalControles) btnFermerControles.addEventListener('click', () => modalControles.classList.add('cache'));
+      window.sonLancementGlobal = window.jouerSFX(
+        "/sounds/son_lancement.mp3",
+        0.8,
+      );
 
-    onglets.forEach(onglet => {
-        onglet.addEventListener('click', (e) => {
-            onglets.forEach(o => o.classList.remove('active'));
-            schemas.forEach(s => s.classList.remove('active'));
-            e.target.classList.add('active');
-            const cible = document.getElementById(e.target.getAttribute('data-cible'));
-            if (cible) cible.classList.add('active');
-        });
+      if (ecranTutoriel) {
+        ecranTutoriel.style.transition = "none";
+        ecranTutoriel.style.opacity = "1";
+        ecranTutoriel.classList.remove("cache");
+        activerVideoTuto();
+      }
+      if (ecranChargement) {
+        ecranChargement.style.pointerEvents = "none";
+        ecranChargement.style.transition = "opacity 1.5s ease-in-out";
+        setTimeout(() => (ecranChargement.style.opacity = "0"), 50);
+        setTimeout(() => ecranChargement.remove(), 1600);
+      }
     });
-    // === GESTION DES MENUS PAUSE & FIN ===
-    const modalPause = document.getElementById('modal-pause');
-    const btnPause = document.getElementById('btn-pause');
-    const btnReprendre = document.getElementById('btn-reprendre');
-    const btnRecommencer = document.getElementById('btn-recommencer');
-    const btnQuitterList = document.querySelectorAll('.btn-quitter');
+  }
 
-    if (btnPause) btnPause.addEventListener('click', () => { window.jouerSFX('/sounds/clic.mp3'); if (window.togglePause) window.togglePause(); });
-    if (btnReprendre) btnReprendre.addEventListener('click', () => { window.jouerSFX('/sounds/clic.mp3'); if (window.togglePause) window.togglePause(); });
-    if (btnRecommencer) btnRecommencer.addEventListener('click', () => {
-        window.jouerSFX('/sounds/clic.mp3');
-        localStorage.removeItem("popcorn_save");
-        sessionStorage.setItem("skipIntro", "true"); // 🚀 MAGIE : Bypasse le tuto au rechargement !
-        if (window.nettoyerMemoire) window.nettoyerMemoire();
-        location.reload();
+  // === GESTION DU TUTORIEL FLUIDE ===
+  let etapeActuelle = 0;
+  const etapes = document.querySelectorAll(".etape-tuto");
+  const btnSuivant = document.getElementById("btn-suivant");
+  const btnRentrer = document.getElementById("btn-rentrer");
+
+  if (btnSuivant) {
+    btnSuivant.addEventListener("click", () => {
+      window.jouerSFX("/sounds/clic.mp3");
+      if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.remove("active");
+      etapeActuelle++;
+      if (etapes[etapeActuelle]) etapes[etapeActuelle].classList.add("active");
+
+      if (etapeActuelle === 2) {
+        btnSuivant.style.display = "none";
+      } else if (etapeActuelle === etapes.length - 1) {
+        btnSuivant.style.display = "none";
+        setTimeout(() => btnRentrer?.classList.remove("cache"), 300);
+      } else {
+        btnSuivant.style.display = "inline-block";
+      }
     });
-    btnQuitterList.forEach(btn => btn.addEventListener('click', () => {
-        if (window.nettoyerMemoire) window.nettoyerMemoire();
-        location.reload();
-    }));
+  }
 
-    // === GESTION DES VOLUMES (Sliders Menu Pause) ===
-    const sliderMusique = document.getElementById('volume-musique');
-    const sliderSFX = document.getElementById('volume-sfx');
+  if (btnRentrer) {
+    btnRentrer.addEventListener("click", () => {
+      if (window.sonLancementGlobal) window.sonLancementGlobal.pause();
+      window.demarrerAmbiance();
 
-    if (sliderMusique) {
-        sliderMusique.addEventListener('input', (e) => {
-            const vol = parseFloat(e.target.value);
-            window.audioState.volumeMusique = vol;
-            if (window.ambiance) window.ambiance.volume = vol;
-            if (window.musiquePause) window.musiquePause.volume = vol; // Modifie aussi la musique de pause !
-        });
+      if (ecranTutoriel) {
+        ecranTutoriel.style.pointerEvents = "none";
+        ecranTutoriel.style.backgroundColor = "#050510";
+        const video = document.getElementById("bg-video");
+        if (video) video.style.opacity = "0";
+        ecranTutoriel.style.transition = "opacity 1.5s ease-in-out";
+        ecranTutoriel.style.opacity = "0";
+        setTimeout(() => {
+          libererVideoTuto();
+          ecranTutoriel.remove();
+        }, 1500);
+      }
+      window.initialiserHUD(totalSauvegarde, null);
+      window.lancerJeu3D?.();
+    });
+  }
+
+  // === GESTION DU HUD & SAUVEGARDE ===
+  const hud = document.getElementById("hud");
+  const affichageScore = document.getElementById("score-affichage");
+  const affichageVies = document.getElementById("vies-affichage");
+  const affichageObjets = document.getElementById("objets-affichage");
+
+  let score = 0;
+  let vies = 3;
+  let totalObjetsMemoire = 26;
+
+  document.querySelectorAll(".btn-diff").forEach((b) =>
+    b.addEventListener("click", (e) => {
+      const l = e.currentTarget.dataset.lvl;
+      localStorage.removeItem("popcorn_save");
+      sessionStorage.setItem("diff_popcorn", l);
+      window.viesMax = l === "facile" ? 6 : l === "difficile" ? 2 : 3;
+      vies = window.viesMax;
+      if (affichageVies) affichageVies.textContent = "❤️".repeat(vies);
+      btnSuivant?.click();
+    }),
+  );
+
+  window.ui_majObjetsTrouves = function (trouves, total = totalObjetsMemoire) {
+    totalObjetsMemoire = total;
+    if (affichageObjets) affichageObjets.textContent = `${trouves} / ${total}`;
+  };
+
+  window.initialiserHUD = function (
+    totalObjets = totalObjetsMemoire,
+    savedData = null,
+  ) {
+    partieTerminee = false;
+    totalObjetsMemoire = totalObjets;
+
+    const diff =
+      savedData?.difficulty ||
+      sessionStorage.getItem("diff_popcorn") ||
+      "normal";
+    sessionStorage.setItem("diff_popcorn", diff);
+    window.viesMax = diff === "facile" ? 6 : diff === "difficile" ? 2 : 3;
+
+    if (savedData && Array.isArray(savedData.foundIds)) {
+      score = Number(savedData.score) || 0;
+      vies = Math.max(
+        1,
+        Math.min(window.viesMax, Number(savedData.vies) || window.viesMax),
+      );
+      if (affichageScore) affichageScore.textContent = String(score);
+      window.ui_majObjetsTrouves(savedData.foundIds.length, totalObjets);
+    } else {
+      score = 0;
+      vies = window.viesMax;
+      if (affichageScore) affichageScore.textContent = "0";
+      window.ui_majObjetsTrouves(0, totalObjets);
     }
 
-    if (sliderSFX) {
-        sliderSFX.addEventListener('input', (e) => {
-            window.audioState.volumeSFX = parseFloat(e.target.value);
-            // On joue un tout petit clic silencieux pour que le joueur se rende compte du niveau sonore
-            window.jouerSFX('/sounds/clic.mp3', 0.5);
-        });
+    if (affichageVies) {
+      affichageVies.textContent =
+        "❤️".repeat(vies) + "🖤".repeat(Math.max(0, window.viesMax - vies));
     }
-    const selectJukebox = document.getElementById('select-jukebox');
-    if (selectJukebox) {
-        selectJukebox.addEventListener('change', (e) => {
-            if (window.changerMusique) window.changerMusique(e.target.value);
-        });
-    }
+    if (hud) hud.classList.remove("cache");
+  };
 
-    // Synchronisation de l'UI avec l'état de pause global
-    window.ui_syncPause = () => {
-        const modalPause = document.getElementById('modal-pause');
-        if (modalPause) {
-            if (window.enPause) {
-                modalPause.classList.remove('cache');
-                if (window.ambiance) window.ambiance.pause(); // Coupe le Jukebox
-                if (!window.musiquePause) { window.musiquePause = new Audio('/sounds/pause.mp3', 0.5); window.musiquePause.loop = true; }
-                window.musiquePause.volume = window.audioState.volumeMusique;
-                window.musiquePause.play().catch(e => console.warn(e)); // Lance la musique de pause
+  window.sauvegarderProgression = () => {
+    if (partieTerminee) return;
+    const foundIds = Array.isArray(window.__foundPropIds)
+      ? window.__foundPropIds
+      : [];
+    if (foundIds.length === 0 || vies <= 0) return;
+    try {
+      localStorage.setItem(
+        "popcorn_save",
+        JSON.stringify({
+          foundIds,
+          score,
+          vies,
+          difficulty: sessionStorage.getItem("diff_popcorn") || "normal",
+        }),
+      );
+    } catch {
+      // Stockage plein ou bloqué en navigation privée : on continue sans erreur
+    }
+  };
+
+  window.ajouterScore = function (points) {
+    score += points;
+    if (!affichageScore) return;
+    affichageScore.textContent = String(score);
+    const parent = affichageScore.parentElement;
+    if (parent) {
+      parent.style.transform = "scale(1.15)";
+      setTimeout(() => (parent.style.transform = "scale(1)"), 200);
+    }
+  };
+
+  window.perdreVie = function () {
+    if (vies > 0) vies--;
+    if (affichageVies) {
+      affichageVies.textContent =
+        "❤️".repeat(vies) +
+        "🖤".repeat(Math.max(0, (window.viesMax || 3) - vies));
+    }
+    if (vies === 0) {
+      window.afficherFin?.(false);
+    }
+  };
+
+  // === GESTION DU QUIZ ===
+  const DOM = {
+    modal: document.getElementById("modal-quiz"),
+    question: document.getElementById("quiz-titre"),
+    optionsContainer: document.getElementById("quiz-options"),
+    feedback: document.getElementById("quiz-feedback"),
+  };
+
+  let quizTimerId = null;
+  let quizFinaliser = null;
+
+  window.ui_fermerQuiz = function () {
+    if (quizFinaliser) {
+      quizFinaliser();
+      return;
+    }
+    DOM.modal?.classList.add("cache");
+    window.deselectionnerObjet?.();
+  };
+
+  window.ui_afficherQuiz = function (data, callback) {
+    if (!DOM.modal) return;
+    if (quizTimerId !== null) {
+      clearTimeout(quizTimerId);
+      quizTimerId = null;
+    }
+    quizFinaliser = null;
+
+    DOM.optionsContainer.innerHTML = "";
+    DOM.feedback.textContent = "";
+    DOM.feedback.className = "message-feedback";
+    DOM.question.textContent = data.question;
+
+    if (Array.isArray(data.options)) {
+      data.options.forEach((texteOption, index) => {
+        const btn = document.createElement("button");
+        btn.className = "btn-option";
+        btn.textContent = texteOption;
+
+        btn.addEventListener(
+          "click",
+          () => {
+            const boutons = DOM.optionsContainer.querySelectorAll(".btn-option");
+            boutons.forEach((b) => (b.disabled = true));
+
+            const estBonne = index === data.reponseCorrecte;
+            if (estBonne) {
+              window.jouerSFX("/sounds/succes.mp3", 0.3);
+              btn.classList.add("correct");
+              DOM.feedback.textContent =
+                data.anecdoteSucces || "Bonne réponse !";
+              DOM.feedback.classList.add("succes");
             } else {
-                modalPause.classList.add('cache');
-                if (window.musiquePause) window.musiquePause.pause(); // Coupe la musique de pause
-                if (window.ambiance && !window.isRetroMode) window.ambiance.play().catch(e => console.warn(e)); // Relance le Jukebox
+              window.jouerSFX("/sounds/erreur.mp3", 0.3);
+              btn.classList.add("incorrect");
+              DOM.feedback.textContent =
+                data.anecdoteEchec || "Mauvaise réponse !";
+              DOM.feedback.classList.add("erreur");
+              boutons[data.reponseCorrecte]?.classList.add("correct");
             }
-        }
+
+            quizFinaliser = () => {
+              if (quizTimerId !== null) {
+                clearTimeout(quizTimerId);
+                quizTimerId = null;
+              }
+              quizFinaliser = null;
+              DOM.modal.classList.add("cache");
+
+              if (estBonne) {
+                // Incrémenter le score avant objetTrouve -> afficherFin(true) pour afficher le score final exact
+                window.ajouterScore(100);
+                if (typeof callback === "function") callback(true);
+              } else {
+                if (typeof callback === "function") callback(false);
+                window.perdreVie();
+              }
+              window.sauvegarderProgression();
+            };
+            quizTimerId = setTimeout(quizFinaliser, 1800);
+          },
+          { once: true },
+        );
+
+        DOM.optionsContainer.appendChild(btn);
+      });
+    }
+
+    window.bloquerControles3D?.(true);
+    DOM.modal.classList.remove("cache");
+  };
+
+  // === GESTION DE LA MODALE DES CONTRÔLES ===
+  const btnOuvrirControles = document.getElementById("btn-ouvrir-controles");
+  const btnFermerControles = document.getElementById("btn-fermer-controles");
+  const modalControles = document.getElementById("modal-controles");
+  const onglets = document.querySelectorAll(".onglet");
+  const schemas = document.querySelectorAll(".schema");
+
+  window.ui_fermerControles = () => {
+    modalControles?.classList.add("cache");
+    if (!window.enPause) window.bloquerControles3D?.(false);
+    window.demanderRendu?.();
+  };
+
+  if (btnOuvrirControles && modalControles) {
+    btnOuvrirControles.addEventListener("click", () => {
+      modalControles.classList.remove("cache");
+      window.bloquerControles3D?.(true);
+    });
+  }
+  if (btnFermerControles) {
+    btnFermerControles.addEventListener("click", window.ui_fermerControles);
+  }
+
+  onglets.forEach((onglet) => {
+    onglet.addEventListener("click", (e) => {
+      const targetBtn = e.currentTarget;
+      onglets.forEach((o) => o.classList.remove("active"));
+      schemas.forEach((s) => s.classList.remove("active"));
+      targetBtn.classList.add("active");
+      const cible = document.getElementById(targetBtn.getAttribute("data-cible"));
+      if (cible) cible.classList.add("active");
+    });
+  });
+
+  // === GESTION DES MENUS PAUSE & FIN ===
+  const btnPause = document.getElementById("btn-pause");
+  const btnReprendre = document.getElementById("btn-reprendre");
+  const btnRecommencer = document.getElementById("btn-recommencer");
+  const btnResetList = document.querySelectorAll(".btn-reset-partie");
+  const btnQuitterList = document.querySelectorAll(".btn-quitter");
+
+  const reinitialiserPartieComplete = () => {
+    window.jouerSFX("/sounds/clic.mp3");
+    localStorage.removeItem("popcorn_save");
+    sessionStorage.setItem("skipIntro", "true");
+    window.nettoyerMemoire?.();
+    location.reload();
+  };
+
+  if (btnPause) {
+    btnPause.addEventListener("click", () => {
+      window.jouerSFX("/sounds/clic.mp3");
+      window.togglePause?.();
+    });
+  }
+  if (btnReprendre) {
+    btnReprendre.addEventListener("click", () => {
+      window.jouerSFX("/sounds/clic.mp3");
+      window.togglePause?.();
+    });
+  }
+  if (btnRecommencer) {
+    btnRecommencer.addEventListener("click", reinitialiserPartieComplete);
+  }
+  btnResetList.forEach((btn) =>
+    btn.addEventListener("click", reinitialiserPartieComplete),
+  );
+  btnQuitterList.forEach((btn) =>
+    btn.addEventListener("click", () => {
+      window.nettoyerMemoire?.();
+      location.reload();
+    }),
+  );
+
+  // === GESTION DES VOLUMES, DRS & JUKEBOX ===
+  const sliderMusique = document.getElementById("volume-musique");
+  const sliderSFX = document.getElementById("volume-sfx");
+  const toggleDRS = document.getElementById("toggle-drs");
+  const badgeDRS = document.getElementById("drs-status");
+
+  window.ui_majDRSBadge = (enabled, scale = 1.0) => {
+    const actif = Boolean(enabled);
+    if (toggleDRS) toggleDRS.checked = actif;
+    if (badgeDRS) {
+      badgeDRS.textContent = actif
+        ? `Auto (${Math.round((scale || 1) * 100)}%)`
+        : "Désactivé";
+    }
+  };
+
+  if (toggleDRS) {
+    const drsPref = localStorage.getItem("popcorn_drs") !== "false";
+    window.ui_majDRSBadge(drsPref, window.drsScale || 1.0);
+    toggleDRS.addEventListener("change", (e) => {
+      window.jouerSFX("/sounds/clic.mp3", 0.4);
+      window.setDrsEnabled?.(e.target.checked);
+    });
+  }
+
+  if (sliderMusique) {
+    sliderMusique.addEventListener("input", (e) => {
+      const vol = parseFloat(e.target.value);
+      window.audioState.volumeMusique = vol;
+      if (window.ambiance && !window.audioState.muteRetro) {
+        window.ambiance.volume = vol;
+      }
+      if (window.musiquePause) window.musiquePause.volume = vol;
+    });
+  }
+
+  if (sliderSFX) {
+    sliderSFX.addEventListener("input", (e) => {
+      window.audioState.volumeSFX = parseFloat(e.target.value);
+      window.jouerSFX("/sounds/clic.mp3", 0.5);
+    });
+  }
+
+  const selectJukebox = document.getElementById("select-jukebox");
+  if (selectJukebox) {
+    selectJukebox.addEventListener("change", (e) => {
+      window.changerMusique?.(e.target.value);
+    });
+  }
+
+  window.ui_syncPause = () => {
+    const modalPause = document.getElementById("modal-pause");
+    if (!modalPause) return;
+
+    if (window.enPause) {
+      window.ui_majDRSBadge(window.drsEnabled !== false, window.drsScale || 1.0);
+      modalPause.classList.remove("cache");
+      if (window.ambiance) window.ambiance.pause();
+      if (!window.musiquePause) {
+        window.musiquePause = new Audio("/sounds/pause.mp3");
+        window.musiquePause.loop = true;
+      }
+      window.musiquePause.volume = window.audioState.volumeMusique;
+      if (window.audioState.volumeMusique > 0) {
+        window.musiquePause.play().catch(() => {});
+      }
+    } else {
+      modalPause.classList.add("cache");
+      if (window.musiquePause) window.musiquePause.pause();
+      if (
+        window.ambiance &&
+        !window.audioState.muteRetro &&
+        window.audioState.volumeMusique > 0
+      ) {
+        window.ambiance.volume = window.audioState.volumeMusique;
+        window.ambiance.play().catch(() => {});
+      }
+    }
+  };
+
+  // === GESTION DE L'ÉCRAN DE FIN ===
+  window.afficherFin = (victoire) => {
+    partieTerminee = true;
+    localStorage.removeItem("popcorn_save");
+    window.bloquerControles3D?.(true);
+
+    const titreFin = document.getElementById("titre-fin");
+    const texteFin = document.getElementById("texte-fin");
+    const modalFin = document.getElementById("modal-fin");
+
+    if (window.ambiance) window.ambiance.pause();
+    if (window.musiquePause) window.musiquePause.pause();
+    window.jouerSFX(
+      victoire ? "/sounds/victoire_final.mp3" : "/sounds/game_over.mp3",
+      1.0,
+    );
+
+    const best = Math.max(score, Number(localStorage.getItem("dis_best") || 0));
+    localStorage.setItem("dis_best", String(best));
+    if (titreFin) {
+      titreFin.innerHTML = victoire
+        ? "<span style='color:#2ed573'>👑 VICTOIRE !</span>"
+        : "<span style='color:#ff4757'>💀 FIN DE PARTIE</span>";
+    }
+    if (texteFin) {
+      texteFin.innerHTML = `Ton Score : ${score} <br><br>🏆 Meilleur Score : ${best}`;
+    }
+    if (modalFin) modalFin.classList.remove("cache");
+    window.demanderRendu?.();
+  };
+
+  window.ui_AnimationPS2 = () => {
+    window.isRetroMode = !window.isRetroMode;
+    const vid = document.getElementById("video-ps2");
+
+    const restaurerAudioPostVideo = () => {
+      window.audioState.muteRetro = false;
+      if (vid) {
+        vid.classList.add("cache");
+        vid.pause();
+        vid.removeAttribute("src");
+        vid.load();
+      }
+      if (window.ambiance && !window.enPause) {
+        window.ambiance.volume = window.audioState.volumeMusique;
+      }
     };
 
-    // === GESTION DE L'ÉCRAN DE FIN ===
-    window.afficherFin = (victoire) => {
-        if (window.bloquerControles3D) window.bloquerControles3D(true);
-        if (typeof intervalChrono !== 'undefined') clearInterval(intervalChrono);
-        const titreFin = document.getElementById('titre-fin');
-        const texteFin = document.getElementById('texte-fin');
-        const modalFin = document.getElementById('modal-fin');
+    if (window.isRetroMode && vid) {
+      window.audioState.muteRetro = true;
+      if (window.ambiance) window.ambiance.volume = 0;
+      if (!vid.getAttribute("src") && vid.dataset.src) {
+        vid.src = vid.dataset.src;
+      }
+      vid.classList.remove("cache");
+      vid.currentTime = 0;
+      vid.onended = restaurerAudioPostVideo;
+      vid.onerror = restaurerAudioPostVideo;
+      vid.play().catch(restaurerAudioPostVideo);
+    } else {
+      restaurerAudioPostVideo();
+    }
+  };
 
-        if (window.ambiance) window.ambiance.pause(); // Coupe le Jukebox
-        window.jouerSFX(victoire ? '/sounds/victoire_final.mp3' : '/sounds/game_over.mp3', 1.0);
-
-        const best = Math.max(score, localStorage.getItem('dis_best') || 0);
-        localStorage.setItem('dis_best', best);
-        if (titreFin) titreFin.innerHTML = victoire ? "<span style='color:#2ed573'>👑 VICTOIRE !</span>" : "<span style='color:#ff4757'>💀 FIN DE PARTIE</span>";
-        if (texteFin) texteFin.innerHTML = `Ton Score : ${score} <br><br>🏆 Meilleur Score : ${best}`;
-        if (modalFin) modalFin.classList.remove('cache');
-    };
-    window.isRetroMode = false;
-    window.ui_AnimationPS2 = () => {
-        window.isRetroMode = !window.isRetroMode;
-        window.audioState.muteRetro = window.isRetroMode;
-        if (window.ambiance) window.ambiance.volume = window.isRetroMode ? 0 : window.audioState.volumeMusique;
-        const vid = document.getElementById("video-ps2");
-        if (!vid) return;
-        if (window.isRetroMode) {
-            vid.classList.remove("cache"); vid.currentTime = 0; vid.play();
-            vid.onended = () => { vid.classList.add("cache"); if (window.ambiance) window.ambiance.volume = window.audioState.volumeMusique; };
-        }
-        else { vid.pause(); vid.classList.add("cache"); if (window.ambiance) window.ambiance.volume = window.audioState.volumeMusique; }
-    };
-    window.changerMusique = (nomFichier) => {
-        if (!window.ambiance) return;
-        window.ambiance.pause(); window.ambiance.src = `/sounds/${nomFichier}`; window.ambiance.play();
-    };
+  window.changerMusique = (nomFichier) => {
+    if (!window.ambiance) {
+      window.ambiance = new Audio(`/sounds/${nomFichier}`);
+      window.ambiance.loop = true;
+    } else {
+      window.ambiance.pause();
+      window.ambiance.src = `/sounds/${nomFichier}`;
+      window.ambiance.load();
+    }
+    window.ambiance.volume = window.audioState.muteRetro
+      ? 0
+      : window.audioState.volumeMusique;
+    if (
+      !window.enPause &&
+      !window.audioState.muteRetro &&
+      window.audioState.volumeMusique > 0
+    ) {
+      window.ambiance.play().catch(() => {});
+    }
+  };
 })();

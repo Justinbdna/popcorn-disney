@@ -1,12 +1,25 @@
-export default function resize(camera, renderer) {
-  window.addEventListener("resize", () => {
-    // Met à jour la caméra
-    camera.aspect = window.innerWidth / window.innerHeight;
+export default function resize(camera, renderer, getPixelRatio) {
+  let resizeRaf = 0;
+
+  const applyResize = () => {
+    resizeRaf = 0;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    camera.aspect = width / height;
     camera.updateProjectionMatrix();
 
-    // Met à jour le moteur de rendu
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    const isMobile = window.innerWidth < 768;
-    renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(width, height);
+    const ratio =
+      typeof getPixelRatio === "function"
+        ? getPixelRatio()
+        : width < 768
+          ? 1
+          : Math.min(window.devicePixelRatio || 1, 2);
+    renderer.setPixelRatio(ratio);
+    if (typeof window.demanderRendu === "function") window.demanderRendu();
+  };
+
+  window.addEventListener("resize", () => {
+    if (!resizeRaf) resizeRaf = requestAnimationFrame(applyResize);
   });
 }

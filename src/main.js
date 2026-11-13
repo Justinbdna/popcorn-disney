@@ -1,91 +1,234 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import resize from "./resize.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import GUI from "lil-gui";
-import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
-import Stats from "three/examples/jsm/libs/stats.module.js";
-import { disneyData } from "./disneyData.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import nipplejs from "nipplejs";
+import resize from "./resize.js";
+import { disneyData } from "./disneyData.js";
 
 // =========================================================================
-// 🛠️ 1. CONFIGURATION GLOBALE ET DÉVELOPPEMENT
+// 🛠️ 1. CONFIGURATION GLOBALE ET PROFIL MATÉRIEL (LOW-END FIRST)
 // =========================================================================
 const MODE_DEV = false; // Mets sur 'false' pour le rendu final !
 window.easterEggDebloque = false;
 
-// Détection mobile immédiate
-const isMobile = window.innerWidth < 768;
+const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+const isMobile =
+  window.innerWidth < 768 ||
+  (isTouchDevice && Math.min(window.innerWidth, window.innerHeight) < 768);
+
+const hardwareLowHint =
+  isMobile ||
+  (typeof navigator.hardwareConcurrency === "number" &&
+    navigator.hardwareConcurrency <= 4) ||
+  (typeof navigator.deviceMemory === "number" && navigator.deviceMemory <= 4);
+
+const TOTAL_OBJETS = disneyData.length;
+
+// Sauvegarde persistante (entre rafraîchissements)
+let savedGame = null;
+try {
+  const parsed = JSON.parse(localStorage.getItem("popcorn_save") || "null");
+  if (
+    parsed &&
+    Array.isArray(parsed.foundIds) &&
+    parsed.foundIds.length > 0 &&
+    (parsed.vies ?? 1) > 0 &&
+    parsed.foundIds.length < TOTAL_OBJETS
+  ) {
+    savedGame = {
+      foundIds: parsed.foundIds.filter((id) => typeof id === "string"),
+      score: Number(parsed.score) || 0,
+      vies: Math.max(1, Number(parsed.vies) || 3),
+      difficulty: parsed.difficulty || "normal",
+    };
+  }
+} catch {
+  savedGame = null;
+}
+window.__foundPropIds = savedGame ? [...savedGame.foundIds] : [];
+window.hasSavedProgression = Boolean(savedGame);
 
 // =========================================================================
 // 🌍 2. INITIALISATION DE LA SCÈNE 3D (Scène, Caméra, Renderer)
 // =========================================================================
 const scene = new THREE.Scene();
+const propHitboxes = [];
 const objetsCliquables = [];
-const lodsScene = []; // Tableau global pour les LODs
+const lodsScene = [];
+const visiblePropHitboxes = [];
+const maisonBlockingMeshes = [];
 
-// --- SKYBOX (La vue par les fenêtres) ---
-// ⚠️ Assure-toi d'avoir une image panoramique dans public/pictures/ciel.jpg
-const textureLoader = new THREE.TextureLoader(); // 🛑 FIX : Plus de 'manager' ici !
-textureLoader.load('/pictures/cielV2.jpg', (texture) => {
-  texture.mapping = THREE.EquirectangularReflectionMapping;
-  texture.colorSpace = THREE.SRGBColorSpace;
-  scene.background = texture;
-  if (!isMobile) scene.environment = texture; // Reflets réalistes (desktop uniquement, économise ~24 Mo VRAM)
-});
-
-// 🛑 FIX : On force le FOV à 75 partout pour éviter l'effet "zoom énorme" en mode portrait
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.5, 500);
+const camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth / window.innerHeight,
+  0.5,
+  500,
+);
 camera.position.set(0, 23, 5);
 
 const canvas = document.querySelector("#webgl");
-// 🛑 OPTI : Antialias désactivé sur mobile, et on force la VRAIE carte graphique
-const renderer = new THREE.WebGLRenderer({ 
-  canvas: canvas, 
-  antialias: !isMobile, 
-  powerPreference: "high-performance" 
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: !isMobile && !hardwareLowHint,
+  powerPreference: "high-performance",
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
-window.lodDist = isMobile ? 80 : 120; // Valeur par défaut
-const ext = renderer.getContext().getExtension('WEBGL_debug_renderer_info');
-const gpu = ext ? renderer.getContext().getParameter(ext.UNMASKED_RENDERER_WEBGL).toLowerCase() : '';
-// 🛑 TEMP FIX : Distances augmentées en attendant les vrais modèles décimés (LOD 1)
-if (gpu.includes('intel') || gpu.includes('mali')) { renderer.setPixelRatio(1); window.lodDist = isMobile ? 80 : 130; }
-else { renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); window.lodDist = isMobile ? 130 : 220; }
-renderer.shadowMap.enabled = false; // Désactivé pour sauver la VRAM
+
+// Détection GPU pour adapter résolution, textures (Option B) et distances LOD
+const gl = renderer.getContext();
+const gpuExt = gl.getExtension("WEBGL_debug_renderer_info");
+const gpuName = gpuExt
+  ? String(gl.getParameter(gpuExt.UNMASKED_RENDERER_WEBGL) || "").toLowerCase()
+  : "";
+const isWeakGpu =
+  /intel|mali|adreno|powervr|videocore|vivante|swiftshader|llvmpipe|microsoft basic|softpipe/i.test(
+    gpuName,
+  );
+const isLowEnd =
+  isMobile ||
+  isWeakGpu ||
+  (!gpuName && hardwareLowHint) ||
+  (typeof navigator.deviceMemory === "number" && navigator.deviceMemory <= 4);
+
+window.lodDist = isMobile ? 250 : isLowEnd ? 300 : 380;
+
+// État DRS (Résolution Dynamique)
+const DRS_STEPS = [1.0, 0.85, 0.72, 0.6];
+let drsStepIdx = 0;
+let drsScale = 1.0;
+let drsLodFactor = 1.0;
+window.drsEnabled = localStorage.getItem("popcorn_drs") !== "false";
+window.drsScale = 1.0;
+
+const getBasePixelRatio = () => {
+  if (isMobile || isLowEnd) return 1;
+  return Math.min(window.devicePixelRatio || 1, 2);
+};
+
+const getTargetPixelRatio = () => {
+  if (window.easterEggDebloque) return 0.37;
+  const base = getBasePixelRatio();
+  if (!window.drsEnabled) return base;
+  return Math.max(0.55, Number((base * drsScale).toFixed(2)));
+};
+
+window.setDrsEnabled = (enabled) => {
+  window.drsEnabled = Boolean(enabled);
+  localStorage.setItem("popcorn_drs", String(window.drsEnabled));
+  if (!window.drsEnabled) {
+    drsStepIdx = 0;
+    drsScale = 1.0;
+    drsLodFactor = 1.0;
+    window.drsScale = 1.0;
+  }
+  renderer.setPixelRatio(getTargetPixelRatio());
+  window.ui_majDRSBadge?.(window.drsEnabled, drsScale);
+  window.demanderRendu?.();
+};
+
+renderer.setPixelRatio(getTargetPixelRatio());
+renderer.shadowMap.enabled = false; // Désactivé pour économiser la VRAM
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-// 🛑 Cache.clear() retiré : il purgeait les textures encore utilisées → points noirs
+// --- SKYBOX (La vue par les fenêtres) ---
+const textureLoader = new THREE.TextureLoader();
+textureLoader.load("/pictures/cielV2.webp", (texture) => {
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  scene.background = texture;
+  // Économise la génération PMREM (~24 Mo VRAM) sur mobile et GPU intégrés modestes
+  if (!isMobile && !isLowEnd) scene.environment = texture;
+  window.demanderRendu?.();
+});
 
 // =========================================================================
 // 🎥 3. CONTRÔLES DE LA CAMÉRA (OrbitControls)
 // =========================================================================
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.listenToKeyEvents(window); // Le canevas écoute enfin la fenêtre entière
 controls.enableDamping = true;
-controls.enableZoom = MODE_DEV; // 🛑 FIX : Empêche le zoom à deux doigts
-controls.enablePan = MODE_DEV;  // 🛑 FIX : Empêche le glissement latéral passe-muraille
-controls.target.y = 23;
+controls.dampingFactor = 0.08;
+controls.enableZoom = MODE_DEV;
+controls.enablePan = MODE_DEV;
+controls.target.set(0, 23, 4.9);
 controls.maxPolarAngle = Math.PI / 2 - 0.05;
 controls.minDistance = 0.1;
 controls.maxDistance = 250;
 controls.update();
 
 // =========================================================================
-// 🕹️ 4. VARIABLES D'ÉTAT (Mouvement, Manette, Touches)
+// 🕹️ 4. VARIABLES D'ÉTAT (Mouvement, Manette, Touches, Modales)
 // =========================================================================
 const padMobile = { x: 0, y: 0, actif: false };
 let objetActif = null;
-let renduAutorise = false; // Bloque le rendu GPU pendant le chargement
-window.activerModeRetro = () => {
-  window.easterEggDebloque = !window.easterEggDebloque;
-  renderer.setPixelRatio(window.easterEggDebloque ? 0.37 : (isMobile ? 1 : Math.min(window.devicePixelRatio, 2)));
-  window.easterEggDebloque ? canvas.classList.add('mode-retro') : canvas.classList.remove('mode-retro');
-  if (window.ui_AnimationPS2) window.ui_AnimationPS2();
+let renduAutorise = false;
+let forceRender = true;
+let joystickInitialise = false;
+
+window.demanderRendu = () => {
+  forceRender = true;
 };
 
-const touches = { z: false, q: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
+const estModaleOuverte = (id) => {
+  const el = document.getElementById(id);
+  return Boolean(el && !el.classList.contains("cache"));
+};
+
+const estIntroPresente = () =>
+  Boolean(
+    document.getElementById("ecran-chargement") ||
+      document.getElementById("ecran-tutoriel"),
+  );
+
+const estJeuInteractif = () =>
+  renduAutorise &&
+  !window.enPause &&
+  !estIntroPresente() &&
+  !estModaleOuverte("modal-quiz") &&
+  !estModaleOuverte("modal-controles") &&
+  !estModaleOuverte("modal-fin");
+
+window.activerModeRetro = () => {
+  window.easterEggDebloque = !window.easterEggDebloque;
+  renderer.setPixelRatio(getTargetPixelRatio());
+  canvas.classList.toggle("mode-retro", window.easterEggDebloque);
+  window.ui_AnimationPS2?.();
+  forceRender = true;
+};
+
+const touches = {
+  z: false,
+  q: false,
+  s: false,
+  d: false,
+  arrowup: false,
+  arrowleft: false,
+  arrowdown: false,
+  arrowright: false,
+};
+
+const resetTouches = () => {
+  for (const key in touches) touches[key] = false;
+  padMobile.x = 0;
+  padMobile.y = 0;
+  padMobile.actif = false;
+};
+
+window.addEventListener("blur", resetTouches);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) resetTouches();
+  else forceRender = true;
+});
+
+// Outils dev initialisés uniquement si MODE_DEV === true
+let transformControls = null;
+let gui = null;
+let stats = null;
+let dossierSelection = null;
+let debugManette = null;
+const debugConfig = { afficherHitboxes: false };
+const perfData = { polygones: 0, drawCalls: 0, geometries: 0 };
 
 window.deselectionnerObjet = () => {
   objetActif = null;
@@ -94,134 +237,557 @@ window.deselectionnerObjet = () => {
   controls.target.copy(camera.position).add(direction.multiplyScalar(0.1));
   controls.update();
 
-  if (typeof transformControls !== 'undefined' && transformControls) transformControls.detach();
-  if (window.bloquerControles3D) window.bloquerControles3D(false);
-  document.getElementById('modal-quiz')?.classList.add('cache');
-  if (typeof dossierSelection !== 'undefined' && dossierSelection) {
+  transformControls?.detach();
+  const gardeBlocage =
+    window.enPause ||
+    estModaleOuverte("modal-fin") ||
+    estModaleOuverte("modal-controles");
+  window.bloquerControles3D?.(gardeBlocage);
+  document.getElementById("modal-quiz")?.classList.add("cache");
+
+  if (dossierSelection) {
     dossierSelection.destroy();
-    dossierSelection = typeof gui !== 'undefined' ? gui?.addFolder("Aucun objet sélectionné") : null;
+    dossierSelection = gui?.addFolder("Aucun objet sélectionné") || null;
   }
-}; // 🛑 LA VRAIE FERMETURE EST ICI
+  forceRender = true;
+};
 
 window.resetCamera = () => {
   camera.position.set(0, 23, 5);
   controls.target.set(0, 23, 4.9);
   controls.update();
+  forceRender = true;
 };
+
 window.addEventListener("keyup", (e) => {
-  if (touches.hasOwnProperty(e.key)) touches[e.key] = false;
+  const k = e.key.toLowerCase();
+  if (Object.hasOwn(touches, k)) touches[k] = false;
 });
 
 window.addEventListener("keydown", (e) => {
-  window.seqClavier = ((window.seqClavier || "") + e.key).slice(-6);
-  if (window.seqClavier.toLowerCase() === "mickey") window.activerModeRetro();
-  
-  if (touches.hasOwnProperty(e.key)) touches[e.key] = true;
-  if (e.key === "g") transformControls?.setMode("translate");
-  if (e.key === "r") transformControls?.setMode("rotate");
-  if (e.key === "e" || e.key === "E") window.deselectionnerObjet();
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const tag = e.target?.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+  const k = e.key.toLowerCase();
+  if (k.length === 1) {
+    window.seqClavier = ((window.seqClavier || "") + k).slice(-6);
+    if (window.seqClavier === "mickey") window.activerModeRetro();
+  }
+
+  if (Object.hasOwn(touches, k)) touches[k] = true;
+  if (MODE_DEV) {
+    if (k === "g") transformControls?.setMode("translate");
+    if (k === "r") transformControls?.setMode("rotate");
+  }
+  if (k === "e" && objetActif && !estModaleOuverte("modal-quiz")) {
+    window.deselectionnerObjet();
+  }
   if (e.key === "Escape") {
-    if (window.togglePause) window.togglePause(); 
+    if (estModaleOuverte("modal-controles")) {
+      window.ui_fermerControles?.();
+    } else if (estModaleOuverte("modal-quiz")) {
+      window.ui_fermerQuiz?.();
+    } else if (
+      renduAutorise &&
+      !estIntroPresente() &&
+      !estModaleOuverte("modal-fin")
+    ) {
+      window.togglePause?.();
+    }
   }
 });
-// =========================================================================
-// Système de pause 
-// =========================================================================
 
+// =========================================================================
+// ⏸️ SYSTÈME DE PAUSE
+// =========================================================================
 window.enPause = false;
 window.togglePause = () => {
+  if (estIntroPresente() || estModaleOuverte("modal-fin")) return;
   window.enPause = !window.enPause;
-  if (window.bloquerControles3D) window.bloquerControles3D(window.enPause);
-  console.log(window.enPause ? "⏸️ JEU EN PAUSE" : "▶️ REPRISE DU JEU");
-  
-  // 🪄 FIX : Prévient l'interface HTML de s'afficher ou disparaître
-  if (window.ui_syncPause) window.ui_syncPause(); 
+  if (window.enPause) resetTouches();
+  window.bloquerControles3D?.(window.enPause);
+  window.ui_syncPause?.();
+  forceRender = true;
 };
+
 // =========================================================================
 // 📱 5. INITIALISATION DU JOYSTICK MOBILE (Nipple.js)
 // =========================================================================
 window.lancerJeu3D = () => {
-  console.log("🎬 Jeu lancé !");
-  if (isMobile || 'ontouchstart' in window) {
+  if (joystickInitialise) return;
+  if (isTouchDevice || isMobile) {
     const zoneJoystick = document.getElementById("zone-joystick");
     if (zoneJoystick) {
-      zoneJoystick.style.touchAction = "none"; // Bloque le scroll Safari
-      zoneJoystick.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: false });
-      
-      const joystick = nipplejs.create({ zone: zoneJoystick, mode: "dynamic", color: "white", restOpacity: 0.75 });
+      joystickInitialise = true;
+      zoneJoystick.style.touchAction = "none";
+      zoneJoystick.addEventListener("touchstart", (e) => e.stopPropagation(), {
+        passive: false,
+      });
+
+      const joystick = nipplejs.create({
+        zone: zoneJoystick,
+        mode: "dynamic",
+        color: "white",
+        restOpacity: 0.75,
+      });
 
       joystick.on("move", (evt, data) => {
-        const v = data?.vector || evt.data?.vector;
+        const v = data?.vector || evt?.data?.vector;
         if (!v) return;
         padMobile.x = v.x;
         padMobile.y = v.y;
         padMobile.actif = true;
       });
 
-      joystick.on("start", () => { if (controls) controls.enabled = false; });
+      joystick.on("start", () => {
+        if (controls) controls.enabled = false;
+      });
       joystick.on("end", () => {
-        padMobile.x = 0; padMobile.y = 0; padMobile.actif = false;
-        if (controls) controls.enabled = true;
+        padMobile.x = 0;
+        padMobile.y = 0;
+        padMobile.actif = false;
+        if (controls && !window.enPause) controls.enabled = true;
       });
     }
   }
+  forceRender = true;
 };
 
-window.bloquerControles3D = (etat) => { if (controls) controls.enabled = !etat; };
+window.bloquerControles3D = (etat) => {
+  if (controls) controls.enabled = !etat;
+};
 
 // =========================================================================
-// 🛠️ 6. OUTILS DÉVELOPPEUR (TransformControls & GUI)
+// 🛠️ 6. OUTILS DÉVELOPPEUR (Chargement dynamique uniquement si MODE_DEV)
 // =========================================================================
-const transformControls = !isMobile ? new TransformControls(camera, renderer.domElement) : null;
-if (transformControls) scene.add(transformControls.getHelper());
+async function initDevTools() {
+  if (!MODE_DEV) return;
+  const [{ default: GUI }, { TransformControls }, { default: Stats }] =
+    await Promise.all([
+      import("lil-gui"),
+      import("three/examples/jsm/controls/TransformControls.js"),
+      import("three/examples/jsm/libs/stats.module.js"),
+    ]);
 
-transformControls?.addEventListener("dragging-changed", (event) => {
-  if (controls) controls.enabled = !event.value;
-  const cible = transformControls.object;
-  if (cible && cible.userData.flotte) {
-    cible.userData.flotteActive = !event.value;
-    if (!event.value) cible.userData.baseY = cible.position.y;
+  if (!isMobile) {
+    transformControls = new TransformControls(camera, renderer.domElement);
+    scene.add(transformControls.getHelper());
+    transformControls.addEventListener("dragging-changed", (event) => {
+      if (controls) controls.enabled = !event.value;
+      const cible = transformControls.object;
+      if (cible && cible.userData.flotte) {
+        cible.userData.flotteActive = !event.value;
+        if (!event.value) cible.userData.baseY = cible.position.y;
+      }
+    });
+
+    gui = new GUI();
+    const dossierDebug = gui.addFolder("🛠️ Mode Debug");
+    dossierDebug
+      .add(debugConfig, "afficherHitboxes")
+      .name("Voir Collisions")
+      .onChange((val) => {
+        propHitboxes.forEach((h) => {
+          h.visible = val;
+        });
+        forceRender = true;
+      });
+
+    const lumiereDossier = gui.addFolder("Éclairage");
+    lumiereDossier
+      .add(dirLight, "intensity")
+      .min(0)
+      .max(10)
+      .step(0.1)
+      .name("Soleil");
+
+    dossierSelection = gui.addFolder("Aucun objet sélectionné");
+
+    const outils = {
+      exporter: () => {
+        const data = propHitboxes
+          .map((o) => {
+            const lod = o.parent || o;
+            const y = lod.userData.flotte ? lod.userData.baseY : lod.position.y;
+            return `${lod.name} | x: ${lod.position.x.toFixed(2)}, y: ${y.toFixed(2)}, z: ${lod.position.z.toFixed(2)} | rotX: ${lod.rotation.x.toFixed(3)}, rotY: ${lod.rotation.y.toFixed(3)}, rotZ: ${lod.rotation.z.toFixed(3)} | scale: ${lod.scale.x.toFixed(2)}`;
+          })
+          .join("\n");
+        navigator.clipboard?.writeText(data);
+        alert("Coordonnées ET Tailles copiées ! 📋");
+      },
+    };
+    gui.add(outils, "exporter").name("💾 Exporter Coordonnées");
+
+    const cheats = {
+      gagner: () => window.afficherFin?.(true),
+      perdre: () => window.afficherFin?.(false),
+      respawn: () => document.getElementById("btn-recommencer")?.click(),
+    };
+    const cheatFolder = gui.addFolder("🎭 God Mode (Cheat)");
+    cheatFolder.add(cheats, "gagner").name("🏆 Forcer Victoire");
+    cheatFolder.add(cheats, "perdre").name("💀 Forcer Game Over");
+    cheatFolder.add(cheats, "respawn").name("🔄 Forcer Respawn");
+
+    stats = new Stats();
+    document.body.appendChild(stats.dom);
+    const perfFolder = gui.addFolder("Moniteur d'Activité");
+    perfFolder.add(perfData, "polygones").name("Triangles").listen();
+    perfFolder.add(perfData, "drawCalls").name("Draw Calls").listen();
+    perfFolder.add(perfData, "geometries").name("Géométries (RAM)").listen();
   }
-});
 
-const gui = !isMobile ? new GUI() : null;
-const debugConfig = { afficherHitboxes: false };
-const dossierDebug = gui?.addFolder("🛠️ Mode Debug");
-dossierDebug?.add(debugConfig, "afficherHitboxes").name("Voir Collisions").onChange((val) => {
-  objetsCliquables.forEach((h) => { if (h.material) { h.material.opacity = val ? 0.4 : 0; h.material.wireframe = val; } });
-});
+  debugManette = document.createElement("div");
+  debugManette.style.cssText =
+    "position:fixed;top:10px;left:10px;background:rgba(0,0,0,0.8);color:lime;padding:10px;font-family:monospace;z-index:99999;pointer-events:none;";
+  document.body.appendChild(debugManette);
+}
 
 // =========================================================================
-// 📦 7. GESTION DU CHARGEMENT DES ASSETS 3D (Maison & Objets Disney)
+// 🎨 HELPERS TEXTURES & MULTI-LOD (OPTION B + BOUILLIE DE TEXTURES LOD3)
+// =========================================================================
+function downscaleTextureInPlace(tex, maxDim, processedSet) {
+  if (!tex || !tex.image || processedSet.has(tex)) return;
+  processedSet.add(tex);
+  const img = tex.image;
+  const w = img.width || img.naturalWidth || 0;
+  const h = img.height || img.naturalHeight || 0;
+  if (!w || !h || Math.max(w, h) <= maxDim) return;
+
+  const scale = maxDim / Math.max(w, h);
+  const nw = Math.max(1, Math.round(w * scale));
+  const nh = Math.max(1, Math.round(h * scale));
+  const c = document.createElement("canvas");
+  c.width = nw;
+  c.height = nh;
+  const ctx = c.getContext("2d");
+  if (!ctx) return;
+  ctx.drawImage(img, 0, 0, nw, nh);
+  if (typeof img.close === "function") img.close();
+  tex.image = c;
+  tex.needsUpdate = true;
+}
+
+function downscaleRootTextures(root, maxBasePx, maxAuxPx) {
+  const seen = new WeakSet();
+  root.traverse((obj) => {
+    if (!obj.isMesh || !obj.material) return;
+    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+    for (const m of mats) {
+      if (m.map) downscaleTextureInPlace(m.map, maxBasePx, seen);
+      if (m.emissiveMap) downscaleTextureInPlace(m.emissiveMap, maxBasePx, seen);
+      ["normalMap", "roughnessMap", "metalnessMap", "aoMap"].forEach((k) => {
+        if (m[k]) downscaleTextureInPlace(m[k], maxAuxPx, seen);
+      });
+    }
+  });
+}
+
+function createBouillieTexture(srcTex, cache) {
+  if (!srcTex || !srcTex.image) return null;
+  if (cache.has(srcTex)) return cache.get(srcTex);
+  const img = srcTex.image;
+  const w = img.width || img.naturalWidth || 0;
+  const h = img.height || img.naturalHeight || 0;
+  if (!w || !h) return srcTex;
+
+  // Mini-texture 64x64 lissée (~16 Ko VRAM) pour LOD3 lointain sans bouillie pixelisée
+  const size = 64;
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext("2d");
+  if (!ctx) return srcTex;
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(img, 0, 0, size, size);
+
+  const tinyTex = new THREE.CanvasTexture(c);
+  tinyTex.colorSpace = srcTex.colorSpace;
+  tinyTex.flipY = srcTex.flipY;
+  tinyTex.wrapS = srcTex.wrapS;
+  tinyTex.wrapT = srcTex.wrapT;
+  tinyTex.minFilter = THREE.LinearFilter;
+  tinyTex.magFilter = THREE.LinearFilter;
+  tinyTex.generateMipmaps = false;
+  tinyTex.needsUpdate = true;
+  cache.set(srcTex, tinyTex);
+  return tinyTex;
+}
+
+function convertToLOD2Materials(root) {
+  const matCache = new Map();
+  const convertOne = (m) => {
+    if (matCache.has(m)) return matCache.get(m);
+    const lambert = new THREE.MeshLambertMaterial({
+      color: m.color ? m.color.clone() : new THREE.Color(0xffffff),
+      map: m.map || null,
+      transparent: Boolean(m.transparent),
+      opacity: m.opacity ?? 1,
+      alphaTest: m.alphaTest || 0,
+      side: m.side ?? THREE.FrontSide,
+      emissive: m.emissive ? m.emissive.clone() : new THREE.Color(0x000000),
+      emissiveMap: m.emissiveMap || null,
+      emissiveIntensity: m.emissiveIntensity ?? 1,
+    });
+    matCache.set(m, lambert);
+    return lambert;
+  };
+  root.traverse((obj) => {
+    if (!obj.isMesh || !obj.material) return;
+    obj.material = Array.isArray(obj.material)
+      ? obj.material.map(convertOne)
+      : convertOne(obj.material);
+  });
+}
+
+function convertToLOD3BouillieMaterials(root, bouillieCache) {
+  const matCache = new Map();
+  const convertOne = (m) => {
+    if (matCache.has(m)) return matCache.get(m);
+    const baseCol = m.color ? m.color.clone().multiplyScalar(0.88) : new THREE.Color(0xe0e0e0);
+    const basic = new THREE.MeshBasicMaterial({
+      color: baseCol,
+      map: m.map ? createBouillieTexture(m.map, bouillieCache) : null,
+      transparent: Boolean(m.transparent),
+      opacity: m.opacity ?? 1,
+      alphaTest: m.alphaTest || 0,
+      side: m.side ?? THREE.FrontSide,
+    });
+    matCache.set(m, basic);
+    return basic;
+  };
+  root.traverse((obj) => {
+    if (!obj.isMesh || !obj.material) return;
+    obj.material = Array.isArray(obj.material)
+      ? obj.material.map(convertOne)
+      : convertOne(obj.material);
+  });
+}
+
+function disposeUnusedSubtree(unusedRoot, keptRoots) {
+  const keptGeoms = new Set();
+  const keptMats = new Set();
+  for (const r of keptRoots) {
+    if (!r) continue;
+    r.traverse((obj) => {
+      if (!obj.isMesh) return;
+      if (obj.geometry) keptGeoms.add(obj.geometry);
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach((m) => m && keptMats.add(m));
+    });
+  }
+  unusedRoot.traverse((obj) => {
+    if (!obj.isMesh) return;
+    if (obj.geometry && !keptGeoms.has(obj.geometry)) obj.geometry.dispose();
+    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+    mats.forEach((m) => m && !keptMats.has(m) && m.dispose());
+  });
+}
+
+// =========================================================================
+// 📦 7. CHARGEMENT DES ASSETS 3D, BATCHING MAISON & MURS BLOQUANTS
 // =========================================================================
 const manager = new THREE.LoadingManager();
-const mursCollision = [];
+const mursCollisionBoxes = [];
 
-// Sécurité anti-freeze
 setTimeout(() => {
   const btn = document.getElementById("btn-decouvrir");
   if (btn && btn.classList.contains("cache")) btn.classList.remove("cache");
 }, 10000);
 
 let dernierPourcentage = 0;
-manager.onProgress = (url, loaded, total) => {
+manager.onProgress = (_url, loaded, total) => {
   const el = document.getElementById("loading-percent");
-  let actuel = Math.round((loaded / total) * 100);
+  const actuel = Math.round((loaded / total) * 100);
   if (el && actuel > dernierPourcentage) {
     dernierPourcentage = actuel;
     el.textContent = `${actuel}%`;
   }
 };
 
-manager.onLoad = () => console.log("✅ Fichiers 3D téléchargés en mémoire locale.");
-manager.onError = (url) => { if (!isMobile) alert(`Le fichier ${url} refuse de charger.`); };
+manager.onLoad = () =>
+  console.log("✅ Fichiers 3D téléchargés en mémoire locale.");
+manager.onError = (url) => {
+  if (!isMobile) alert(`Le fichier ${url} refuse de charger.`);
+};
 
 const loader = new GLTFLoader(manager);
 const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
+dracoLoader.setDecoderPath("/draco/");
 dracoLoader.setWorkerLimit(1);
 loader.setDRACOLoader(dracoLoader);
 
+function optimizeMaisonGeometryAndCollisions(maison) {
+  maison.updateMatrixWorld(true);
+
+  const wallMeshes = [];
+  const staticMeshes = [];
+  const boxTmp = new THREE.Box3();
+  const sizeTmp = new THREE.Vector3();
+  const centerTmp = new THREE.Vector3();
+
+  maison.traverse((obj) => {
+    if (!obj.isMesh) return;
+    if (obj.name.includes("MurFictif")) {
+      boxTmp.setFromObject(obj);
+      mursCollisionBoxes.push({
+        minX: boxTmp.min.x,
+        maxX: boxTmp.max.x,
+        minY: boxTmp.min.y,
+        maxY: boxTmp.max.y,
+        minZ: boxTmp.min.z,
+        maxZ: boxTmp.max.z,
+      });
+      wallMeshes.push(obj);
+      return;
+    }
+
+    const geom = obj.geometry;
+    if (
+      !geom ||
+      !obj.material ||
+      Array.isArray(obj.material) ||
+      obj.isSkinnedMesh ||
+      obj.morphTargetInfluences ||
+      obj.matrixWorld.determinant() <= 0 ||
+      Object.values(geom.attributes).some((a) => a.isInterleavedBufferAttribute)
+    ) {
+      return;
+    }
+
+    boxTmp.setFromObject(obj);
+    boxTmp.getSize(sizeTmp);
+    if (sizeTmp.x > 100 || sizeTmp.z > 100) return;
+
+    boxTmp.getCenter(centerTmp);
+    staticMeshes.push({
+      mesh: obj,
+      cellX: Math.floor(centerTmp.x / 80),
+      cellZ: Math.floor(centerTmp.z / 80),
+    });
+  });
+
+  const replacedGeoms = new Set();
+  for (const wall of wallMeshes) {
+    if (wall.geometry) replacedGeoms.add(wall.geometry);
+    wall.parent?.remove(wall);
+  }
+
+  const buckets = new Map();
+  for (const entry of staticMeshes) {
+    const { mesh, cellX, cellZ } = entry;
+    const geom = mesh.geometry;
+    const isIndexed = geom.index ? 1 : 0;
+    const attrSig = Object.keys(geom.attributes).sort().join(",");
+    const key = `${mesh.material.uuid}|${isIndexed}|${attrSig}|${cellX},${cellZ}`;
+    let list = buckets.get(key);
+    if (!list) {
+      list = [];
+      buckets.set(key, list);
+    }
+    list.push(mesh);
+  }
+
+  const invMaisonWorld = new THREE.Matrix4().copy(maison.matrixWorld).invert();
+  const relMatrix = new THREE.Matrix4();
+
+  for (const meshes of buckets.values()) {
+    if (meshes.length < 2) continue;
+    const clones = meshes.map((m) => {
+      const cloned = m.geometry.clone();
+      relMatrix.copy(invMaisonWorld).multiply(m.matrixWorld);
+      cloned.applyMatrix4(relMatrix);
+      return cloned;
+    });
+
+    const merged = mergeGeometries(clones, false);
+    clones.forEach((c) => c.dispose());
+    if (!merged) continue;
+
+    merged.computeBoundingBox();
+    merged.computeBoundingSphere();
+
+    const batchedMesh = new THREE.Mesh(merged, meshes[0].material);
+    batchedMesh.name = "Maison_ZoneBatch";
+    batchedMesh.frustumCulled = true;
+    batchedMesh.matrixAutoUpdate = false;
+    batchedMesh.updateMatrix();
+    maison.add(batchedMesh);
+
+    for (const m of meshes) {
+      if (m.geometry) replacedGeoms.add(m.geometry);
+      m.parent?.remove(m);
+    }
+  }
+
+  const activeGeoms = new Set();
+  maisonBlockingMeshes.length = 0;
+  maison.traverse((obj) => {
+    if (!obj.isMesh) return;
+    if (obj.geometry) activeGeoms.add(obj.geometry);
+    obj.matrixAutoUpdate = false;
+    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+    const opaque = mats.every(
+      (m) => m && !m.transparent && (m.opacity ?? 1) >= 0.99,
+    );
+    if (opaque) maisonBlockingMeshes.push(obj);
+  });
+  for (const geom of replacedGeoms) {
+    if (!activeGeoms.has(geom)) geom.dispose();
+  }
+  maison.updateMatrixWorld(true);
+}
+
+const hitboxMaterial = new THREE.MeshBasicMaterial({
+  color: 0xffd700,
+  transparent: true,
+  opacity: 0.4,
+  wireframe: true,
+  depthWrite: false,
+});
+
+let solHitbox = null;
+
+// --- OPTIMISATION OPTION A : VISION-CONE (FRUSTUM) + 4 NIVEAUX LOD (OPTION B) ---
+const frustum = new THREE.Frustum();
+const projScreenMatrix = new THREE.Matrix4();
+
+function updateVisionCulling() {
+  camera.updateMatrixWorld();
+  projScreenMatrix.multiplyMatrices(
+    camera.projectionMatrix,
+    camera.matrixWorldInverse,
+  );
+  frustum.setFromProjectionMatrix(projScreenMatrix);
+
+  const camPos = camera.position;
+  const effLodDist = window.lodDist * drsLodFactor;
+  visiblePropHitboxes.length = 0;
+
+  for (let i = 0; i < lodsScene.length; i++) {
+    const lod = lodsScene[i];
+    const sphere = lod.userData._cullSphere;
+    if (!sphere) continue;
+
+    if (lod.userData.flotte) {
+      sphere.center.y =
+        lod.userData._cullBaseY + (lod.position.y - lod.userData._basePosY);
+    }
+
+    const dx = sphere.center.x - camPos.x;
+    const dy = sphere.center.y - camPos.y;
+    const dz = sphere.center.z - camPos.z;
+    const distSq = dx * dx + dy * dy + dz * dz;
+    const maxDist = effLodDist + sphere.radius;
+
+    const visible = distSq < maxDist * maxDist && frustum.intersectsSphere(sphere);
+    lod.visible = visible;
+    if (visible) {
+      lod.update(camera);
+      if (lod.userData._hitbox) visiblePropHitboxes.push(lod.userData._hitbox);
+    }
+  }
+}
 
 const chargerTout = async () => {
   manager.itemStart("chargement_sequentiel");
@@ -232,77 +798,198 @@ const chargerTout = async () => {
     const maison = gltfMaison.scene;
     maison.scale.set(15, 15, 15);
     maison.name = "Maison";
-    maison.traverse((obj) => {
-      if (obj.isMesh && obj.name.includes("MurFictif")) {
-        obj.visible = false;
-        mursCollision.push(obj);
-      }
-    });
+    // Réduction dynamique en RAM des textures de la maison à 512px max sur mobile / petit PC
+    if (isMobile || isLowEnd) {
+      downscaleRootTextures(maison, 512, 256);
+    }
+    optimizeMaisonGeometryAndCollisions(maison);
     scene.add(maison);
-    
-    // Hitbox globale du sol
-    const solHitbox = new THREE.Mesh(new THREE.BoxGeometry(300, 1, 300), new THREE.MeshBasicMaterial({ color: 0x0000ff, transparent: true, opacity: 0, depthWrite: false }));
-    solHitbox.name = "Maison"; solHitbox.position.y = -0.5;
-    scene.add(solHitbox); objetsCliquables.push(solHitbox);
-  } catch (e) { console.error("❌ Erreur Maison", e); }
 
-  await new Promise(resolve => setTimeout(resolve, 500)); // Pause Garbage Collector
+    solHitbox = new THREE.Mesh(
+      new THREE.BoxGeometry(300, 1, 300),
+      hitboxMaterial,
+    );
+    solHitbox.name = "Maison";
+    solHitbox.position.y = -0.5;
+    solHitbox.visible = false;
+    solHitbox.matrixAutoUpdate = false;
+    solHitbox.updateMatrix();
+    scene.add(solHitbox);
+    objetsCliquables.push(solHitbox);
+  } catch (e) {
+    console.error("❌ Erreur Maison", e);
+  }
 
-  // --- CHARGEMENT DES OBJETS DISNEY ---
+  await new Promise((resolve) => setTimeout(resolve, isMobile ? 250 : 100));
+
+  // --- CHARGEMENT DES OBJETS DISNEY (AVEC REPRISE DE SAUVEGARDE & 4 LODs OPTION B) ---
+  const savedSet = new Set(window.__foundPropIds);
+  const tailleTmp = new THREE.Vector3();
+  const centerTmp = new THREE.Vector3();
+  const boiteTmp = new THREE.Box3();
+  const worldBoxTmp = new THREE.Box3();
+
   for (const item of disneyData) {
-    const lod = new THREE.LOD(); // 🛑 FIX : Le LOD agit comme un interrupteur de visibilité
+    if (savedSet.has(item.id)) continue; // Déjà trouvé dans la sauvegarde : ne même pas le charger !
+
+    const lod = new THREE.LOD();
+    lod.autoUpdate = false;
     lod.name = item.id;
-    
-    if (item.flotte) Object.assign(lod.userData, { flotteActive: true, baseY: item.y || 0, vitesse: item.vitesse || 0.8, amplitude: item.amplitude || 0.08 });
+    lod.userData.id = item.id;
+    lod.userData.nom = item.nom || item.id;
+
+    if (item.flotte) {
+      Object.assign(lod.userData, {
+        flotte: true,
+        flotteActive: true,
+        baseY: item.y || 0,
+        vitesse: item.vitesse || 0.8,
+        amplitude: item.amplitude || 0.08,
+      });
+    }
+
     lod.position.set(item.x || 0, item.y || 0, item.z || 0);
     lod.rotation.set(item.rotX || 0, item.rotY || 0, item.rotZ || 0);
-    if (item.scale) lod.scale.setScalar(item.scale);
+    const scale = item.scale || 1;
+    lod.scale.setScalar(scale);
 
     try {
       const gltf = await loader.loadAsync(`/assets/${item.id}.glb`);
-      const boite = new THREE.Box3().setFromObject(gltf.scene);
-      const taille = new THREE.Vector3();
-      boite.getSize(taille);
-      
-      const hitbox = new THREE.Mesh(new THREE.BoxGeometry(Math.max(taille.x * 1.5, 2.5), Math.max(taille.y * 1.5, 2.5), Math.max(taille.z * 1.5, 2.5)), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
-      const center = new THREE.Vector3();
-      boite.getCenter(center);
-      hitbox.position.copy(center);
-      hitbox.name = lod.name; hitbox.userData = lod.userData;
-      
-      lod.addLevel(gltf.scene, 0);
-      // 🛑 OPTI TIERING : La distance s'adapte à la puissance de la carte graphique !
-      lod.addLevel(new THREE.Object3D(), window.lodDist);
-      lod.add(hitbox); objetsCliquables.push(hitbox);
-      scene.add(lod);
-      lodsScene.push(lod);
+      const node0 = gltf.scene.getObjectByName("LOD0");
+      const node1 = gltf.scene.getObjectByName("LOD1");
+      const node2 = gltf.scene.getObjectByName("LOD2");
+      const node3 = gltf.scene.getObjectByName("LOD3");
+      const refMesure = node0 || gltf.scene;
 
-      // 🛑 Cache.clear() retiré : causait la suppression de textures actives → artefacts noirs
-    } catch (error) { console.error("❌ Erreur sur :", item.id, error); }
-    await new Promise(resolve => setTimeout(resolve, isMobile ? 50 : 10)); // 🫁 Respiration renforcée
+      boiteTmp.setFromObject(refMesure);
+      boiteTmp.getSize(tailleTmp);
+      boiteTmp.getCenter(centerTmp);
+
+      const minWorldHit = 3.5;
+      const hitbox = new THREE.Mesh(
+        new THREE.BoxGeometry(
+          Math.max(tailleTmp.x * 1.2, minWorldHit / scale),
+          Math.max(tailleTmp.y * 1.2, minWorldHit / scale),
+          Math.max(tailleTmp.z * 1.2, minWorldHit / scale),
+        ),
+        hitboxMaterial,
+      );
+      hitbox.position.copy(centerTmp);
+      hitbox.name = lod.name;
+      hitbox.userData = lod.userData;
+      hitbox.visible = MODE_DEV && debugConfig.afficherHitboxes;
+
+      if (node0 && node1 && node2 && node3) {
+        // Réduction textures props en RAM à 512px max sur mobile / petit PC (Mac/PC garde 1024px)
+        if (isMobile || isLowEnd) {
+          downscaleRootTextures(node1, 512, 256);
+        }
+
+        // Dégradation progressive des shaders pour LOD2 (Lambert sans normal/ORM) & LOD3 (64x64 unlit)
+        const bouillieCache = new Map();
+        convertToLOD2Materials(node2);
+        convertToLOD3BouillieMaterials(node3, bouillieCache);
+
+        // Détache les 4 groupes de gltf.scene pour les greffer comme niveaux LOD propres
+        gltf.scene.remove(node0, node1, node2, node3);
+
+        lod.add(hitbox); // Pas dans levels : reste actif pour raycaster indépendamment du LOD
+        lod.userData._hitbox = hitbox;
+        scene.add(lod);
+
+        // Calcul sphère de culling avant éventuellement de purger LOD0 en Option B
+        lod.add(node0);
+        lod.updateMatrixWorld(true);
+        worldBoxTmp.setFromObject(node0);
+        lod.remove(node0);
+
+        const cullSphere = new THREE.Sphere();
+        worldBoxTmp.getBoundingSphere(cullSphere);
+        cullSphere.radius = cullSphere.radius * 1.15 + 2.0;
+        // 1 mètre jeu ≈ 15 unités Three.js : seuil LOD1 >= ~6 m (+ grâce proportionnelle à la taille de l'objet)
+        const rOff = cullSphere.radius * 1.5;
+
+        if (isMobile || isLowEnd) {
+          // Option B : LOD0 n'est JAMAIS monté dans le graphe de rendu sur petit PC / mobile
+          disposeUnusedSubtree(node0, [node1, node2, node3]);
+          const distBase = isMobile ? 90 : 100;
+          lod.addLevel(node1, 0, 0.1);
+          lod.addLevel(node2, distBase + rOff, 0.1);
+          lod.addLevel(node3, distBase * 2 + rOff, 0.1);
+        } else {
+          // 4 niveaux complets sur PC standard / Mac / PC gamer (LOD0 net sur toute la pièce >= 6,3 m)
+          lod.addLevel(node0, 0, 0.1);
+          lod.addLevel(node1, 95 + rOff, 0.1);
+          lod.addLevel(node2, 180 + rOff, 0.1);
+          lod.addLevel(node3, 275 + rOff, 0.1);
+        }
+
+        lod.userData._cullSphere = cullSphere;
+        lod.userData._cullBaseY = cullSphere.center.y;
+        lod.userData._basePosY = lod.position.y;
+      } else {
+        // Fallback sûr si un asset n'a pas de nœuds LOD0..LOD3
+        lod.addLevel(gltf.scene, 0);
+        lod.add(hitbox);
+        lod.userData._hitbox = hitbox;
+        scene.add(lod);
+
+        lod.updateMatrixWorld(true);
+        worldBoxTmp.setFromObject(gltf.scene);
+        const cullSphere = new THREE.Sphere();
+        worldBoxTmp.getBoundingSphere(cullSphere);
+        cullSphere.radius = cullSphere.radius * 1.15 + 2.0;
+        lod.userData._cullSphere = cullSphere;
+        lod.userData._cullBaseY = cullSphere.center.y;
+        lod.userData._basePosY = lod.position.y;
+      }
+
+      propHitboxes.push(hitbox);
+      objetsCliquables.push(hitbox);
+      lodsScene.push(lod);
+    } catch (error) {
+      console.error("❌ Erreur sur :", item.id, error);
+    }
+    await new Promise((resolve) => setTimeout(resolve, isMobile ? 25 : 5));
   }
 
   dracoLoader.dispose();
   manager.itemEnd("chargement_sequentiel");
-// 💾 CHARGEMENT SAUVEGARDE
-  const saves = JSON.parse(localStorage.getItem("popcorn_save")) || [];
-  // --- GESTION DE L'INTERFACE À LA FIN ABSOLUE DU CHARGEMENT ---
+
   console.log("✅ Tous les modèles sont chargés.");
-  if (!isMobile) renderer.compile(scene, camera); // Évite le crash RAM mobile
-  
+  if (!isMobile) renderer.compile(scene, camera);
+
+  await initDevTools();
+  updateVisionCulling();
+  renduAutorise = true;
+  forceRender = true;
+  window.ui_majDRSBadge?.(window.drsEnabled, drsScale);
+
   if (MODE_DEV) {
-    if (isMobile) { const s = document.createElement('script'); s.src="//cdn.jsdelivr.net/npm/eruda"; document.head.appendChild(s); s.onload=()=>eruda.init(); }
-    const ecranChargement = document.getElementById("ecran-chargement");
-    const tuto = document.getElementById("ecran-tutoriel");
-    if (ecranChargement) ecranChargement.remove();
-    if (tuto) tuto.remove();
-    if (window.lancerJeu3D) window.lancerJeu3D();
+    if (isMobile) {
+      const s = document.createElement("script");
+      s.src = "//cdn.jsdelivr.net/npm/eruda";
+      document.head.appendChild(s);
+      s.onload = () => window.eruda?.init();
+    }
+    document.getElementById("ecran-chargement")?.remove();
+    document.getElementById("ecran-tutoriel")?.remove();
+    window.initialiserHUD?.(TOTAL_OBJETS, savedGame);
+    window.lancerJeu3D?.();
   } else if (sessionStorage.getItem("skipIntro") === "true") {
     sessionStorage.removeItem("skipIntro");
-    document.getElementById("ecran-chargement")?.remove(); document.getElementById("ecran-tutoriel")?.remove();
-    if (window.initialiserHUD) window.initialiserHUD(); if (window.lancerJeu3D) window.lancerJeu3D();
+    document.getElementById("ecran-chargement")?.remove();
+    document.getElementById("ecran-tutoriel")?.remove();
+    window.initialiserHUD?.(TOTAL_OBJETS, savedGame);
+    window.demarrerAmbiance?.();
+    window.lancerJeu3D?.();
   } else {
-    const btnDecouvrir = document.getElementById("btn-decouvrir"); const texteChargement = document.querySelector(".texte-chargement");
+    const btnDecouvrir = document.getElementById("btn-decouvrir");
+    const texteChargement = document.querySelector(".texte-chargement");
+    if (savedGame && btnDecouvrir) {
+      btnDecouvrir.textContent = `▶️ Reprendre (${savedGame.foundIds.length} / ${TOTAL_OBJETS})`;
+      window.ui_preparerRepriseSauvegarde?.(TOTAL_OBJETS, savedGame);
+    }
     if (btnDecouvrir && texteChargement) {
       texteChargement.style.transition = "opacity 0.5s ease";
       texteChargement.style.opacity = "0";
@@ -310,146 +997,167 @@ const chargerTout = async () => {
       setTimeout(() => btnDecouvrir.classList.remove("cache"), 400);
     }
   }
-  renduAutorise = true; // Autorise la boucle animate à dessiner
 };
 chargerTout();
 
 // =========================================================================
-// 💡 8. LUMIÈRES ET PERFORMANCES
+// 💡 8. LUMIÈRES ET REDIMENSIONNEMENT
 // =========================================================================
-const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3);
+const hemiLight = new THREE.HemisphereLight(
+  0xffffff,
+  0x444444,
+  isMobile || isLowEnd ? 3.5 : 3,
+);
 scene.add(hemiLight);
+
 const dirLight = new THREE.DirectionalLight(0xffffff, 5);
 dirLight.position.set(5, 10, 7);
 dirLight.castShadow = false;
 scene.add(dirLight);
 
-const lumiereDossier = gui?.addFolder("Éclairage");
-lumiereDossier?.add(dirLight, "intensity").min(0).max(10).step(0.1).name("Soleil");
-
-let dossierSelection = gui?.addFolder("Aucun objet sélectionné");
-
-const outils = {
-  exporter: () => {
-    const data = objetsCliquables.map((o) => {
-      const lod = o.parent || o; 
-      const y = lod.userData.flotte ? lod.userData.baseY : lod.position.y;
-      return `${lod.name} | x: ${lod.position.x.toFixed(2)}, y: ${y.toFixed(2)}, z: ${lod.position.z.toFixed(2)} | rotX: ${lod.rotation.x.toFixed(3)}, rotY: ${lod.rotation.y.toFixed(3)}, rotZ: ${lod.rotation.z.toFixed(3)} | scale: ${lod.scale.x.toFixed(2)}`;
-    }).join("\n");
-    navigator.clipboard.writeText(data);
-    alert("Coordonnées ET Tailles copiées ! 📋");
-  },
-};
-
-gui?.add(outils, "exporter").name("💾 Exporter Coordonnées");
-const cheats = {
-  gagner: () => { if (window.afficherFin) window.afficherFin(true); },
-  perdre: () => { if (window.afficherFin) window.afficherFin(false); },
-  respawn: () => { document.getElementById('btn-recommencer')?.click(); }
-};
-const cheatFolder = gui?.addFolder("🎭 God Mode (Cheat)");
-cheatFolder?.add(cheats, "gagner").name("🏆 Forcer Victoire");
-cheatFolder?.add(cheats, "perdre").name("💀 Forcer Game Over");
-cheatFolder?.add(cheats, "respawn").name("🔄 Forcer Respawn");
-
-const stats = !isMobile ? new Stats() : null;
-if (stats) document.body.appendChild(stats.dom);
-const perfData = { polygones: 0, drawCalls: 0, geometries: 0 };
-const perfFolder = gui?.addFolder("Moniteur d'Activité");
-if (perfFolder) {
-  perfFolder.add(perfData, "polygones").name("Triangles").listen();
-  perfFolder.add(perfData, "drawCalls").name("Draw Calls").listen();
-  perfFolder.add(perfData, "geometries").name("Géométries (RAM)").listen();
-}
-
-if (!MODE_DEV) {
-  gui?.hide();
-  if (stats) stats.dom.style.display = "none";
-}
-
-resize(camera, renderer);
+resize(camera, renderer, getTargetPixelRatio);
 
 // =========================================================================
-// 🎯 9. INTERACTIVITÉ (Raycaster et Clics)
+// 🎯 9. INTERACTIVITÉ (Raycaster throttlé + Anti-clic à travers les murs)
 // =========================================================================
 const raycaster = new THREE.Raycaster();
 const souris = new THREE.Vector2();
+let hoverPending = false;
+let hoverClientX = 0;
+let hoverClientY = 0;
+let dernierCurseur = "";
+
+const setCursorSafe = (curseur) => {
+  if (dernierCurseur !== curseur) {
+    dernierCurseur = curseur;
+    document.body.style.cursor = curseur;
+  }
+};
+
+function isRayBlockedByMaison(hitDistance) {
+  if (maisonBlockingMeshes.length === 0) return false;
+  const prevFar = raycaster.far;
+  raycaster.far = Math.max(0.1, hitDistance - 0.2);
+  let blocked = false;
+  try {
+    blocked =
+      raycaster.intersectObjects(maisonBlockingMeshes, false).length > 0;
+  } finally {
+    raycaster.far = prevFar;
+  }
+  return blocked;
+}
+
+function getUnblockedPropHit(propHits) {
+  for (let i = 0; i < propHits.length; i++) {
+    if (!isRayBlockedByMaison(propHits[i].distance)) return propHits[i];
+  }
+  return null;
+}
 
 window.addEventListener("pointermove", (event) => {
-  souris.x = (event.clientX / window.innerWidth) * 2 - 1;
-  souris.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  raycaster.setFromCamera(souris, camera);
-  
-  const hits = raycaster.intersectObjects(objetsCliquables, true);
-  const cibleHover = hits[0]?.object;
-  const estMaison = cibleHover?.name === "Maison" || cibleHover?.parent?.name === "Maison";
-  
-  if (hits.length > 0 && !estMaison) {
-    document.body.style.cursor = "pointer";
-  } else {
-    document.body.style.cursor = "default";
+  if (isMobile || !estJeuInteractif()) {
+    setCursorSafe("default");
+    return;
   }
+  hoverClientX = event.clientX;
+  hoverClientY = event.clientY;
+  if (hoverPending) return;
+  hoverPending = true;
+
+  requestAnimationFrame(() => {
+    hoverPending = false;
+    if (!estJeuInteractif() || visiblePropHitboxes.length === 0) {
+      setCursorSafe("default");
+      return;
+    }
+    souris.x = (hoverClientX / window.innerWidth) * 2 - 1;
+    souris.y = -(hoverClientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(souris, camera);
+    const hits = raycaster.intersectObjects(visiblePropHitboxes, false);
+    const unblocked = hits.length > 0 ? getUnblockedPropHit(hits) : null;
+    setCursorSafe(unblocked ? "pointer" : "default");
+  });
 });
 
-let ptX = 0, ptY = 0;
-window.addEventListener("pointerdown", (e) => { ptX = e.clientX; ptY = e.clientY; });
+let ptX = 0;
+let ptY = 0;
+window.addEventListener("pointerdown", (e) => {
+  ptX = e.clientX;
+  ptY = e.clientY;
+});
+
 window.addEventListener("pointerup", (event) => {
-  if (Math.abs(event.clientX - ptX) + Math.abs(event.clientY - ptY) > 10) return; 
-  // Le doigt a glissé
-  // 🛑 FIX : On bloque le clic 3D si le Tuto, le Chargement, ou le QUIZ sont affichés
-  if (document.getElementById("ecran-tutoriel") || document.getElementById("ecran-chargement")) return;
-  const modalQuiz = document.getElementById("modal-quiz");
-  if (modalQuiz && !modalQuiz.classList.contains("cache")) return;
-  if (event.target !== canvas) return;
+  if (Math.abs(event.clientX - ptX) + Math.abs(event.clientY - ptY) > 10) return;
+  if (!estJeuInteractif() || event.target !== canvas) return;
 
   souris.x = (event.clientX / window.innerWidth) * 2 - 1;
   souris.y = -(event.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(souris, camera);
 
-  const intersections = raycaster.intersectObjects(objetsCliquables, true);
+  const propHits = raycaster.intersectObjects(visiblePropHitboxes, false);
+  const validPropHit =
+    propHits.length > 0 ? getUnblockedPropHit(propHits) : null;
 
-  if (intersections.length > 0) {
-    let cible = intersections[0].object;
+  if (validPropHit) {
+    let cible = validPropHit.object;
     while (cible.parent && cible.parent.type !== "Scene") cible = cible.parent;
-
-    if (cible.name === "Maison") return;
 
     objetActif = cible;
     controls.target.copy(cible.position);
+    controls.update();
+    forceRender = true;
 
-    if (!MODE_DEV && window.ouvrirQuiz) window.ouvrirQuiz(cible.userData.id || cible.name, cible.userData.nom || cible.name);
+    if (!MODE_DEV && window.ouvrirQuiz) {
+      setCursorSafe("default");
+      window.ouvrirQuiz(
+        cible.userData.id || cible.name,
+        cible.userData.nom || cible.name,
+      );
+    }
     if (MODE_DEV && transformControls) transformControls.attach(cible);
-    
-    if (dossierSelection) {
+
+    if (dossierSelection && gui) {
       dossierSelection.destroy();
-      dossierSelection = gui?.addFolder("Objet : " + cible.name);
+      dossierSelection = gui.addFolder("Objet : " + cible.name);
       const actionsOutils = {
         deplacer: () => transformControls?.setMode("translate"),
         tourner: () => transformControls?.setMode("rotate"),
         agrandir: () => transformControls?.setMode("scale"),
       };
-      dossierSelection?.add(actionsOutils, "deplacer").name("Activer Déplacement");
-      dossierSelection?.add(actionsOutils, "tourner").name("Activer Rotation");
-      dossierSelection?.add(actionsOutils, "agrandir").name("Activer Taille");
-      dossierSelection?.open();
+      dossierSelection.add(actionsOutils, "deplacer").name("Activer Déplacement");
+      dossierSelection.add(actionsOutils, "tourner").name("Activer Rotation");
+      dossierSelection.add(actionsOutils, "agrandir").name("Activer Taille");
+      dossierSelection.open();
     }
-  } else {
-    window.deselectionnerObjet(); // 🛑 FIX : Applique la désélection propre FPS
+    return;
+  }
+
+  // Si on a cliqué sur un mur ou le sol (pas le ciel vide), on ne désélectionne pas brutalement
+  const maisonOrFloor = solHitbox
+    ? [...maisonBlockingMeshes, solHitbox]
+    : maisonBlockingMeshes;
+  if (raycaster.intersectObjects(maisonOrFloor, false).length === 0) {
+    window.deselectionnerObjet();
   }
 });
-// 🟢 LOGIQUE DU QUIZ (Le Cerveau connecté à disneyData)
-window.ouvrirQuiz = (idObjet, nomObjet) => {
-  const data = disneyData.find(item => item.id === idObjet); // On cherche l'objet cliqué dans ta data
-  if (!data || !data.question) return window.objetTrouve(idObjet); // Sécurité si pas de question
 
-  if (window.bloquerControles3D) window.bloquerControles3D(true);
-  console.log(`🧠 QUIZ : ${data.question}`);
-  console.log(`Choix : ${data.options.join(" | ")}`);
+// 🟢 LOGIQUE DU QUIZ (Connectée à disneyData)
+window.ouvrirQuiz = (idObjet) => {
+  const data = disneyData.find((item) => item.id === idObjet);
+  if (!data || !data.question) {
+    window.objetTrouve(idObjet);
+    window.sauvegarderProgression?.();
+    window.deselectionnerObjet();
+    return;
+  }
 
- if (window.ui_afficherQuiz) {
+  window.bloquerControles3D?.(true);
+
+  if (window.ui_afficherQuiz) {
     window.ui_afficherQuiz(data, (succes) => {
       if (succes) window.objetTrouve(idObjet);
-      window.deselectionnerObjet(); // 🛑 FIX : Reset la caméra FPS après le quiz
+      window.deselectionnerObjet();
     });
   }
 };
@@ -457,292 +1165,476 @@ window.ouvrirQuiz = (idObjet, nomObjet) => {
 window.objetTrouve = (idObjet) => {
   const obj = scene.getObjectByName(idObjet);
   if (obj) {
+    const disposedGeoms = new Set();
+    const disposedMats = new Set();
+    const disposedTexs = new Set();
+
     obj.traverse((child) => {
       if (child.isMesh) {
-        if (child.geometry) child.geometry.dispose();
-        const mats = Array.isArray(child.material) ? child.material : [child.material];
-        mats.forEach(m => {
-          ['map','normalMap','aoMap','emissiveMap','roughnessMap','metalnessMap'].forEach(k => { if (m[k]) m[k].dispose(); });
-          m.dispose();
-        });
+        if (child.geometry && !disposedGeoms.has(child.geometry)) {
+          disposedGeoms.add(child.geometry);
+          child.geometry.dispose();
+        }
+        if (child.material && child.material !== hitboxMaterial) {
+          const mats = Array.isArray(child.material)
+            ? child.material
+            : [child.material];
+          mats.forEach((m) => {
+            if (!m || m === hitboxMaterial || disposedMats.has(m)) return;
+            disposedMats.add(m);
+            [
+              "map",
+              "normalMap",
+              "aoMap",
+              "emissiveMap",
+              "roughnessMap",
+              "metalnessMap",
+            ].forEach((k) => {
+              if (m[k] && !disposedTexs.has(m[k])) {
+                disposedTexs.add(m[k]);
+                m[k].dispose();
+              }
+            });
+            m.dispose();
+          });
+        }
       }
     });
     scene.remove(obj);
-    const index = objetsCliquables.findIndex((o) => o.name === idObjet);
-    if (index > -1) objetsCliquables.splice(index, 1);
-    // 💾 SAUVEGARDE & VICTOIRE
-    const saves = JSON.parse(localStorage.getItem("popcorn_save")) ||[];
-    if (!saves.includes(idObjet)) localStorage.setItem("popcorn_save", JSON.stringify([...saves, idObjet]));
-    const idxLod = lodsScene.findIndex(l => l.name === idObjet);
-    if (idxLod > -1) { 
-      lodsScene.splice(idxLod, 1); 
-      if (lodsScene.length === 0 && window.afficherFin) window.afficherFin(true); // 🏆 DÉCLENCHE LA FIN !
-    }
+
+    const removeByName = (arr) => {
+      const idx = arr.findIndex((o) => o.name === idObjet);
+      if (idx > -1) arr.splice(idx, 1);
+    };
+    removeByName(propHitboxes);
+    removeByName(objetsCliquables);
+    removeByName(visiblePropHitboxes);
+    removeByName(lodsScene);
+  }
+
+  if (!window.__foundPropIds.includes(idObjet)) {
+    window.__foundPropIds.push(idObjet);
+  }
+  window.ui_majObjetsTrouves?.(window.__foundPropIds.length, TOTAL_OBJETS);
+  forceRender = true;
+
+  if (lodsScene.length === 0) {
+    window.afficherFin?.(true);
   }
 };
 
 // =========================================================================
-// 🔄 10. LA BOUCLE D'ANIMATION PRINCIPALE (Le cœur du jeu)
+// 🧱 COLLISIONS FLUIDES CERCLE VS AABB (GLISSEMENT CONTRE LES MURS)
+// =========================================================================
+function collidesWithWalls(x, y, z, radius = 1.5) {
+  const r2 = radius * radius;
+  for (let i = 0; i < mursCollisionBoxes.length; i++) {
+    const w = mursCollisionBoxes[i];
+    if (y < w.minY || y > w.maxY) continue;
+    const cx = x < w.minX ? w.minX : x > w.maxX ? w.maxX : x;
+    const cz = z < w.minZ ? w.minZ : z > w.maxZ ? w.maxZ : z;
+    const dx = x - cx;
+    const dz = z - cz;
+    if (dx * dx + dz * dz < r2) return true;
+  }
+  return false;
+}
+
+// =========================================================================
+// 🔄 10. BOUCLE D'ANIMATION PRINCIPALE (DT NORMALISÉ + DRS + VEILLE PAUSE)
 // =========================================================================
 const clock = new THREE.Clock();
-const raycasterColl = new THREE.Raycaster();
-const dirRaycast = new THREE.Vector3();
 const dirCamera = new THREE.Vector3();
 const dirLaterale = new THREE.Vector3();
 const offsetCam = new THREE.Vector3();
 const axeY = new THREE.Vector3(0, 1, 0);
-const vitesseZQSD = 0.5;
-let deltaAccumule = 0;
-let hauteurJoueur = 26; // 🛑 FIX : L'ancre absolue du joueur
-const fpsMax = (isMobile || window.lodDist < 100) ? 60 : 90; // 🛑 OPTI : Adapte les FPS !
-const intervalleFPS = 1 / fpsMax;
 
-// --- VISEUR MANETTE ---
-let padAPrevious = false, padBPrevious = false, padYPrevious = false;
-let indexBoutonFocus = -1, padDirPrevious = false; // Navigation UI
+const vitesseUnitsParSec = 30;
+const vitesseRotPadRad = 3.0;
+const fpsMax = isMobile || isLowEnd ? 60 : 120;
+const intervalleFPS = 1 / fpsMax;
+let stepAccumule = 0;
+let hauteurJoueur = 26;
+
+// Moniteur DRS temps réel
+let drsFrames = 0;
+let drsSampleMs = 0;
+let drsLastTime = performance.now();
+let drsLastChange = 0;
+let drsGoodStreak = 0;
+
+function updateDynamicResolution(now) {
+  const frameMs = now - drsLastTime;
+  drsLastTime = now;
+  if (!window.drsEnabled || window.easterEggDebloque || frameMs > 250 || frameMs <= 0) {
+    drsFrames = 0;
+    drsSampleMs = 0;
+    return;
+  }
+  drsFrames++;
+  drsSampleMs += frameMs;
+  if (drsSampleMs < 1000 || drsFrames < 15) return;
+
+  const avgFps = (drsFrames * 1000) / drsSampleMs;
+  drsFrames = 0;
+  drsSampleMs = 0;
+
+  if (avgFps < 38 && drsStepIdx < DRS_STEPS.length - 1 && now - drsLastChange > 2000) {
+    drsStepIdx++;
+    drsGoodStreak = 0;
+    drsLastChange = now;
+    drsScale = DRS_STEPS[drsStepIdx];
+    drsLodFactor = Math.max(0.75, drsScale);
+    window.drsScale = drsScale;
+    renderer.setPixelRatio(getTargetPixelRatio());
+    window.ui_majDRSBadge?.(true, drsScale);
+  } else if (avgFps > 54 && drsStepIdx > 0 && now - drsLastChange > 4500) {
+    drsGoodStreak++;
+    if (drsGoodStreak >= 2) {
+      drsStepIdx--;
+      drsGoodStreak = 0;
+      drsLastChange = now;
+      drsScale = DRS_STEPS[drsStepIdx];
+      drsLodFactor = Math.max(0.75, drsScale);
+      window.drsScale = drsScale;
+      renderer.setPixelRatio(getTargetPixelRatio());
+      window.ui_majDRSBadge?.(true, drsScale);
+    }
+  } else {
+    drsGoodStreak = 0;
+  }
+}
+
+// Navigation manette
+let padAPrevious = false;
+let padBPrevious = false;
+let padYPrevious = false;
+let padXPrevious = false;
+let padStartPrev = false;
+let indexBoutonFocus = -1;
+let padDirPrevious = false;
+
 const crosshair = document.createElement("div");
-crosshair.style.cssText = "display:none; position:fixed;top:50%;left:50%;width:6px;height:6px;background:white;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:9999;box-shadow: 0 0 4px black;";
+crosshair.style.cssText =
+  "display:none; position:fixed;top:50%;left:50%;width:6px;height:6px;background:white;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:9999;box-shadow: 0 0 4px black;";
 document.body.appendChild(crosshair);
 
-// --- DEBUG MANETTE ---
-const debugManette = document.createElement("div");
-if (MODE_DEV) {
-  debugManette.style.cssText = "position:fixed;top:10px;left:10px;background:rgba(0,0,0,0.8);color:lime;padding:10px;font-family:monospace;z-index:99999;pointer-events:none;";
-  document.body.appendChild(debugManette);
-}
-// --- OPTIMISATION ANTI-CRASH : RADAR DE VISION ---
-const frustum = new THREE.Frustum();
-const projScreenMatrix = new THREE.Matrix4();
-
 const animate = () => {
-  window.requestAnimationFrame(animate); 
-  const delta = clock.getDelta();
-  deltaAccumule += delta;
+  window.requestAnimationFrame(animate);
+  const rawDelta = clock.getDelta();
+  if (document.hidden || !renduAutorise) {
+    drsLastTime = performance.now();
+    return;
+  }
 
-  if (deltaAccumule < intervalleFPS) return; // Contrôle du framerate
-  deltaAccumule = deltaAccumule % intervalleFPS; 
-  controls.update();
+  stepAccumule += rawDelta;
+  if (stepAccumule < intervalleFPS) return;
+  const dt = Math.min(stepAccumule, 0.05);
+  stepAccumule = stepAccumule % intervalleFPS;
 
-  // --------------------------------------------------------
-  // A. LECTURE DE LA MANETTE (GamePad API)
-  // --------------------------------------------------------
+  // A. LECTURE MANETTE
   let gamepadActif = null;
-  let padX = 0, padY = 0, padRotX = 0, padRotY = 0;
-  let padA = false, padB = false, padYBtn = false;
-  let padLT = 0, padRT = 0;
-  
-  if (!isMobile) {
+  let padX = 0;
+  let padY = 0;
+  let padRotX = 0;
+  let padRotY = 0;
+  let padA = false;
+  let padB = false;
+  let padYBtn = false;
+  let padXBtn = false;
+  let padLT = 0;
+  let padRT = 0;
+
+  if (!isMobile && typeof navigator.getGamepads === "function") {
     const gamepads = navigator.getGamepads();
     for (let i = 0; i < gamepads.length; i++) {
-      if (gamepads[i] && gamepads[i].connected) { gamepadActif = gamepads[i]; break; }
+      if (gamepads[i] && gamepads[i].connected) {
+        gamepadActif = gamepads[i];
+        break;
+      }
     }
   }
 
   if (gamepadActif) {
-    crosshair.style.display = "block";
-    if (Math.abs(gamepadActif.axes[0]) > 0.15) padX = gamepadActif.axes[0]; 
-    if (Math.abs(gamepadActif.axes[1]) > 0.15) padY = gamepadActif.axes[1]; 
-    if (Math.abs(gamepadActif.axes[2]) > 0.15) padRotX = gamepadActif.axes[2]; 
-    if (Math.abs(gamepadActif.axes[3]) > 0.15) padRotY = gamepadActif.axes[3]; 
-    padA = gamepadActif.buttons[0].pressed; 
-    padB = gamepadActif.buttons[1].pressed; 
-    padYBtn = gamepadActif.buttons[3].pressed; 
-    padLT = gamepadActif.buttons[6].value;
-    padRT = gamepadActif.buttons[7].value;
-    // 🛑 FIX : Le bouton Start doit être lu MÊME quand le jeu est en pause !
-    let padStart = gamepadActif.buttons[9]?.pressed;
-    if (padStart && !window.padStartPrev) { if (window.togglePause) window.togglePause(); }
-    window.padStartPrev = padStart;
+    crosshair.style.display = estJeuInteractif() ? "block" : "none";
+    if (Math.abs(gamepadActif.axes[0]) > 0.15) padX = gamepadActif.axes[0];
+    if (Math.abs(gamepadActif.axes[1]) > 0.15) padY = gamepadActif.axes[1];
+    if (Math.abs(gamepadActif.axes[2]) > 0.15) padRotX = gamepadActif.axes[2];
+    if (Math.abs(gamepadActif.axes[3]) > 0.15) padRotY = gamepadActif.axes[3];
+    padA = Boolean(gamepadActif.buttons[0]?.pressed);
+    padB = Boolean(gamepadActif.buttons[1]?.pressed);
+    padXBtn = Boolean(gamepadActif.buttons[2]?.pressed);
+    padYBtn = Boolean(gamepadActif.buttons[3]?.pressed);
+    padLT = gamepadActif.buttons[6]?.value || 0;
+    padRT = gamepadActif.buttons[7]?.value || 0;
+
+    const padStart = Boolean(gamepadActif.buttons[9]?.pressed);
+    if (padStart && !padStartPrev) window.togglePause?.();
+    padStartPrev = padStart;
   } else {
     crosshair.style.display = "none";
   }
-  
-  if (MODE_DEV && gamepadActif) {
-    debugManette.innerHTML = `🕹️ L-Joy (X,Y): ${padX.toFixed(2)}, ${padY.toFixed(2)} <br> 👁️ R-Joy (RotX,RotY): ${padRotX.toFixed(2)}, ${padRotY.toFixed(2)} <br> 🔫 Gâchettes: LT:${padLT.toFixed(2)} RT:${padRT.toFixed(2)} <br> 🔘 Boutons: A(${padA}) B(${padB})`;
-  } else if (MODE_DEV) { debugManette.innerHTML = "❌ Pas de manette détectée"; }
 
-  // --- NAVIGATION UI (QCM) ---
-  const modalQuiz = document.getElementById('modal-quiz');
-  // On vérifie que la modale n'a pas la classe 'cache' (ce qui signifie qu'elle est affichée)
-  if (modalQuiz && !modalQuiz.classList.contains('cache')) {
-    const boutons = document.querySelectorAll('.btn-option:not([disabled])');
-    const padUp = padY < -0.5 || (gamepadActif && gamepadActif.buttons[12]?.pressed);
-    const padDown = padY > 0.5 || (gamepadActif && gamepadActif.buttons[13]?.pressed);
-    
-    if (padUp && !padDirPrevious) indexBoutonFocus = (indexBoutonFocus > 0) ? indexBoutonFocus - 1 : boutons.length - 1;
-    if (padDown && !padDirPrevious) indexBoutonFocus = (indexBoutonFocus < boutons.length - 1) ? indexBoutonFocus + 1 : 0;
-    
-    // On applique un style visuel clair (bordure dorée)
-    boutons.forEach((b, i) => {
-        b.style.border = (i === indexBoutonFocus) ? "3px solid #f9ca24" : "none";
-        b.style.transform = (i === indexBoutonFocus) ? "scale(1.05)" : "scale(1)";
-    });
-    
-    // Si on appuie sur A et qu'un bouton est sélectionné
-    if (padA && !padAPrevious && indexBoutonFocus >= 0) boutons[indexBoutonFocus].click();
-    
-    padDirPrevious = padUp || padDown; 
-    padX = 0; padY = 0; padRotX = 0; padRotY = 0; // Bloque la caméra 3D
-  } else { 
-    indexBoutonFocus = -1; 
+  if (MODE_DEV && debugManette) {
+    if (gamepadActif) {
+      debugManette.innerHTML = `🕹️ L-Joy: ${padX.toFixed(2)}, ${padY.toFixed(2)} <br> 👁️ R-Joy: ${padRotX.toFixed(2)}, ${padRotY.toFixed(2)} <br> 🔫 LT:${padLT.toFixed(2)} RT:${padRT.toFixed(2)} <br> 🔘 A(${padA}) B(${padB})`;
+    } else {
+      debugManette.innerHTML = "❌ Pas de manette détectée";
+    }
   }
 
-  // --------------------------------------------------------
-  // B. ACTIONS DES BOUTONS (A, B, Y)
-  // --------------------------------------------------------
-  let btnPress = (padA && !padAPrevious) ? "A" : (padB && !padBPrevious) ? "B" : (padYBtn && !padYPrevious) ? "Y" : "";
-  if (btnPress) window.seqPad = ((window.seqPad || "") + btnPress).slice(-4);
-  if (window.seqPad === "YYBA") window.activerModeRetro();
+  // Navigation UI QCM manette
+  const quizOuvert = estModaleOuverte("modal-quiz");
+  if (quizOuvert) {
+    const boutons = document.querySelectorAll(".btn-option:not([disabled])");
+    const padUp = padY < -0.5 || Boolean(gamepadActif?.buttons[12]?.pressed);
+    const padDown = padY > 0.5 || Boolean(gamepadActif?.buttons[13]?.pressed);
+
+    if (boutons.length > 0) {
+      if (padUp && !padDirPrevious) {
+        indexBoutonFocus =
+          indexBoutonFocus > 0 ? indexBoutonFocus - 1 : boutons.length - 1;
+      }
+      if (padDown && !padDirPrevious) {
+        indexBoutonFocus =
+          indexBoutonFocus < boutons.length - 1 ? indexBoutonFocus + 1 : 0;
+      }
+      boutons.forEach((b, i) => {
+        b.style.border = i === indexBoutonFocus ? "3px solid #f9ca24" : "";
+        b.style.transform = i === indexBoutonFocus ? "scale(1.03)" : "";
+      });
+      if (padA && !padAPrevious && indexBoutonFocus >= 0) {
+        boutons[indexBoutonFocus].click();
+      }
+    }
+    padDirPrevious = padUp || padDown;
+    padX = 0;
+    padY = 0;
+    padRotX = 0;
+    padRotY = 0;
+  } else {
+    indexBoutonFocus = -1;
+  }
+
+  // B. BOUTONS MANETTE
+  const btnPress =
+    padA && !padAPrevious
+      ? "A"
+      : padB && !padBPrevious
+        ? "B"
+        : padYBtn && !padYPrevious
+          ? "Y"
+          : "";
+  if (btnPress) {
+    window.seqPad = ((window.seqPad || "") + btnPress).slice(-4);
+    if (window.seqPad === "YYBA") window.activerModeRetro();
+  }
 
   if (padA && !padAPrevious) {
-    const btnDecvrir = document.getElementById("btn-decouvrir");
-    const btnSuivant = document.getElementById("btn-suivant");
-    const btnRentrer = document.getElementById("btn-rentrer");
-
-    // 1. Navigation fluide dans le tutoriel avec la manette
-    if (btnDecvrir && !btnDecvrir.classList.contains("cache") && btnDecvrir.style.display !== "none") btnDecvrir.click();
-    else if (btnSuivant && !btnSuivant.classList.contains("cache")) btnSuivant.click();
-    else if (btnRentrer && !btnRentrer.classList.contains("cache")) btnRentrer.click();
-    
-    // 2. Ou bien validation d'un bouton de QCM (Bordure dorée)
-    else if (document.getElementById('modal-quiz') && !document.getElementById('modal-quiz').classList.contains('cache')) {
-      const boutons = document.querySelectorAll('.btn-option:not([disabled])');
-      // Si aucun bouton n'est surligné, on force le premier par défaut
-      if (indexBoutonFocus === -1 && boutons.length > 0) indexBoutonFocus = 0; 
-      if (boutons[indexBoutonFocus]) boutons[indexBoutonFocus].click();
-    }
-    // 3. Ou bien tir du Raycaster 3D classique (Fix PointerEvent manette)
-    else {
-      const xc = window.innerWidth / 2, yc = window.innerHeight / 2;
+    const btnDec = document.getElementById("btn-decouvrir");
+    const btnSuiv = document.getElementById("btn-suivant");
+    const btnRent = document.getElementById("btn-rentrer");
+    if (btnDec && !btnDec.classList.contains("cache") && btnDec.style.display !== "none") {
+      btnDec.click();
+    } else if (btnSuiv && !btnSuiv.classList.contains("cache") && btnSuiv.style.display !== "none") {
+      btnSuiv.click();
+    } else if (btnRent && !btnRent.classList.contains("cache")) {
+      btnRent.click();
+    } else if (quizOuvert) {
+      const boutons = document.querySelectorAll(".btn-option:not([disabled])");
+      if (indexBoutonFocus === -1 && boutons.length > 0) indexBoutonFocus = 0;
+      boutons[indexBoutonFocus]?.click();
+    } else if (estModaleOuverte("modal-controles")) {
+      window.ui_fermerControles?.();
+    } else if (estModaleOuverte("modal-pause")) {
+      document.getElementById("btn-reprendre")?.click();
+    } else if (estModaleOuverte("modal-fin")) {
+      document.getElementById("btn-recommencer")?.click();
+    } else if (estJeuInteractif()) {
+      const xc = window.innerWidth / 2;
+      const yc = window.innerHeight / 2;
       canvas.dispatchEvent(new PointerEvent("pointerdown", { clientX: xc, clientY: yc }));
       canvas.dispatchEvent(new PointerEvent("pointerup", { clientX: xc, clientY: yc }));
     }
   }
 
   if (padB && !padBPrevious) {
-    window.deselectionnerObjet(); // 🛑 FIX : Désélection FPS propre via manette
+    if (estModaleOuverte("modal-controles")) {
+      window.ui_fermerControles?.();
+    } else if (quizOuvert) {
+      window.ui_fermerQuiz?.();
+    } else if (window.enPause) {
+      window.togglePause?.();
+    } else {
+      window.deselectionnerObjet();
+    }
   }
-  let padXBtn = gamepadActif ? gamepadActif.buttons[2].pressed : false;
-  if (padXBtn && !window.padXPrevious) window.deselectionnerObjet();
-  window.padXPrevious = padXBtn;
-  
-  padAPrevious = padA; padBPrevious = padB; padYPrevious = padYBtn;
+  if (padXBtn && !padXPrevious && objetActif) {
+    window.deselectionnerObjet();
+  }
 
-  // --------------------------------------------------------
-  // C. MOTEUR GTA (Déplacement de l'objet actif)
-  // --------------------------------------------------------
+  padXPrevious = padXBtn;
+  padAPrevious = padA;
+  padBPrevious = padB;
+  padYPrevious = padYBtn;
+
+  // Pause ou superposition totale : économise GPU (1 seul rendu à la transition)
+  if (
+    window.enPause ||
+    estIntroPresente() ||
+    quizOuvert ||
+    estModaleOuverte("modal-fin")
+  ) {
+    drsLastTime = performance.now();
+    if (forceRender) {
+      renderer.render(scene, camera);
+      forceRender = false;
+    }
+    stats?.update();
+    return;
+  }
+
+  // C. MODE DEV : DÉPLACEMENT OBJET
   if (objetActif && MODE_DEV) {
-    if (touches.q || touches.ArrowLeft) objetActif.translateX(-1);
-    if (touches.d || touches.ArrowRight) objetActif.translateX(1);
-    if (touches.z || touches.ArrowUp) objetActif.translateZ(-1);
-    if (touches.s || touches.ArrowDown) objetActif.translateZ(1);
+    const devStep = 12 * dt;
+    let movedObj = false;
+    if (touches.q || touches.arrowleft) { objetActif.translateX(-devStep); movedObj = true; }
+    if (touches.d || touches.arrowright) { objetActif.translateX(devStep); movedObj = true; }
+    if (touches.z || touches.arrowup) { objetActif.translateZ(-devStep); movedObj = true; }
+    if (touches.s || touches.arrowdown) { objetActif.translateZ(devStep); movedObj = true; }
 
-    if (touches.z || touches.s || touches.q || touches.d || touches.ArrowUp || touches.ArrowDown || touches.ArrowLeft || touches.ArrowRight) {
+    if (movedObj) {
       offsetCam.subVectors(objetActif.position, controls.target);
       camera.position.add(offsetCam);
       controls.target.copy(objetActif.position);
     }
   }
 
-  // --------------------------------------------------------
-  // D. DÉPLACEMENT DE LA CAMÉRA (ZQSD, Manette, Mobile)
-  // --------------------------------------------------------
-  const peutBouger = (direction, inverse = false) => {
-    if (mursCollision.length === 0) return true; 
-    dirRaycast.copy(direction);
-    if (inverse) dirRaycast.negate();
-    raycasterColl.set(camera.position, dirRaycast.normalize());
-    const intersect = raycasterColl.intersectObjects(mursCollision);
-    return intersect.length === 0 || intersect[0].distance > 1.5;
-  };
-
-  if (!objetActif && !window.enPause) { // 🛑 FIX : Gèle les moteurs en pause
+  // D. DÉPLACEMENT CAMÉRA + GLISSEMENT SUR MURS
+  if (!objetActif) {
     camera.getWorldDirection(dirCamera);
-    dirCamera.y = 0; dirCamera.normalize();
+    dirCamera.y = 0;
+    dirCamera.normalize();
     dirLaterale.crossVectors(camera.up, dirCamera).normalize();
 
-    // -- Manette --
-    if (padY < -0.15 && peutBouger(dirCamera)) { camera.position.addScaledVector(dirCamera, -padY * vitesseZQSD); controls.target.addScaledVector(dirCamera, -padY * vitesseZQSD); }
-    if (padY > 0.15 && peutBouger(dirCamera, true)) { camera.position.addScaledVector(dirCamera, -padY * vitesseZQSD); controls.target.addScaledVector(dirCamera, -padY * vitesseZQSD); }
-    if (padX < -0.15 && peutBouger(dirLaterale)) { camera.position.addScaledVector(dirLaterale, -padX * vitesseZQSD); controls.target.addScaledVector(dirLaterale, -padX * vitesseZQSD); }
-    if (padX > 0.15 && peutBouger(dirLaterale, true)) { camera.position.addScaledVector(dirLaterale, -padX * vitesseZQSD); controls.target.addScaledVector(dirLaterale, -padX * vitesseZQSD); }
-    
-    if (Math.abs(padRotX) > 0.15) { offsetCam.subVectors(controls.target, camera.position); offsetCam.applyAxisAngle(axeY, -padRotX * 0.05); controls.target.copy(camera.position).add(offsetCam); }
-    if (Math.abs(padRotY) > 0.15) { 
-      let nouvelleHauteur = controls.target.y - (padRotY * 0.2);
-      let dist = camera.position.distanceTo(controls.target);
-      controls.target.y = Math.max(camera.position.y - (dist * 0.9), Math.min(camera.position.y + (dist * 0.9), nouvelleHauteur));
+    let fwdInput = 0;
+    let sideInput = 0;
+
+    if (touches.z || touches.arrowup) fwdInput += 1;
+    if (touches.s || touches.arrowdown) fwdInput -= 1;
+    if (touches.q || touches.arrowleft) sideInput += 1;
+    if (touches.d || touches.arrowright) sideInput -= 1;
+
+    if (Math.abs(padY) > 0.15) fwdInput -= padY;
+    if (Math.abs(padX) > 0.15) sideInput -= padX;
+
+    if (Math.abs(padMobile.y) > 0.05) fwdInput += padMobile.y;
+    if (Math.abs(padMobile.x) > 0.05) sideInput -= padMobile.x;
+
+    const mag = Math.hypot(fwdInput, sideInput);
+    if (mag > 1) {
+      fwdInput /= mag;
+      sideInput /= mag;
     }
 
-    if (MODE_DEV && padLT > 0.1) hauteurJoueur += padLT * 0.4;
-    if (MODE_DEV && padRT > 0.1) hauteurJoueur -= padRT * 0.4;
+    if (mag > 0.001) {
+      const distPas = vitesseUnitsParSec * dt;
+      const dx = (dirCamera.x * fwdInput + dirLaterale.x * sideInput) * distPas;
+      const dz = (dirCamera.z * fwdInput + dirLaterale.z * sideInput) * distPas;
 
+      if (dx !== 0 && !collidesWithWalls(camera.position.x + dx, camera.position.y, camera.position.z)) {
+        camera.position.x += dx;
+        controls.target.x += dx;
+      }
+      if (dz !== 0 && !collidesWithWalls(camera.position.x, camera.position.y, camera.position.z + dz)) {
+        camera.position.z += dz;
+        controls.target.z += dz;
+      }
+    }
 
-    // -- Tactile Mobile --
-    if (Math.abs(padMobile.y) > 0.05 && peutBouger(dirCamera, padMobile.y < 0)) {
-      camera.position.addScaledVector(dirCamera, padMobile.y * vitesseZQSD); controls.target.addScaledVector(dirCamera, padMobile.y * vitesseZQSD);
+    if (Math.abs(padRotX) > 0.15) {
+      offsetCam.subVectors(controls.target, camera.position);
+      offsetCam.applyAxisAngle(axeY, -padRotX * vitesseRotPadRad * dt);
+      controls.target.copy(camera.position).add(offsetCam);
     }
-    if (Math.abs(padMobile.x) > 0.05 && peutBouger(dirLaterale, padMobile.x > 0)) {
-      camera.position.addScaledVector(dirLaterale, -padMobile.x * vitesseZQSD); controls.target.addScaledVector(dirLaterale, -padMobile.x * vitesseZQSD);
+    if (Math.abs(padRotY) > 0.15) {
+      const nouvelleHauteur = controls.target.y - padRotY * 12 * dt;
+      const dist = camera.position.distanceTo(controls.target);
+      controls.target.y = Math.max(
+        camera.position.y - dist * 0.9,
+        Math.min(camera.position.y + dist * 0.9, nouvelleHauteur),
+      );
     }
-    
-    // -- Clavier --
-    if ((touches.z || touches.ArrowUp) && peutBouger(dirCamera)) { camera.position.addScaledVector(dirCamera, vitesseZQSD); controls.target.addScaledVector(dirCamera, vitesseZQSD); }
-    if ((touches.s || touches.ArrowDown) && peutBouger(dirCamera, true)) { camera.position.addScaledVector(dirCamera, -vitesseZQSD); controls.target.addScaledVector(dirCamera, -vitesseZQSD); }
-    if ((touches.q || touches.ArrowLeft) && peutBouger(dirLaterale)) { camera.position.addScaledVector(dirLaterale, vitesseZQSD); controls.target.addScaledVector(dirLaterale, vitesseZQSD); }
-    if ((touches.d || touches.ArrowRight) && peutBouger(dirLaterale, true)) { camera.position.addScaledVector(dirLaterale, -vitesseZQSD); controls.target.addScaledVector(dirLaterale, -vitesseZQSD); }
+
+    if (MODE_DEV && padLT > 0.1) hauteurJoueur += padLT * 24 * dt;
+    if (MODE_DEV && padRT > 0.1) hauteurJoueur -= padRT * 24 * dt;
   }
- 
-  // --------------------------------------------------------
-  // E. ANIMATION DES OBJETS ET RENDU FINAL
-  // --------------------------------------------------------
-  const elapsedTime = clock.getElapsedTime();
-  objetsCliquables.forEach((objet, i) => {
-    if (objet.userData.flotte && objet.userData.flotteActive !== false) {
-      const cibleAnimation = objet.parent || objet;
-      cibleAnimation.position.y = objet.userData.baseY + Math.sin(elapsedTime * (objet.userData.vitesse || 0.8) + (i * 1.2)) * (objet.userData.amplitude || 0.08);
-    }
-  });
 
-  // 🛑 FIX RADICAL : On cloue le joueur. OrbitControls ne peut plus te faire voler.
   if (!objetActif) {
     const decalageY = hauteurJoueur - camera.position.y;
     camera.position.y = hauteurJoueur;
     controls.target.y += decalageY;
   }
-  
-  // 🚀 OPTI AGRESSIVE ANTI-CRASH : Cône de vision + Distance adaptative
-  camera.updateMatrixWorld();
-  projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-  frustum.setFromProjectionMatrix(projScreenMatrix);
 
-  lodsScene.forEach(l => {
-    l.update(camera); 
-    if (isMobile) {
-      // 🛑 FIX : On teste le cône de vision sur la grosse Hitbox (children[2]) pour éviter que l'objet disparaisse trop tôt sur les bords
-      l.visible = (l.position.distanceTo(camera.position) < window.lodDist) && frustum.intersectsObject(l.children[2] || l);
+  controls.update();
+
+  // E. FLOTTAISON & CULLING PAR ANGLE DE VISION + 4 LODs
+  const elapsedTime = clock.elapsedTime;
+  for (let i = 0; i < lodsScene.length; i++) {
+    const lod = lodsScene[i];
+    if (lod.visible && lod.userData.flotte && lod.userData.flotteActive !== false) {
+      lod.position.y =
+        lod.userData.baseY +
+        Math.sin(elapsedTime * lod.userData.vitesse + i * 1.2) *
+          lod.userData.amplitude;
     }
-  });
-  
-  if (renduAutorise) renderer.render(scene, camera);
+  }
+
+  updateVisionCulling();
+  renderer.render(scene, camera);
+  forceRender = false;
+  updateDynamicResolution(performance.now());
+
   if (stats) {
     stats.update();
     perfData.polygones = renderer.info.render.triangles;
     perfData.drawCalls = renderer.info.render.calls;
     perfData.geometries = renderer.info.memory.geometries;
   }
-}; 
+};
 animate();
 
 window.nettoyerMemoire = () => {
   renduAutorise = false;
+  const gSet = new Set();
+  const mSet = new Set();
+  const tSet = new Set();
   scene.traverse((child) => {
     if (child.isMesh) {
-      if (child.geometry) child.geometry.dispose();
+      if (child.geometry && !gSet.has(child.geometry)) {
+        gSet.add(child.geometry);
+        child.geometry.dispose();
+      }
       if (child.material) {
-        const mats = Array.isArray(child.material) ? child.material : [child.material];
-        mats.forEach(m => {
-          ['map', 'normalMap', 'aoMap', 'emissiveMap', 'roughnessMap', 'metalnessMap'].forEach(k => { if (m[k]) m[k].dispose(); });
+        const mats = Array.isArray(child.material)
+          ? child.material
+          : [child.material];
+        mats.forEach((m) => {
+          if (!m || mSet.has(m)) return;
+          mSet.add(m);
+          [
+            "map",
+            "normalMap",
+            "aoMap",
+            "emissiveMap",
+            "roughnessMap",
+            "metalnessMap",
+          ].forEach((k) => {
+            if (m[k] && !tSet.has(m[k])) {
+              tSet.add(m[k]);
+              m[k].dispose();
+            }
+          });
           m.dispose();
         });
       }
